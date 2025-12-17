@@ -235,18 +235,27 @@ const CashflowFountain = ({ surplus, maxSurplus }: { surplus: number; maxSurplus
   };
 
   return (
-    <group position={[0, 0, 0]} onClick={handleClick}>
-      {/* Base */}
-      <mesh position={[0, 0.04, 0]}><cylinderGeometry args={[1.1, 1.2, 0.08, 24]} /><meshStandardMaterial color="#E0E0E0" /></mesh>
+    <group position={[0, 0, 0]}>
+      {/* Clickable base - largest hit area */}
+      <mesh position={[0, 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}>
+        <cylinderGeometry args={[1.1, 1.2, 0.08, 24]} />
+        <meshStandardMaterial color="#E0E0E0" />
+      </mesh>
       {/* Pool rim */}
-      <mesh position={[0, 0.12, 0]}><cylinderGeometry args={[0.85, 0.95, 0.12, 20]} /><meshStandardMaterial color="#78909C" /></mesh>
+      <mesh position={[0, 0.12, 0]} onClick={handleClick} onPointerDown={handleClick}>
+        <cylinderGeometry args={[0.85, 0.95, 0.12, 20]} />
+        <meshStandardMaterial color="#78909C" />
+      </mesh>
       {/* Water */}
-      <mesh position={[0, 0.08 + waterLevel * 0.04, 0]}>
+      <mesh position={[0, 0.08 + waterLevel * 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}>
         <cylinderGeometry args={[0.8, 0.8, waterLevel * 0.08, 20]} />
         <meshStandardMaterial color={isNegative ? COLORS.waterNegative : COLORS.water} transparent opacity={0.8} />
       </mesh>
       {/* Pillar */}
-      <mesh position={[0, 0.25, 0]}><cylinderGeometry args={[0.06, 0.08, 0.25, 8]} /><meshStandardMaterial color="#607D8B" /></mesh>
+      <mesh position={[0, 0.25, 0]} onClick={handleClick} onPointerDown={handleClick}>
+        <cylinderGeometry args={[0.06, 0.08, 0.25, 8]} />
+        <meshStandardMaterial color="#607D8B" />
+      </mesh>
       {/* Spray */}
       {!isNegative && (
         <mesh ref={sprayRef} position={[0, 0.42, 0]}>
@@ -262,7 +271,7 @@ const CashflowFountain = ({ surplus, maxSurplus }: { surplus: number; maxSurplus
         </mesh>
       )}
       {/* Status ring */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={handleClick} onPointerDown={handleClick}>
         <ringGeometry args={[1.15, 1.25, 24]} />
         <meshStandardMaterial color={isNegative ? COLORS.waterNegative : '#4CAF50'} emissive={isNegative ? COLORS.waterNegative : '#4CAF50'} emissiveIntensity={0.4} />
       </mesh>
@@ -324,9 +333,9 @@ const AssetBuilding = ({ position, height, type, balance, name }: {
   };
   
   return (
-    <group position={position} onClick={handleClick}>
-      {/* Main building */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+    <group position={position}>
+      {/* Main building - clickable */}
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[width, height, width]} />
         <meshStandardMaterial color={getColor()} roughness={0.4} />
       </mesh>
@@ -421,9 +430,9 @@ const DebtBuilding = ({ position, height, type, balance, name }: {
   };
   
   return (
-    <group position={position} onClick={handleClick}>
-      {/* Main building */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+    <group position={position}>
+      {/* Main building - clickable */}
+      <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[width, height, width]} />
         <meshStandardMaterial color={COLORS.debt} roughness={0.5} />
       </mesh>
@@ -495,9 +504,9 @@ const LaunchPad = ({ position, goal }: { position: [number, number, number]; goa
   };
   
   return (
-    <group position={position} onClick={handleClick}>
-      {/* Launch platform - larger for mobile visibility */}
-      <mesh position={[0, 0.08, 0]} receiveShadow>
+    <group position={position}>
+      {/* Launch platform - clickable */}
+      <mesh position={[0, 0.08, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
         <cylinderGeometry args={[0.6, 0.65, 0.16, 16]} />
         <meshStandardMaterial color={COLORS.concrete} />
       </mesh>
@@ -519,13 +528,13 @@ const LaunchPad = ({ position, goal }: { position: [number, number, number]; goa
       {/* Rocket */}
       {progress > 0.05 && (
         <group position={[0, 0.2, 0]}>
-          {/* Body - larger */}
-          <mesh position={[0, rocketHeight / 2, 0]} castShadow>
+          {/* Body - clickable */}
+          <mesh position={[0, rocketHeight / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
             <cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} />
             <meshStandardMaterial color={COLORS.rocket} metalness={0.3} />
           </mesh>
-          {/* Nose cone */}
-          <mesh position={[0, rocketHeight + 0.12, 0]}>
+          {/* Nose cone - clickable */}
+          <mesh position={[0, rocketHeight + 0.12, 0]} onClick={handleClick} onPointerDown={handleClick}>
             <coneGeometry args={[0.1, 0.25, 12]} />
             <meshStandardMaterial color={COLORS.rocketAccent} />
           </mesh>

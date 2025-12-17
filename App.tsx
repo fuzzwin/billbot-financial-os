@@ -74,7 +74,7 @@ const WelcomeOverlay = ({ onComplete }: { onComplete: () => void }) => {
   
   const steps = [
     { icon: "👋", title: "Welcome to BillBot", text: "Your money, your grid. Let's build something epic." },
-    { icon: "⚡", title: "The Grid", text: "Watch your wealth grow as buildings rise. Debt creates smoke — let's clear the air." },
+    { icon: "🏙️", title: "Your City", text: "Watch your wealth grow as buildings rise. Debt creates smoke — let's clear the air." },
     { icon: "🎯", title: "Lock In Targets", text: "Save for what matters. When you hit your target, unlock it and celebrate guilt-free!" },
     { icon: "🔥", title: "2 Min Quick Sync", text: "A quick sync each week keeps your grid running. That's all it takes." },
   ];
@@ -419,7 +419,7 @@ const HomeView = ({
                 </div>
               </div>
               <div>
-                <h1 className="text-base font-black text-white drop-shadow-lg leading-tight">The Grid</h1>
+                <h1 className="text-base font-black text-white drop-shadow-lg leading-tight">BillBot</h1>
                 <p className="text-slate-400 text-[10px]">{accounts.length} accounts • {goals.length} targets</p>
               </div>
             </div>
@@ -1285,7 +1285,7 @@ const App = () => {
   };
 
   const navItems = [
-    { view: AppView.HOME, icon: '⚡', label: 'Grid' },
+    { view: AppView.HOME, icon: '🏠', label: 'Home' },
     { view: AppView.MONEY, icon: '💸', label: 'Cash' },
     { view: AppView.GOALS, icon: '🎯', label: 'Targets' },
     { view: AppView.HELP, icon: '🛟', label: 'Support' },
