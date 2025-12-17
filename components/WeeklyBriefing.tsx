@@ -50,8 +50,8 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-xl animate-in fade-in">
                 <div className="max-w-md w-full text-center p-8">
                     <div className="text-6xl mb-4 animate-bounce">{isProfit ? '📈' : '📉'}</div>
-                    <h2 className="text-3xl font-black text-white italic mb-2">WEEKLY REPORT</h2>
-                    <p className="text-slate-400 mb-8">Briefing Complete.</p>
+                    <h2 className="text-3xl font-black text-white italic mb-2">SYNC COMPLETE</h2>
+                    <p className="text-slate-400 mb-8">You're all caught up.</p>
                     
                     <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 mb-8">
                         <p className="text-xs font-bold text-slate-500 uppercase mb-2">Net Worth Change</p>
@@ -64,7 +64,7 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
                         onClick={handleFinish}
                         className="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 rounded-xl shadow-lg"
                     >
-                        Apply Updates to City
+                        Apply to Grid ⚡
                     </button>
                 </div>
             </div>
@@ -75,7 +75,7 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-xl animate-in fade-in">
             <div className="max-w-md w-full p-6">
                 <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-xl font-bold text-white italic">MONDAY BRIEFING</h2>
+                    <h2 className="text-xl font-bold text-white italic">⚡ QUICK SYNC</h2>
                     <span className="text-slate-500 text-sm">{step + 1} of {accounts.length}</span>
                 </div>
 

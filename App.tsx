@@ -73,10 +73,10 @@ const WelcomeOverlay = ({ onComplete }: { onComplete: () => void }) => {
   const [step, setStep] = useState(0);
   
   const steps = [
-    { icon: "👋", title: "Welcome to BillBot", text: "Your money, your city. Let's build something beautiful together." },
-    { icon: "🏙️", title: "Your Financial City", text: "Watch your wealth grow as buildings rise. Debt creates pollution - let's clear the air." },
-    { icon: "🚀", title: "Goals Launch", text: "Save for what matters. When you're ready, launch and celebrate guilt-free!" },
-    { icon: "⚡", title: "5 Minutes a Week", text: "Quick weekly check-ins keep your city thriving. That's all it takes." },
+    { icon: "👋", title: "Welcome to BillBot", text: "Your money, your grid. Let's build something epic." },
+    { icon: "⚡", title: "The Grid", text: "Watch your wealth grow as buildings rise. Debt creates smoke — let's clear the air." },
+    { icon: "🎯", title: "Lock In Targets", text: "Save for what matters. When you hit your target, unlock it and celebrate guilt-free!" },
+    { icon: "🔥", title: "2 Min Quick Sync", text: "A quick sync each week keeps your grid running. That's all it takes." },
   ];
 
   const current = steps[step];
@@ -218,7 +218,7 @@ const NextActionCard = ({
       };
     }
     
-    // Goals needing fuel
+    // Targets needing more cash
     const underfunded = goals.filter(g => {
       if (g.goalType === 'rocket' && g.deadline) {
         const days = Math.max(1, (new Date(g.deadline).getTime() - Date.now()) / (1000 * 3600 * 24));
@@ -230,23 +230,23 @@ const NextActionCard = ({
     
     if (underfunded.length > 0) {
       return {
-        icon: "🚀",
-        title: `${underfunded[0].name} needs more fuel`,
+        icon: "🎯",
+        title: `${underfunded[0].name} needs more ammo`,
         description: "You might miss your deadline at this pace.",
-        action: "Adjust Goal",
+        action: "Adjust Target",
         view: AppView.GOALS,
         urgent: false
       };
     }
     
-    // Ready to launch
+    // Ready to unlock
     const ready = goals.filter(g => g.currentAmount >= g.targetAmount);
     if (ready.length > 0) {
       return {
         icon: "🎉",
-        title: `${ready[0].name} is ready to launch!`,
+        title: `${ready[0].name} is ready to unlock!`,
         description: "You did it! Time to celebrate.",
-        action: "Launch Now",
+        action: "Unlock Now",
         view: AppView.GOALS,
         urgent: false
       };
@@ -256,8 +256,8 @@ const NextActionCard = ({
     return {
       icon: "✨",
       title: "You're on track!",
-      description: `Keep it up - your city is thriving.`,
-      action: "View Goals",
+      description: `Keep it up - the grid is humming.`,
+      action: "View Targets",
       view: AppView.GOALS,
       urgent: false
     };
@@ -336,8 +336,8 @@ const HomeView = ({
       {/* Compact Header */}
       <div className="flex justify-between items-center px-1">
         <div>
-          <h1 className="text-xl font-black text-white">Wealth City</h1>
-          <p className="text-slate-500 text-xs">{accounts.length} accounts • {goals.length} goals</p>
+          <h1 className="text-xl font-black text-white">The Grid</h1>
+          <p className="text-slate-500 text-xs">{accounts.length} accounts • {goals.length} targets</p>
         </div>
         <div className="flex items-center gap-2">
           <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${surplus >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
@@ -393,11 +393,11 @@ const HomeView = ({
             </div>
             <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
               <p className="text-base font-black text-cyan-400">{activeGoals}</p>
-              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Active Goals</p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Targets</p>
             </div>
             <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
               <p className="text-base font-black text-amber-400">{health.willpowerPoints || 0}</p>
-              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Willpower</p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Juice</p>
             </div>
           </div>
         </div>
@@ -417,10 +417,10 @@ const HomeView = ({
         className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl p-3.5 flex items-center justify-between group transition-all"
       >
         <div className="flex items-center gap-3">
-          <span className="text-xl">📊</span>
+          <span className="text-xl">⚡</span>
           <div className="text-left">
-            <h3 className="font-bold text-sm">Weekly Check-in</h3>
-            <p className="text-violet-200 text-xs opacity-80">2 min • Keep your city alive</p>
+            <h3 className="font-bold text-sm">Quick Sync</h3>
+            <p className="text-violet-200 text-xs opacity-80">2 min • Keep the grid running</p>
           </div>
         </div>
         <div className="bg-white/20 px-3 py-1.5 rounded-lg font-bold text-sm">
@@ -472,7 +472,7 @@ const MoneyView = ({
     <div className="space-y-5 pb-24 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-white">Money Flow</h1>
+          <h1 className="text-2xl font-black text-white">Cash</h1>
           <p className="text-slate-500 text-sm">Track every dollar</p>
         </div>
       </div>
@@ -578,7 +578,7 @@ const MoneyView = ({
             </div>
             <p className="text-slate-400 text-sm mt-2">
               {health.monthlyIncome - health.monthlyExpenses > 0 
-                ? "This is your fuel for goals! 🚀" 
+                ? "This is your ammo for targets! 🎯" 
                 : "You're spending more than you earn. Let's fix this."}
             </p>
           </div>
@@ -649,7 +649,7 @@ const MoneyView = ({
                 onClick={() => killSubscription(sub.id)}
                 className="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
               >
-                Kill
+                Axe 🪓
               </button>
             </div>
           ))}
@@ -707,7 +707,7 @@ const GoalsView = ({
     setShowNewGoal(false);
   };
   
-  const addFuel = (goalId: string, amount: number) => {
+  const addCash = (goalId: string, amount: number) => {
     onUpdateGoals(goals.map(g => {
       if (g.id === goalId) {
         return { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + amount) };
@@ -748,8 +748,8 @@ const GoalsView = ({
     <div className="space-y-5 pb-24 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-white">Goals</h1>
-          <p className="text-slate-500 text-sm">Fuel your dreams</p>
+          <h1 className="text-2xl font-black text-white">Targets</h1>
+          <p className="text-slate-500 text-sm">Lock in what matters</p>
         </div>
         <button 
           onClick={() => setShowNewGoal(true)}
@@ -759,14 +759,14 @@ const GoalsView = ({
         </button>
       </div>
       
-      {/* Weekly Fuel Available */}
+      {/* Weekly Budget */}
       <div className="bg-gradient-to-r from-purple-900/40 to-fuchsia-900/40 border border-purple-500/30 rounded-2xl p-4">
         <div className="flex justify-between items-center">
           <div>
-            <p className="text-purple-300 text-sm font-bold">Weekly Fuel Available</p>
+            <p className="text-purple-300 text-sm font-bold">Weekly Ammo</p>
             <p className="text-white text-2xl font-black">${weeklySurplus.toFixed(0)}/wk</p>
           </div>
-          <div className="text-4xl">⛽</div>
+          <div className="text-4xl">💰</div>
         </div>
       </div>
       
@@ -780,13 +780,13 @@ const GoalsView = ({
               onClick={() => setNewGoalType('rocket')}
               className={`flex-1 py-3 rounded-xl font-bold transition-all ${newGoalType === 'rocket' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
             >
-              🚀 Serious Goal
+              🎯 Target
             </button>
             <button 
               onClick={() => setNewGoalType('impulse')}
               className={`flex-1 py-3 rounded-xl font-bold transition-all ${newGoalType === 'impulse' ? 'bg-amber-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
             >
-              🎁 Maybe Buy
+              🅿️ Parked
             </button>
           </div>
           
@@ -817,10 +817,10 @@ const GoalsView = ({
         </div>
       )}
       
-      {/* Rockets (Serious Goals) */}
+      {/* Targets (Serious Goals) */}
       {rockets.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider">🚀 Missions</h3>
+          <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider">🎯 Locked In</h3>
           {rockets.map(goal => {
             const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
             const isReady = goal.currentAmount >= goal.targetAmount;
@@ -863,17 +863,17 @@ const GoalsView = ({
                     disabled={isLaunching}
                     className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 font-bold py-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
                   >
-                    {isLaunching ? '🚀 LAUNCHING...' : '🚀 LAUNCH & CELEBRATE!'}
+                    {isLaunching ? '🔓 UNLOCKING...' : '🔓 UNLOCK & CELEBRATE!'}
                   </button>
                 ) : (
                   <div className="flex gap-2">
-                    <button onClick={() => addFuel(goal.id, 50)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-colors">
+                    <button onClick={() => addCash(goal.id, 50)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-colors">
                       +$50
                     </button>
-                    <button onClick={() => addFuel(goal.id, 100)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-colors">
+                    <button onClick={() => addCash(goal.id, 100)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-colors">
                       +$100
                     </button>
-                    <button onClick={() => addFuel(goal.id, 500)} className="flex-1 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-xl font-bold text-sm transition-colors">
+                    <button onClick={() => addCash(goal.id, 500)} className="flex-1 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-xl font-bold text-sm transition-colors">
                       +$500
                     </button>
                   </div>
@@ -884,10 +884,10 @@ const GoalsView = ({
         </div>
       )}
       
-      {/* Impulse Items (Maybe Buys) */}
+      {/* Parked Items */}
       {impulses.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider">🎁 Maybe Buys</h3>
+          <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider">🅿️ Parked</h3>
           {impulses.map(goal => {
             const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
             const isReady = goal.currentAmount >= goal.targetAmount;
@@ -899,7 +899,7 @@ const GoalsView = ({
                     <h4 className="text-white font-bold flex items-center gap-2">
                       {goal.emoji || '🎁'} {goal.name}
                     </h4>
-                    <p className="text-amber-400 text-sm">Impulse Item</p>
+                    <p className="text-amber-400 text-sm">Parked Item</p>
                   </div>
                   <span className="text-amber-400 font-bold">{percent}%</span>
                 </div>
@@ -927,15 +927,15 @@ const GoalsView = ({
                       onClick={() => skipImpulse(goal)}
                       className="py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl font-bold transition-colors"
                     >
-                      💪 Keep Cash (+50 WP)
+                      💪 Keep Cash (+50 Juice)
                     </button>
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <button onClick={() => addFuel(goal.id, 25)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm">
+                    <button onClick={() => addCash(goal.id, 25)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm">
                       +$25
                     </button>
-                    <button onClick={() => addFuel(goal.id, 50)} className="flex-1 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-xl font-bold text-sm">
+                    <button onClick={() => addCash(goal.id, 50)} className="flex-1 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-xl font-bold text-sm">
                       +$50
                     </button>
                   </div>
@@ -949,13 +949,13 @@ const GoalsView = ({
       {goals.length === 0 && !showNewGoal && (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🎯</div>
-          <h3 className="text-white font-bold text-xl mb-2">No Goals Yet</h3>
-          <p className="text-slate-500 mb-6">What are you saving for?</p>
+          <h3 className="text-white font-bold text-xl mb-2">No Targets Yet</h3>
+          <p className="text-slate-500 mb-6">What are you locking in?</p>
           <button 
             onClick={() => setShowNewGoal(true)}
             className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-6 py-3 rounded-xl"
           >
-            Create Your First Goal
+            Set Your First Target
           </button>
         </div>
       )}
@@ -968,7 +968,7 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
   const [activeSection, setActiveSection] = useState<'chat' | 'crisis' | 'tools'>('chat');
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{role: 'user' | 'bot', text: string}>>([
-    { role: 'bot', text: "Hey! I'm BillBot. How can I help you today? 🤖" }
+    { role: 'bot', text: "Hey! I'm BillBot. What's on your mind? 💬" }
   ]);
   
   const isCrisis = health.monthlyExpenses > health.monthlyIncome;
@@ -1001,8 +1001,8 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
   return (
     <div className="space-y-5 pb-24 animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-black text-white">Help</h1>
-        <p className="text-slate-500 text-sm">Your financial support center</p>
+        <h1 className="text-2xl font-black text-white">Support</h1>
+        <p className="text-slate-500 text-sm">We've got your back</p>
       </div>
       
       {/* Crisis Banner */}
@@ -1010,7 +1010,7 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
         <div className="bg-red-900/30 border border-red-500/50 rounded-2xl p-4 flex items-center gap-4 animate-pulse">
           <div className="text-3xl">🚨</div>
           <div>
-            <h3 className="text-red-400 font-bold">Crisis Mode Active</h3>
+            <h3 className="text-red-400 font-bold">SOS Mode</h3>
             <p className="text-red-300 text-sm">You're spending more than you earn. Let's fix this together.</p>
           </div>
         </div>
@@ -1019,13 +1019,13 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
       {/* Section Tabs */}
       <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
         <button onClick={() => setActiveSection('chat')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'chat' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>
-          🤖 Chat
+          💬 Chat
         </button>
         <button onClick={() => setActiveSection('crisis')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'crisis' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>
-          ☎️ Crisis
+          🚨 SOS
         </button>
         <button onClick={() => setActiveSection('tools')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'tools' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>
-          🔧 Tools
+          🧰 Tools
         </button>
       </div>
       
@@ -1090,11 +1090,11 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
           </div>
           
           <button className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 font-bold py-4 rounded-2xl transition-colors">
-            📄 Generate Hardship Letter
+            📄 Draft Hardship Letter
           </button>
           
           <button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl transition-colors">
-            📞 Find Free Financial Counsellor
+            📞 Get Free Help
           </button>
         </div>
       )}
@@ -1228,10 +1228,10 @@ const App = () => {
   };
 
   const navItems = [
-    { view: AppView.HOME, icon: '🏙️', label: 'Home' },
-    { view: AppView.MONEY, icon: '💰', label: 'Money' },
-    { view: AppView.GOALS, icon: '🚀', label: 'Goals' },
-    { view: AppView.HELP, icon: '🆘', label: 'Help' },
+    { view: AppView.HOME, icon: '⚡', label: 'Grid' },
+    { view: AppView.MONEY, icon: '💸', label: 'Cash' },
+    { view: AppView.GOALS, icon: '🎯', label: 'Targets' },
+    { view: AppView.HELP, icon: '🛟', label: 'Support' },
   ];
 
   return (

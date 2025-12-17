@@ -1,9 +1,25 @@
 
-import React, { useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useMemo, useRef, useState, createContext, useContext } from 'react';
+import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { OrthographicCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AccountItem, FinancialHealth, Goal, WeeklyBuild, AppView, Subscription } from '../types';
+
+// ============ TOOLTIP CONTEXT ============
+interface TooltipInfo {
+  type: 'asset' | 'debt' | 'goal' | 'fountain' | 'harbor' | 'taxvault' | 'construction' | 'tree';
+  title: string;
+  subtitle?: string;
+  value?: string;
+  description: string;
+  icon: string;
+  color: string;
+}
+
+const TooltipContext = createContext<{
+  showTooltip: (info: TooltipInfo) => void;
+  hideTooltip: () => void;
+}>({ showTooltip: () => {}, hideTooltip: () => {} });
 
 // ============ COLORS ============
 const COLORS = {
@@ -194,6 +210,7 @@ const DriftingCloud = ({ initialPosition, speed, scale, isStorm = false }: { ini
 // ============ CASHFLOW FOUNTAIN (CENTER) ============
 const CashflowFountain = ({ surplus, maxSurplus }: { surplus: number; maxSurplus: number }) => {
   const sprayRef = useRef<THREE.Mesh>(null);
+  const { showTooltip } = useContext(TooltipContext);
   const waterLevel = Math.max(0.2, Math.min(1, (surplus + maxSurplus) / (maxSurplus * 2)));
   const isNegative = surplus < 0;
   
@@ -203,8 +220,22 @@ const CashflowFountain = ({ surplus, maxSurplus }: { surplus: number; maxSurplus
     }
   });
 
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'fountain',
+      title: 'Cashflow Fountain',
+      value: `${isNegative ? '-' : '+'}$${Math.abs(surplus).toLocaleString()}/mo`,
+      description: isNegative 
+        ? 'Your expenses exceed income. The fountain runs dry when money flows out faster than it comes in.'
+        : 'Healthy cashflow! The fountain overflows when you have surplus each month.',
+      icon: isNegative ? '🔴' : '⛲',
+      color: isNegative ? '#EF5350' : '#4CAF50'
+    });
+  };
+
   return (
-    <group position={[0, 0, 0]}>
+    <group position={[0, 0, 0]} onClick={handleClick}>
       {/* Base */}
       <mesh position={[0, 0.04, 0]}><cylinderGeometry args={[1.1, 1.2, 0.08, 24]} /><meshStandardMaterial color="#E0E0E0" /></mesh>
       {/* Pool rim */}
@@ -247,6 +278,8 @@ const AssetBuilding = ({ position, height, type, balance, name }: {
   balance: number;
   name?: string;
 }) => {
+  const { showTooltip } = useContext(TooltipContext);
+  
   const getColor = () => {
     switch(type) {
       case 'SAVINGS': return COLORS.savings;
@@ -255,12 +288,43 @@ const AssetBuilding = ({ position, height, type, balance, name }: {
       default: return COLORS.cash;
     }
   };
+
+  const getIcon = () => {
+    switch(type) {
+      case 'SAVINGS': return '🏦';
+      case 'INVESTMENT': return '📈';
+      case 'SUPER': return '💎';
+      default: return '💵';
+    }
+  };
+
+  const getDescription = () => {
+    switch(type) {
+      case 'SAVINGS': return 'Your savings account - money set aside for future use. The gold dome represents security.';
+      case 'INVESTMENT': return 'Investment portfolio growing over time. The antenna tracks market signals.';
+      case 'SUPER': return 'Superannuation fund for retirement. Building wealth for your future self.';
+      default: return 'Everyday cash account for daily transactions and spending.';
+    }
+  };
   
   const floors = Math.min(Math.floor(height / 0.35), 10);
-  const width = 0.95; // Slightly larger for mobile visibility
+  const width = 0.95;
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'asset',
+      title: name || type,
+      subtitle: type,
+      value: `$${balance.toLocaleString()}`,
+      description: getDescription(),
+      icon: getIcon(),
+      color: getColor()
+    });
+  };
   
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       {/* Main building */}
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[width, height, width]} />
