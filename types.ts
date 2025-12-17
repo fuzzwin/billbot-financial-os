@@ -52,6 +52,7 @@ export interface FinancialHealth {
   annualSalary: number;
   monthlyIncome: number; // Net
   salarySacrifice: number;
+  gigIncome?: number; // Side gig/freelance income
   isStudent: boolean; // Triggers Poverty/Youth Allowance logic
   
   // Derived from Accounts
@@ -68,9 +69,26 @@ export interface FinancialHealth {
   score: number; // 0-100
   willpowerPoints: number; // Gamification currency
   taxVault: number; // Gig economy tax quarantine
+  
+  // Progress tracking (new)
+  checkInStreak: number; // Weekly check-in streak
+  lastCheckIn?: string; // ISO date of last weekly check-in
+  totalSavedSinceStart?: number; // Running total of savings progress
+  subscriptionsKilled?: number; // Count of killed subscriptions
+  goalsCompleted?: number; // Count of completed goals
+  joinedAt?: string; // When user started using the app
 }
 
+// Simplified navigation - 4 main zones
 export enum AppView {
+  HOME = 'HOME',           // Dashboard with city, health score, next action
+  MONEY = 'MONEY',         // Cash flow: income, expenses, subscriptions, bills
+  GOALS = 'GOALS',         // Unified goals: rockets + impulse items + challenges
+  HELP = 'HELP',           // AI advisor + crisis command + tools
+}
+
+// Legacy views kept for backward compatibility during transition
+export enum LegacyAppView {
   DASHBOARD = 'DASHBOARD',
   CITY = 'CITY',
   SUBSCRIPTIONS = 'SUBSCRIPTIONS',
@@ -124,12 +142,22 @@ export interface HardshipRequest {
     durationMonths: number;
 }
 
+// Unified Goal type - merges old Launchpad rockets + Impulse Hangar items
+export type GoalType = 'rocket' | 'impulse'; // rocket = serious goal, impulse = maybe-buy
+export type GoalCategory = 'travel' | 'gadget' | 'car' | 'gift' | 'house_deposit' | 'emergency' | 'experience' | 'other';
+export type GoalTag = 'Adventure' | 'Treat' | 'Security' | 'Gift' | 'Freedom';
+
 export interface Goal {
   id: string;
   name: string;
   targetAmount: number;
   currentAmount: number;
-  deadline: string; // ISO string
-  category: 'travel' | 'gadget' | 'car' | 'gift' | 'house_deposit';
-  valueTag: 'Adventure' | 'Comfort' | 'Status' | 'Security';
+  deadline?: string; // ISO string - optional for impulse items
+  category: GoalCategory;
+  valueTag: GoalTag;
+  goalType: GoalType; // 'rocket' for serious goals, 'impulse' for maybe-buys
+  weeklyTarget?: number; // For impulse items - weekly save target
+  createdAt: string; // Track when goal was created
+  completedAt?: string; // Track when goal was achieved
+  emoji?: string; // Custom emoji for the goal
 }

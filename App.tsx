@@ -1,23 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AppView, FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal } from './types';
 import { IsometricCity } from './components/IsometricCity';
-import { HECSCalculator } from './components/HECSCalculator';
-import { DataIngestion } from './components/DataIngestion';
-import { Advisor } from './components/Advisor';
-import { WalletManager } from './components/WalletManager';
-import { SubscriptionManager } from './components/SubscriptionManager';
-import { PurchaseAdvisor } from './components/PurchaseAdvisor';
-import { SafeZoneShield } from './components/SafeZoneShield';
-import { BatteryROI } from './components/BatteryROI';
-import { ImpulseHangar } from './components/ImpulseHangar';
-import { GigPort } from './components/GigPort';
-import { CrisisCommand } from './components/CrisisCommand';
-import { SideQuests } from './components/SideQuests';
-import { Launchpad } from './components/Launchpad';
 import { WeeklyBriefing } from './components/WeeklyBriefing';
-import { TimeTravelUI } from './components/TimeTravelUI';
 import { loadFinancialHealth, saveFinancialHealth, loadTransactions, saveTransactions, loadSubscriptions, saveSubscriptions, loadAccounts, saveAccounts, loadImpulseItems, saveImpulseItems, loadGoals, saveGoals } from './services/storageService';
 
 // --- ERROR BOUNDARY ---
@@ -38,10 +24,10 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-8">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 text-white p-8">
           <div className="bg-red-900/20 border border-red-500 rounded-2xl p-8 max-w-2xl w-full">
-              <h1 className="text-3xl font-black text-red-500 mb-4 italic">SYSTEM FAILURE</h1>
-              <p className="mb-4 text-slate-300">BillBot encountered a critical error while rendering the interface.</p>
+              <h1 className="text-3xl font-black text-red-500 mb-4">SYSTEM ERROR</h1>
+              <p className="mb-4 text-slate-300">Something went wrong. Let's get you back on track.</p>
               <pre className="bg-slate-950 p-4 rounded-lg text-xs font-mono text-red-300 overflow-auto border border-red-900/50 mb-6">
                 {this.state.error?.toString()}
               </pre>
@@ -49,7 +35,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
                 onClick={() => window.location.reload()}
                 className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-6 rounded-xl"
               >
-                REBOOT SYSTEM
+                RESTART
               </button>
           </div>
         </div>
@@ -60,139 +46,1061 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
-// --- CASHFLOW MONITOR COMPONENT ---
-const CashflowMonitor = ({ income, expenses }: { income: number, expenses: number }) => {
-    const surplus = income - expenses;
-    const maxVal = Math.max(income, expenses);
-    const expenseWidth = (expenses / maxVal) * 100;
-    const surplusWidth = (Math.max(0, surplus) / maxVal) * 100;
-
-    return (
-        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 relative overflow-hidden">
-             <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-white font-bold flex items-center gap-2">
-                     ⚡ City Power Supply
-                 </h3>
-                 <span className={`font-mono font-bold ${surplus >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                     {surplus >= 0 ? '+' : ''}${surplus.toLocaleString()}/mo
-                 </span>
-             </div>
-             
-             {/* Visualization Bar */}
-             <div className="flex h-4 rounded-full overflow-hidden bg-slate-800 mb-2">
-                 {/* Expenses Segment */}
-                 <div style={{ width: `${expenseWidth}%` }} className="bg-rose-500/80 transition-all duration-1000 relative group">
-                     <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(0,0,0,0.1)_25%,transparent_25%,transparent_50%,rgba(0,0,0,0.1)_50%,rgba(0,0,0,0.1)_75%,transparent_75%,transparent)] bg-[size:10px_10px]"></div>
-                 </div>
-                 {/* Surplus Segment */}
-                 {surplus > 0 && (
-                     <div style={{ width: `${surplusWidth}%` }} className="bg-emerald-500/80 transition-all duration-1000"></div>
-                 )}
-             </div>
-
-             <div className="flex justify-between text-xs text-slate-500">
-                 <span>Expenses: ${expenses.toLocaleString()}</span>
-                 <span>Income: ${income.toLocaleString()}</span>
-             </div>
-        </div>
-    );
-};
-
 // --- DUMMY DATA FOR VISUALIZATION ---
 const DUMMY_ACCOUNTS: AccountItem[] = [
-  { id: '1', name: 'CommBank Everyday', type: 'CASH', balance: 3450.50 },
-  { id: '2', name: 'ING Savings', type: 'SAVINGS', balance: 18500.00, isValueBuilding: false },
-  { id: '3', name: 'Vanguard ETF', type: 'INVESTMENT', balance: 12200.00 },
-  { id: '4', name: 'AusSuper', type: 'SUPER', balance: 52000.00 },
-  { id: '5', name: 'Amex Platinum', type: 'CREDIT_CARD', balance: 1250.00, interestRate: 20.99 },
+  { id: '1', name: 'Everyday Account', type: 'CASH', balance: 3450.50 },
+  { id: '2', name: 'Savings', type: 'SAVINGS', balance: 18500.00 },
+  { id: '3', name: 'Investments', type: 'INVESTMENT', balance: 12200.00 },
+  { id: '4', name: 'Super', type: 'SUPER', balance: 52000.00 },
+  { id: '5', name: 'Credit Card', type: 'CREDIT_CARD', balance: 1250.00, interestRate: 20.99 },
   { id: '6', name: 'HECS Debt', type: 'HECS', balance: 24000.00 },
-  { id: '7', name: 'Car Loan', type: 'LOAN', balance: 15000.00, interestRate: 8.5 },
-  { id: '8', name: 'Travel Fund', type: 'SAVINGS', balance: 2450.00, isValueBuilding: true },
 ];
 
 const DUMMY_SUBSCRIPTIONS: Subscription[] = [
-  { id: 's1', name: 'Netflix 4K', amount: 22.99, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], category: 'Entertainment', isOptimizable: false },
-  { id: 's2', name: 'Anytime Fitness', amount: 19.95, cycle: 'WEEKLY', nextDueDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], category: 'Gym', isOptimizable: false },
-  { id: 's3', name: 'Adobe Creative Cloud', amount: 79.99, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 15).toISOString().split('T')[0], category: 'Software', isOptimizable: true },
-  { id: 's4', name: 'Spotify Duo', amount: 18.99, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 20).toISOString().split('T')[0], category: 'Entertainment', isOptimizable: false },
-  { id: 's5', name: 'Amazon Prime', amount: 9.99, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 10).toISOString().split('T')[0], category: 'Shopping', isOptimizable: true },
-];
-
-const DUMMY_TRANSACTIONS: Transaction[] = [
-  { id: 't1', date: '2025-05-01', merchant: 'Woolworths Metro', amount: 85.50, category: 'Groceries', isDeductible: false, gstIncluded: true },
-  { id: 't2', date: '2025-05-02', merchant: 'Shell Coles Express', amount: 65.00, category: 'Transport', isDeductible: true, gstIncluded: true },
-  { id: 't3', date: '2025-05-03', merchant: 'Netflix', amount: 22.99, category: 'Entertainment', isDeductible: false, gstIncluded: true },
-  { id: 't4', date: '2025-05-04', merchant: 'Uber Eats', amount: 45.20, category: 'Food', isDeductible: false, gstIncluded: true },
-  { id: 't5', date: '2025-05-05', merchant: 'Officeworks', amount: 249.00, category: 'Work Equipment', isDeductible: true, gstIncluded: true },
-];
-
-const DUMMY_IMPULSE_ITEMS: ImpulseItem[] = [
-  { id: 'i1', name: 'PS5 Pro', price: 1200, savedAmount: 450, targetWeeklySave: 50, dateAdded: '2025-01-01' },
-  { id: 'i2', name: 'Herman Miller Chair', price: 1800, savedAmount: 1200, targetWeeklySave: 100, dateAdded: '2025-02-01' },
-  { id: 'i3', name: 'Bali Trip', price: 3500, savedAmount: 500, targetWeeklySave: 150, dateAdded: '2025-03-01' },
+  { id: 's1', name: 'Netflix', amount: 22.99, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0], category: 'Entertainment', isOptimizable: false },
+  { id: 's2', name: 'Gym Membership', amount: 79.80, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0], category: 'Health', isOptimizable: true },
+  { id: 's3', name: 'Spotify', amount: 12.99, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 15).toISOString().split('T')[0], category: 'Entertainment', isOptimizable: false },
 ];
 
 const DUMMY_GOALS: Goal[] = [
-  { id: 'g1', name: 'Japan 2026', targetAmount: 8000, currentAmount: 3200, deadline: '2026-03-01', category: 'travel', valueTag: 'Adventure' },
-  { id: 'g2', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 10000, deadline: '2025-12-01', category: 'house_deposit', valueTag: 'Security' },
+  { id: 'g1', name: 'Japan Trip', targetAmount: 8000, currentAmount: 3200, deadline: '2026-03-01', category: 'travel', valueTag: 'Adventure', goalType: 'rocket', createdAt: new Date().toISOString(), emoji: '🌏' },
+  { id: 'g2', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 10000, deadline: '2025-12-01', category: 'emergency', valueTag: 'Security', goalType: 'rocket', createdAt: new Date().toISOString(), emoji: '🛡️' },
+  { id: 'g3', name: 'PS5 Pro', targetAmount: 1200, currentAmount: 850, category: 'gadget', valueTag: 'Treat', goalType: 'impulse', weeklyTarget: 50, createdAt: new Date().toISOString(), emoji: '🎮' },
 ];
 
-// --- TUTORIAL COMPONENT ---
-const TutorialOverlay = ({ step, onNext, onClose }: { step: number, onNext: () => void, onClose: () => void }) => {
-    const content = [
-        {
-            title: "Welcome to BillBot",
-            text: "The first financial OS designed specifically for the Australian economy. Let's get you oriented.",
-            icon: "👋"
-        },
-        {
-            title: "Your Wealth City",
-            text: "We don't do boring spreadsheets. Your assets build skyscrapers, and debt creates pollution. Watch your city grow as you save.",
-            icon: "🏙️"
-        },
-        {
-            title: "The Launchpad",
-            text: "Fuel goals like rockets. When you spend the money, they don't crash—they launch! No more guilt for spending saved cash.",
-            icon: "🚀"
-        },
-        {
-            title: "Crisis Protocol",
-            text: "In trouble? The Red Phone provides triage strategies and generates hardship letters instantly.",
-            icon: "☎️"
-        }
-    ];
+// --- WELCOME OVERLAY ---
+const WelcomeOverlay = ({ onComplete }: { onComplete: () => void }) => {
+  const [step, setStep] = useState(0);
+  
+  const steps = [
+    { icon: "👋", title: "Welcome to BillBot", text: "Your money, your city. Let's build something beautiful together." },
+    { icon: "🏙️", title: "Your Financial City", text: "Watch your wealth grow as buildings rise. Debt creates pollution - let's clear the air." },
+    { icon: "🚀", title: "Goals Launch", text: "Save for what matters. When you're ready, launch and celebrate guilt-free!" },
+    { icon: "⚡", title: "5 Minutes a Week", text: "Quick weekly check-ins keep your city thriving. That's all it takes." },
+  ];
 
-    const current = content[step];
+  const current = steps[step];
+  const isLast = step === steps.length - 1;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-neon-blue/10 rounded-full blur-3xl"></div>
-                
-                <div className="text-5xl mb-6 relative z-10 animate-bounce">{current.icon}</div>
-                <h2 className="text-2xl font-black text-white mb-2 relative z-10">{current.title}</h2>
-                <p className="text-slate-400 mb-8 leading-relaxed relative z-10">{current.text}</p>
-                
-                <div className="flex justify-between items-center relative z-10">
-                    <div className="flex gap-1.5">
-                        {content.map((_, i) => (
-                            <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-neon-blue' : 'w-2 bg-slate-700'}`} />
-                        ))}
-                    </div>
-                    <button 
-                        onClick={step === content.length - 1 ? onClose : onNext}
-                        className="bg-neon-blue text-slate-900 font-bold px-6 py-2 rounded-lg hover:bg-cyan-400 transition-colors shadow-[0_0_20px_rgba(0,243,255,0.3)]"
-                    >
-                        {step === content.length - 1 ? "Let's Build" : "Next →"}
-                    </button>
-                </div>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-6">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 rounded-3xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10">
+          <div className="text-6xl mb-6 animate-bounce">{current.icon}</div>
+          <h2 className="text-2xl font-black text-white mb-3">{current.title}</h2>
+          <p className="text-slate-400 mb-8 leading-relaxed">{current.text}</p>
+          
+          <div className="flex justify-between items-center">
+            <div className="flex gap-2">
+              {steps.map((_, i) => (
+                <div key={i} className={`h-2 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-cyan-400' : 'w-2 bg-slate-700'}`} />
+              ))}
             </div>
+            <button 
+              onClick={() => isLast ? onComplete() : setStep(s => s + 1)}
+              className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-6 py-3 rounded-xl transition-all hover:scale-105 shadow-lg shadow-cyan-500/25"
+            >
+              {isLast ? "Let's Go!" : "Next →"}
+            </button>
+          </div>
         </div>
-    );
-}
+      </div>
+    </div>
+  );
+};
 
+// --- HEALTH SCORE RING ---
+const HealthScoreRing = ({ score }: { score: number }) => {
+  const circumference = 2 * Math.PI * 45;
+  const progress = (score / 100) * circumference;
+  const color = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
+  
+  return (
+    <div className="relative w-28 h-28">
+      <svg className="w-full h-full transform -rotate-90">
+        <circle cx="56" cy="56" r="45" stroke="#1e293b" strokeWidth="8" fill="none" />
+        <circle 
+          cx="56" cy="56" r="45" 
+          stroke={color} 
+          strokeWidth="8" 
+          fill="none"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference - progress}
+          className="transition-all duration-1000"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-black text-white">{score}</span>
+        <span className="text-xs text-slate-500 uppercase">Score</span>
+      </div>
+    </div>
+  );
+};
+
+// --- CASH LEFT CARD ---
+const CashLeftCard = ({ income, expenses }: { income: number, expenses: number }) => {
+  const surplus = income - expenses;
+  const percentage = Math.round((expenses / income) * 100);
+  const isHealthy = surplus > 0;
+  
+  return (
+    <div className="bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl p-5">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Monthly Surplus</p>
+          <p className={`text-3xl font-black ${isHealthy ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {isHealthy ? '+' : ''}${surplus.toLocaleString()}
+          </p>
+        </div>
+        <div className={`px-3 py-1 rounded-full text-xs font-bold ${isHealthy ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+          {isHealthy ? '✓ Healthy' : '⚠ Deficit'}
+        </div>
+      </div>
+      
+      <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+        <div 
+          className={`h-full transition-all duration-1000 ${isHealthy ? 'bg-gradient-to-r from-rose-500 to-emerald-500' : 'bg-rose-500'}`}
+          style={{ width: `${Math.min(100, percentage)}%` }}
+        />
+      </div>
+      
+      <div className="flex justify-between text-xs text-slate-500">
+        <span>Expenses: ${expenses.toLocaleString()}</span>
+        <span>Income: ${income.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+};
+
+// --- NEXT ACTION CARD ---
+const NextActionCard = ({ 
+  health, 
+  subscriptions, 
+  goals,
+  onAction 
+}: { 
+  health: FinancialHealth, 
+  subscriptions: Subscription[], 
+  goals: Goal[],
+  onAction: (view: AppView) => void 
+}) => {
+  // AI-like logic to determine next action
+  const getNextAction = () => {
+    const surplus = health.monthlyIncome - health.monthlyExpenses;
+    
+    // Crisis mode
+    if (surplus < 0) {
+      return {
+        icon: "🚨",
+        title: "You're spending more than you earn",
+        description: `You need to cut $${Math.abs(surplus).toLocaleString()} to break even.`,
+        action: "Find Savings",
+        view: AppView.MONEY,
+        urgent: true
+      };
+    }
+    
+    // Optimizable subscriptions
+    const killable = subscriptions.filter(s => s.isOptimizable);
+    if (killable.length > 0) {
+      const total = killable.reduce((sum, s) => sum + s.amount, 0);
+      return {
+        icon: "✂️",
+        title: `Kill ${killable.length} subscription${killable.length > 1 ? 's' : ''}`,
+        description: `Save $${(total * 12).toFixed(0)}/year by cutting the fat.`,
+        action: "Review Now",
+        view: AppView.MONEY,
+        urgent: false
+      };
+    }
+    
+    // Goals needing fuel
+    const underfunded = goals.filter(g => {
+      if (g.goalType === 'rocket' && g.deadline) {
+        const days = Math.max(1, (new Date(g.deadline).getTime() - Date.now()) / (1000 * 3600 * 24));
+        const weekly = (g.targetAmount - g.currentAmount) / (days / 7);
+        return weekly > (surplus / 4);
+      }
+      return false;
+    });
+    
+    if (underfunded.length > 0) {
+      return {
+        icon: "🚀",
+        title: `${underfunded[0].name} needs more fuel`,
+        description: "You might miss your deadline at this pace.",
+        action: "Adjust Goal",
+        view: AppView.GOALS,
+        urgent: false
+      };
+    }
+    
+    // Ready to launch
+    const ready = goals.filter(g => g.currentAmount >= g.targetAmount);
+    if (ready.length > 0) {
+      return {
+        icon: "🎉",
+        title: `${ready[0].name} is ready to launch!`,
+        description: "You did it! Time to celebrate.",
+        action: "Launch Now",
+        view: AppView.GOALS,
+        urgent: false
+      };
+    }
+    
+    // All good
+    return {
+      icon: "✨",
+      title: "You're on track!",
+      description: `Keep it up - your city is thriving.`,
+      action: "View Goals",
+      view: AppView.GOALS,
+      urgent: false
+    };
+  };
+  
+  const action = getNextAction();
+  
+  return (
+    <button 
+      onClick={() => onAction(action.view)}
+      className={`w-full text-left bg-gradient-to-r ${action.urgent ? 'from-rose-900/40 to-orange-900/40 border-rose-500/30' : 'from-cyan-900/30 to-purple-900/30 border-cyan-500/20'} border rounded-2xl p-5 group hover:scale-[1.02] transition-all duration-300`}
+    >
+      <div className="flex items-start gap-4">
+        <div className={`text-3xl ${action.urgent ? 'animate-pulse' : ''}`}>{action.icon}</div>
+        <div className="flex-1">
+          <h3 className="text-white font-bold mb-1">{action.title}</h3>
+          <p className="text-slate-400 text-sm">{action.description}</p>
+        </div>
+        <div className={`px-4 py-2 rounded-lg font-bold text-sm ${action.urgent ? 'bg-rose-500 text-white' : 'bg-cyan-500/20 text-cyan-400'} group-hover:scale-105 transition-transform`}>
+          {action.action} →
+        </div>
+      </div>
+    </button>
+  );
+};
+
+// --- QUICK STATS ---
+const QuickStats = ({ health, goals }: { health: FinancialHealth, goals: Goal[] }) => {
+  const netWorth = health.savings - (health.hecsDebt + health.otherDebts);
+  const activeGoals = goals.filter(g => g.currentAmount < g.targetAmount).length;
+  
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-center">
+        <p className={`text-xl font-black ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          ${Math.abs(netWorth).toLocaleString()}
+        </p>
+        <p className="text-xs text-slate-500 mt-1">Net Worth</p>
+      </div>
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-center">
+        <p className="text-xl font-black text-purple-400">{activeGoals}</p>
+        <p className="text-xs text-slate-500 mt-1">Active Goals</p>
+      </div>
+      <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-center">
+        <p className="text-xl font-black text-amber-400">{health.willpowerPoints || 0}</p>
+        <p className="text-xs text-slate-500 mt-1">Willpower</p>
+      </div>
+    </div>
+  );
+};
+
+// --- HOME VIEW ---
+const HomeView = ({ 
+  health, 
+  accounts, 
+  goals, 
+  subscriptions,
+  onNavigate,
+  onShowCheckIn,
+  impulseItems
+}: { 
+  health: FinancialHealth, 
+  accounts: AccountItem[], 
+  goals: Goal[],
+  subscriptions: Subscription[],
+  onNavigate: (view: AppView) => void,
+  onShowCheckIn: () => void,
+  impulseItems: ImpulseItem[]
+}) => {
+  return (
+    <div className="space-y-5 pb-24 animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-black text-white">Your City</h1>
+          <p className="text-slate-500 text-sm">Financial health at a glance</p>
+        </div>
+        <HealthScoreRing score={health.score} />
+      </div>
+      
+      {/* City Visualization */}
+      <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden h-64 relative">
+        <IsometricCity 
+          accounts={accounts}
+          health={health}
+          goals={goals}
+          hasWeeds={subscriptions.some(s => s.isOptimizable)}
+          isFuture={false}
+          onNavigate={onNavigate}
+          weeklyBuilds={impulseItems.map(i => ({
+            id: i.id,
+            name: i.name,
+            target: i.price,
+            saved: i.savedAmount
+          }))}
+        />
+        <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-full">
+          <span className="text-xs text-slate-400">🏙️ Wealth City • Level {Math.floor(health.score / 20) + 1}</span>
+        </div>
+      </div>
+      
+      {/* Cash Left */}
+      <CashLeftCard income={health.monthlyIncome} expenses={health.monthlyExpenses} />
+      
+      {/* Next Action */}
+      <NextActionCard 
+        health={health} 
+        subscriptions={subscriptions} 
+        goals={goals}
+        onAction={onNavigate}
+      />
+      
+      {/* Weekly Check-in CTA */}
+      <button 
+        onClick={onShowCheckIn}
+        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-2xl p-5 flex items-center justify-between group transition-all hover:scale-[1.02]"
+      >
+        <div className="flex items-center gap-4">
+          <div className="text-3xl">📊</div>
+          <div className="text-left">
+            <h3 className="font-bold">Weekly Check-in</h3>
+            <p className="text-violet-200 text-sm">2 min update • Keep your city alive</p>
+          </div>
+        </div>
+        <div className="bg-white/20 px-4 py-2 rounded-lg font-bold group-hover:bg-white/30 transition-colors">
+          {health.checkInStreak || 0} 🔥
+        </div>
+      </button>
+      
+      {/* Quick Stats */}
+      <QuickStats health={health} goals={goals} />
+    </div>
+  );
+};
+
+// --- MONEY VIEW ---
+const MoneyView = ({ 
+  health, 
+  accounts, 
+  subscriptions,
+  onUpdateHealth,
+  onUpdateAccounts,
+  onUpdateSubscriptions
+}: { 
+  health: FinancialHealth, 
+  accounts: AccountItem[], 
+  subscriptions: Subscription[],
+  onUpdateHealth: (h: FinancialHealth) => void,
+  onUpdateAccounts: (a: AccountItem[]) => void,
+  onUpdateSubscriptions: (s: Subscription[]) => void
+}) => {
+  const [showAddIncome, setShowAddIncome] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'subscriptions'>('overview');
+  
+  const monthlySubTotal = subscriptions.reduce((sum, s) => {
+    if (s.cycle === 'WEEKLY') return sum + (s.amount * 4.33);
+    if (s.cycle === 'YEARLY') return sum + (s.amount / 12);
+    return sum + s.amount;
+  }, 0);
+  
+  const killSubscription = (id: string) => {
+    onUpdateSubscriptions(subscriptions.filter(s => s.id !== id));
+    onUpdateHealth({
+      ...health,
+      subscriptionsKilled: (health.subscriptionsKilled || 0) + 1,
+      willpowerPoints: (health.willpowerPoints || 0) + 25
+    });
+  };
+  
+  const assets = accounts.filter(a => ['CASH', 'SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type));
+  const liabilities = accounts.filter(a => ['LOAN', 'CREDIT_CARD', 'HECS'].includes(a.type));
+  
+  return (
+    <div className="space-y-5 pb-24 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-black text-white">Money Flow</h1>
+          <p className="text-slate-500 text-sm">Track every dollar</p>
+        </div>
+      </div>
+      
+      {/* Tab Navigation */}
+      <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
+        {(['overview', 'accounts', 'subscriptions'] as const).map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all ${activeTab === tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-white'}`}
+          >
+            {tab === 'overview' ? '📊 Overview' : tab === 'accounts' ? '🏦 Accounts' : '📅 Subs'}
+          </button>
+        ))}
+      </div>
+      
+      {activeTab === 'overview' && (
+        <div className="space-y-4">
+          {/* Income */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-bold flex items-center gap-2">💰 Money In</h3>
+              <button 
+                onClick={() => setShowAddIncome(!showAddIncome)}
+                className="text-cyan-400 text-sm font-bold"
+              >
+                Edit
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                <span className="text-slate-400">Salary (after tax)</span>
+                <span className="text-white font-bold">${health.monthlyIncome.toLocaleString()}/mo</span>
+              </div>
+              {health.gigIncome && health.gigIncome > 0 && (
+                <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                  <span className="text-slate-400">Side Income</span>
+                  <span className="text-white font-bold">${health.gigIncome.toLocaleString()}/mo</span>
+                </div>
+              )}
+              {health.taxVault > 0 && (
+                <div className="flex justify-between items-center py-2 text-amber-400">
+                  <span>🔒 Tax Set Aside</span>
+                  <span className="font-bold">${health.taxVault.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+            
+            {showAddIncome && (
+              <div className="mt-4 pt-4 border-t border-slate-700 space-y-3">
+                <div>
+                  <label className="text-xs text-slate-500 font-bold">Monthly Take-Home</label>
+                  <input 
+                    type="number"
+                    value={health.monthlyIncome}
+                    onChange={(e) => onUpdateHealth({...health, monthlyIncome: parseFloat(e.target.value) || 0})}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500 font-bold">Monthly Expenses</label>
+                  <input 
+                    type="number"
+                    value={health.monthlyExpenses}
+                    onChange={(e) => onUpdateHealth({...health, monthlyExpenses: parseFloat(e.target.value) || 0})}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white mt-1"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Expenses Summary */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+            <h3 className="text-white font-bold flex items-center gap-2 mb-4">💸 Money Out</h3>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                <span className="text-slate-400">Fixed Expenses</span>
+                <span className="text-white font-bold">${health.monthlyExpenses.toLocaleString()}/mo</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                <span className="text-slate-400">Subscriptions</span>
+                <span className="text-white font-bold">${monthlySubTotal.toFixed(0)}/mo</span>
+              </div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center">
+              <span className="text-slate-300 font-bold">Total Outflow</span>
+              <span className="text-rose-400 font-black text-xl">${(health.monthlyExpenses + monthlySubTotal).toLocaleString()}</span>
+            </div>
+          </div>
+          
+          {/* Surplus */}
+          <div className={`p-5 rounded-2xl border ${health.monthlyIncome - health.monthlyExpenses > 0 ? 'bg-emerald-900/20 border-emerald-500/30' : 'bg-rose-900/20 border-rose-500/30'}`}>
+            <div className="flex justify-between items-center">
+              <span className="text-white font-bold">Monthly Surplus</span>
+              <span className={`font-black text-2xl ${health.monthlyIncome - health.monthlyExpenses > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                ${(health.monthlyIncome - health.monthlyExpenses).toLocaleString()}
+              </span>
+            </div>
+            <p className="text-slate-400 text-sm mt-2">
+              {health.monthlyIncome - health.monthlyExpenses > 0 
+                ? "This is your fuel for goals! 🚀" 
+                : "You're spending more than you earn. Let's fix this."}
+            </p>
+          </div>
+        </div>
+      )}
+      
+      {activeTab === 'accounts' && (
+        <div className="space-y-4">
+          {/* Assets */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+            <h3 className="text-emerald-400 font-bold mb-4">💚 Assets</h3>
+            <div className="space-y-3">
+              {assets.map(acc => (
+                <div key={acc.id} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                  <div>
+                    <p className="text-white font-medium">{acc.name}</p>
+                    <p className="text-xs text-slate-500">{acc.type}</p>
+                  </div>
+                  <span className="text-emerald-400 font-bold">${acc.balance.toLocaleString()}</span>
+                </div>
+              ))}
+              {assets.length === 0 && (
+                <p className="text-slate-500 text-center py-4">No assets yet</p>
+              )}
+            </div>
+          </div>
+          
+          {/* Liabilities */}
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+            <h3 className="text-rose-400 font-bold mb-4">❤️ Liabilities</h3>
+            <div className="space-y-3">
+              {liabilities.map(acc => (
+                <div key={acc.id} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                  <div>
+                    <p className="text-white font-medium">{acc.name}</p>
+                    <p className="text-xs text-slate-500">{acc.type} {acc.interestRate && `• ${acc.interestRate}% APR`}</p>
+                  </div>
+                  <span className="text-rose-400 font-bold">-${acc.balance.toLocaleString()}</span>
+                </div>
+              ))}
+              {liabilities.length === 0 && (
+                <p className="text-slate-500 text-center py-4">No debts! 🎉</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {activeTab === 'subscriptions' && (
+        <div className="space-y-4">
+          <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
+            <p className="text-amber-400 font-bold">💡 Subscriptions cost you ${(monthlySubTotal * 12).toFixed(0)}/year</p>
+          </div>
+          
+          {subscriptions.map(sub => (
+            <div 
+              key={sub.id} 
+              className={`bg-slate-900/80 border rounded-2xl p-4 flex items-center justify-between ${sub.isOptimizable ? 'border-amber-500/50' : 'border-slate-800'}`}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-bold">{sub.name}</p>
+                  {sub.isOptimizable && <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Cut this?</span>}
+                </div>
+                <p className="text-slate-500 text-sm">${sub.amount}/{sub.cycle.toLowerCase()}</p>
+              </div>
+              <button 
+                onClick={() => killSubscription(sub.id)}
+                className="bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+              >
+                Kill
+              </button>
+            </div>
+          ))}
+          
+          {subscriptions.length === 0 && (
+            <div className="text-center py-8 text-slate-500">
+              <p className="text-4xl mb-2">🎉</p>
+              <p>No subscriptions! You're subscription-free.</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- GOALS VIEW ---
+const GoalsView = ({ 
+  health, 
+  goals, 
+  onUpdateHealth,
+  onUpdateGoals 
+}: { 
+  health: FinancialHealth, 
+  goals: Goal[],
+  onUpdateHealth: (h: FinancialHealth) => void,
+  onUpdateGoals: (g: Goal[]) => void
+}) => {
+  const [showNewGoal, setShowNewGoal] = useState(false);
+  const [newGoalName, setNewGoalName] = useState('');
+  const [newGoalAmount, setNewGoalAmount] = useState('');
+  const [newGoalType, setNewGoalType] = useState<'rocket' | 'impulse'>('rocket');
+  const [launchingId, setLaunchingId] = useState<string | null>(null);
+  
+  const weeklySurplus = Math.max(0, (health.monthlyIncome - health.monthlyExpenses) / 4);
+  
+  const addGoal = () => {
+    if (!newGoalName || !newGoalAmount) return;
+    
+    const newGoal: Goal = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newGoalName,
+      targetAmount: parseFloat(newGoalAmount),
+      currentAmount: 0,
+      category: 'other',
+      valueTag: newGoalType === 'impulse' ? 'Treat' : 'Adventure',
+      goalType: newGoalType,
+      createdAt: new Date().toISOString(),
+      emoji: newGoalType === 'impulse' ? '🎁' : '🚀'
+    };
+    
+    onUpdateGoals([...goals, newGoal]);
+    setNewGoalName('');
+    setNewGoalAmount('');
+    setShowNewGoal(false);
+  };
+  
+  const addFuel = (goalId: string, amount: number) => {
+    onUpdateGoals(goals.map(g => {
+      if (g.id === goalId) {
+        return { ...g, currentAmount: Math.min(g.targetAmount, g.currentAmount + amount) };
+      }
+      return g;
+    }));
+  };
+  
+  const launchGoal = (goal: Goal) => {
+    if (launchingId) return;
+    setLaunchingId(goal.id);
+    
+    setTimeout(() => {
+      onUpdateGoals(goals.filter(g => g.id !== goal.id));
+      onUpdateHealth({
+        ...health,
+        savings: Math.max(0, health.savings - goal.targetAmount),
+        willpowerPoints: (health.willpowerPoints || 0) + 100,
+        goalsCompleted: (health.goalsCompleted || 0) + 1
+      });
+      setLaunchingId(null);
+    }, 2000);
+  };
+  
+  const skipImpulse = (goal: Goal) => {
+    onUpdateGoals(goals.filter(g => g.id !== goal.id));
+    onUpdateHealth({
+      ...health,
+      savings: health.savings + goal.currentAmount,
+      willpowerPoints: (health.willpowerPoints || 0) + 50
+    });
+  };
+  
+  const rockets = goals.filter(g => g.goalType === 'rocket');
+  const impulses = goals.filter(g => g.goalType === 'impulse');
+  
+  return (
+    <div className="space-y-5 pb-24 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-black text-white">Goals</h1>
+          <p className="text-slate-500 text-sm">Fuel your dreams</p>
+        </div>
+        <button 
+          onClick={() => setShowNewGoal(true)}
+          className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-4 py-2 rounded-xl transition-colors"
+        >
+          + New
+        </button>
+      </div>
+      
+      {/* Weekly Fuel Available */}
+      <div className="bg-gradient-to-r from-purple-900/40 to-fuchsia-900/40 border border-purple-500/30 rounded-2xl p-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-purple-300 text-sm font-bold">Weekly Fuel Available</p>
+            <p className="text-white text-2xl font-black">${weeklySurplus.toFixed(0)}/wk</p>
+          </div>
+          <div className="text-4xl">⛽</div>
+        </div>
+      </div>
+      
+      {/* New Goal Form */}
+      {showNewGoal && (
+        <div className="bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 animate-in slide-in-from-top-4">
+          <h3 className="text-white font-bold">Create New Goal</h3>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setNewGoalType('rocket')}
+              className={`flex-1 py-3 rounded-xl font-bold transition-all ${newGoalType === 'rocket' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🚀 Serious Goal
+            </button>
+            <button 
+              onClick={() => setNewGoalType('impulse')}
+              className={`flex-1 py-3 rounded-xl font-bold transition-all ${newGoalType === 'impulse' ? 'bg-amber-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🎁 Maybe Buy
+            </button>
+          </div>
+          
+          <input 
+            type="text"
+            placeholder="Goal name (e.g., Japan Trip)"
+            value={newGoalName}
+            onChange={(e) => setNewGoalName(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white"
+          />
+          
+          <input 
+            type="number"
+            placeholder="Target amount ($)"
+            value={newGoalAmount}
+            onChange={(e) => setNewGoalAmount(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white"
+          />
+          
+          <div className="flex gap-2">
+            <button onClick={() => setShowNewGoal(false)} className="flex-1 py-3 bg-slate-800 text-slate-400 rounded-xl font-bold">
+              Cancel
+            </button>
+            <button onClick={addGoal} className="flex-1 py-3 bg-cyan-500 text-slate-900 rounded-xl font-bold">
+              Create
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Rockets (Serious Goals) */}
+      {rockets.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider">🚀 Missions</h3>
+          {rockets.map(goal => {
+            const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
+            const isReady = goal.currentAmount >= goal.targetAmount;
+            const isLaunching = launchingId === goal.id;
+            
+            return (
+              <div 
+                key={goal.id} 
+                className={`bg-slate-900/80 border border-slate-800 rounded-2xl p-5 transition-all ${isLaunching ? 'animate-pulse scale-105' : ''}`}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="text-white font-bold flex items-center gap-2">
+                      {goal.emoji || '🚀'} {goal.name}
+                    </h4>
+                    <p className="text-slate-500 text-sm">{goal.valueTag}</p>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${isReady ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                    {percent}%
+                  </span>
+                </div>
+                
+                <div className="h-3 bg-slate-800 rounded-full overflow-hidden mb-3">
+                  <div 
+                    className={`h-full transition-all duration-500 ${isReady ? 'bg-emerald-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+                
+                <div className="flex justify-between items-center text-sm mb-4">
+                  <span className="text-slate-400">${goal.currentAmount.toLocaleString()} / ${goal.targetAmount.toLocaleString()}</span>
+                  {goal.deadline && (
+                    <span className="text-slate-500">📅 {new Date(goal.deadline).toLocaleDateString()}</span>
+                  )}
+                </div>
+                
+                {isReady ? (
+                  <button 
+                    onClick={() => launchGoal(goal)}
+                    disabled={isLaunching}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-900 font-bold py-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
+                  >
+                    {isLaunching ? '🚀 LAUNCHING...' : '🚀 LAUNCH & CELEBRATE!'}
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button onClick={() => addFuel(goal.id, 50)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-colors">
+                      +$50
+                    </button>
+                    <button onClick={() => addFuel(goal.id, 100)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm transition-colors">
+                      +$100
+                    </button>
+                    <button onClick={() => addFuel(goal.id, 500)} className="flex-1 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 rounded-xl font-bold text-sm transition-colors">
+                      +$500
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
+      {/* Impulse Items (Maybe Buys) */}
+      {impulses.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-slate-400 font-bold text-sm uppercase tracking-wider">🎁 Maybe Buys</h3>
+          {impulses.map(goal => {
+            const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
+            const isReady = goal.currentAmount >= goal.targetAmount;
+            
+            return (
+              <div key={goal.id} className="bg-slate-900/80 border border-amber-500/30 rounded-2xl p-5">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h4 className="text-white font-bold flex items-center gap-2">
+                      {goal.emoji || '🎁'} {goal.name}
+                    </h4>
+                    <p className="text-amber-400 text-sm">Impulse Item</p>
+                  </div>
+                  <span className="text-amber-400 font-bold">{percent}%</span>
+                </div>
+                
+                <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-3">
+                  <div 
+                    className="h-full bg-amber-500 transition-all duration-500"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+                
+                <div className="flex justify-between text-sm text-slate-400 mb-4">
+                  <span>${goal.currentAmount.toLocaleString()} / ${goal.targetAmount.toLocaleString()}</span>
+                </div>
+                
+                {isReady ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => launchGoal(goal)}
+                      className="py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-colors"
+                    >
+                      🛍️ Buy It
+                    </button>
+                    <button 
+                      onClick={() => skipImpulse(goal)}
+                      className="py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-xl font-bold transition-colors"
+                    >
+                      💪 Keep Cash (+50 WP)
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button onClick={() => addFuel(goal.id, 25)} className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm">
+                      +$25
+                    </button>
+                    <button onClick={() => addFuel(goal.id, 50)} className="flex-1 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 rounded-xl font-bold text-sm">
+                      +$50
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
+      {goals.length === 0 && !showNewGoal && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🎯</div>
+          <h3 className="text-white font-bold text-xl mb-2">No Goals Yet</h3>
+          <p className="text-slate-500 mb-6">What are you saving for?</p>
+          <button 
+            onClick={() => setShowNewGoal(true)}
+            className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-6 py-3 rounded-xl"
+          >
+            Create Your First Goal
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- HELP VIEW ---
+const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: AccountItem[] }) => {
+  const [activeSection, setActiveSection] = useState<'chat' | 'crisis' | 'tools'>('chat');
+  const [message, setMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState<Array<{role: 'user' | 'bot', text: string}>>([
+    { role: 'bot', text: "Hey! I'm BillBot. How can I help you today? 🤖" }
+  ]);
+  
+  const isCrisis = health.monthlyExpenses > health.monthlyIncome;
+  
+  const sendMessage = () => {
+    if (!message.trim()) return;
+    
+    setChatHistory(prev => [...prev, { role: 'user', text: message }]);
+    
+    // Simple response logic (would be AI in real implementation)
+    setTimeout(() => {
+      let response = "I'm thinking about that...";
+      
+      if (message.toLowerCase().includes('save')) {
+        response = "Great question! Based on your numbers, you could save around $" + Math.round(health.monthlyIncome - health.monthlyExpenses) + " per month. Want me to help you set up a goal?";
+      } else if (message.toLowerCase().includes('debt')) {
+        response = "Debt can feel overwhelming, but you've got this! Your current debt is $" + (health.hecsDebt + health.otherDebts).toLocaleString() + ". Would you like me to help create a payoff strategy?";
+      } else if (message.toLowerCase().includes('budget')) {
+        response = "Your income is $" + health.monthlyIncome.toLocaleString() + "/mo and expenses are $" + health.monthlyExpenses.toLocaleString() + "/mo. That gives you $" + (health.monthlyIncome - health.monthlyExpenses).toLocaleString() + " to work with!";
+      } else {
+        response = "I hear you! Tell me more about what's on your mind financially, and I'll do my best to help. 💪";
+      }
+      
+      setChatHistory(prev => [...prev, { role: 'bot', text: response }]);
+    }, 500);
+    
+    setMessage('');
+  };
+  
+  return (
+    <div className="space-y-5 pb-24 animate-in fade-in duration-500">
+      <div>
+        <h1 className="text-2xl font-black text-white">Help</h1>
+        <p className="text-slate-500 text-sm">Your financial support center</p>
+      </div>
+      
+      {/* Crisis Banner */}
+      {isCrisis && (
+        <div className="bg-red-900/30 border border-red-500/50 rounded-2xl p-4 flex items-center gap-4 animate-pulse">
+          <div className="text-3xl">🚨</div>
+          <div>
+            <h3 className="text-red-400 font-bold">Crisis Mode Active</h3>
+            <p className="text-red-300 text-sm">You're spending more than you earn. Let's fix this together.</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Section Tabs */}
+      <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
+        <button onClick={() => setActiveSection('chat')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'chat' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>
+          🤖 Chat
+        </button>
+        <button onClick={() => setActiveSection('crisis')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'crisis' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>
+          ☎️ Crisis
+        </button>
+        <button onClick={() => setActiveSection('tools')} className={`flex-1 py-2 rounded-lg font-bold text-sm ${activeSection === 'tools' ? 'bg-slate-800 text-white' : 'text-slate-500'}`}>
+          🔧 Tools
+        </button>
+      </div>
+      
+      {activeSection === 'chat' && (
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden flex flex-col" style={{ height: '400px' }}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {chatHistory.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] p-3 rounded-2xl ${msg.role === 'user' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-800 text-white'}`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="p-4 border-t border-slate-800 flex gap-2">
+            <input 
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              placeholder="Ask BillBot anything..."
+              className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white"
+            />
+            <button 
+              onClick={sendMessage}
+              className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-4 rounded-xl transition-colors"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {activeSection === 'crisis' && (
+        <div className="space-y-4">
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+            <h3 className="text-white font-bold mb-4">📋 Priority Order (When You Can't Pay Everything)</h3>
+            <div className="space-y-3">
+              <div className="flex gap-3 p-3 bg-emerald-900/20 border border-emerald-500/30 rounded-xl">
+                <span className="text-xl">1️⃣</span>
+                <div>
+                  <p className="text-emerald-400 font-bold">Roof & Essentials</p>
+                  <p className="text-slate-400 text-sm">Rent, electricity, water, food</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 bg-amber-900/20 border border-amber-500/30 rounded-xl">
+                <span className="text-xl">2️⃣</span>
+                <div>
+                  <p className="text-amber-400 font-bold">Critical Assets</p>
+                  <p className="text-slate-400 text-sm">Car (if needed for work), phone, internet</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 bg-red-900/20 border border-red-500/30 rounded-xl">
+                <span className="text-xl">3️⃣</span>
+                <div>
+                  <p className="text-red-400 font-bold">Unsecured Debt (Can Wait)</p>
+                  <p className="text-slate-400 text-sm">Credit cards, personal loans, BNPL</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 font-bold py-4 rounded-2xl transition-colors">
+            📄 Generate Hardship Letter
+          </button>
+          
+          <button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 rounded-2xl transition-colors">
+            📞 Find Free Financial Counsellor
+          </button>
+        </div>
+      )}
+      
+      {activeSection === 'tools' && (
+        <div className="space-y-4">
+          <button className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 text-left transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="text-3xl">🎓</div>
+              <div>
+                <h3 className="text-white font-bold">HECS/HELP Strategy</h3>
+                <p className="text-slate-500 text-sm">Should you pay it off early?</p>
+              </div>
+            </div>
+          </button>
+          
+          <button className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 text-left transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="text-3xl">🔍</div>
+              <div>
+                <h3 className="text-white font-bold">Tax Deduction Lookup</h3>
+                <p className="text-slate-500 text-sm">Check if something is deductible</p>
+              </div>
+            </div>
+          </button>
+          
+          <button className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 text-left transition-colors">
+            <div className="flex items-center gap-4">
+              <div className="text-3xl">✅</div>
+              <div>
+                <h3 className="text-white font-bold">ABN Validator</h3>
+                <p className="text-slate-500 text-sm">Check if a business is legit</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- MAIN APP ---
 const App = () => {
-  const [view, setView] = useState<AppView>(AppView.DASHBOARD);
+  const [view, setView] = useState<AppView>(AppView.HOME);
   
   // Data State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -201,15 +1109,9 @@ const App = () => {
   const [impulseItems, setImpulseItems] = useState<ImpulseItem[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   
-  // Tutorial & UI State
-  const [showTutorial, setShowTutorial] = useState(false);
-  const [tutorialStep, setTutorialStep] = useState(0);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // UI State
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showWeeklyBriefing, setShowWeeklyBriefing] = useState(false);
-  
-  // Time Travel State
-  const [timeYear, setTimeYear] = useState(2025);
-  const [timeMode, setTimeMode] = useState<'DRIFT' | 'TURBO'>('DRIFT');
   
   // Health
   const [health, setHealth] = useState<FinancialHealth>({
@@ -225,373 +1127,152 @@ const App = () => {
     score: 50,
     willpowerPoints: 0,
     taxVault: 0,
-    isStudent: false
+    isStudent: false,
+    checkInStreak: 0
   });
 
   // Load Data on Mount
   useEffect(() => {
-      const savedHealth = loadFinancialHealth();
-      const savedTx = loadTransactions();
-      const savedSubs = loadSubscriptions();
-      const savedAcc = loadAccounts();
-      const savedImpulse = loadImpulseItems();
-      const savedGoals = loadGoals();
-      
-      if (savedHealth) setHealth(savedHealth);
-      
-      // Load saved data or fallback to DUMMY data
-      if (savedTx.length > 0) setTransactions(savedTx);
-      else setTransactions(DUMMY_TRANSACTIONS);
+    const savedHealth = loadFinancialHealth();
+    const savedSubs = loadSubscriptions();
+    const savedAcc = loadAccounts();
+    const savedGoals = loadGoals();
+    
+    if (savedHealth) setHealth({...health, ...savedHealth});
+    
+    if (savedSubs.length > 0) setSubscriptions(savedSubs);
+    else setSubscriptions(DUMMY_SUBSCRIPTIONS);
 
-      if (savedSubs.length > 0) setSubscriptions(savedSubs);
-      else setSubscriptions(DUMMY_SUBSCRIPTIONS);
+    if (savedAcc.length > 0) setAccounts(savedAcc);
+    else setAccounts(DUMMY_ACCOUNTS);
+    
+    if (savedGoals.length > 0) setGoals(savedGoals);
+    else setGoals(DUMMY_GOALS);
 
-      if (savedAcc.length > 0) setAccounts(savedAcc);
-      else setAccounts(DUMMY_ACCOUNTS);
-
-      if (savedImpulse.length > 0) setImpulseItems(savedImpulse);
-      else setImpulseItems(DUMMY_IMPULSE_ITEMS);
-      
-      // Goal Logic: Use dummy if empty to ensure visual pop
-      if (savedGoals.length > 0) setGoals(savedGoals);
-      else setGoals(DUMMY_GOALS);
-
-      // Check Tutorial Status
-      const hasSeenTutorial = localStorage.getItem('BILLBOT_HAS_SEEN_TUTORIAL');
-      if (!hasSeenTutorial) {
-          setShowTutorial(true);
-      }
+    // Check Welcome Status
+    const hasSeenWelcome = localStorage.getItem('BILLBOT_HAS_SEEN_TUTORIAL');
+    if (!hasSeenWelcome) {
+      setShowWelcome(true);
+    }
   }, []);
 
   // Persistence Effects
   useEffect(() => { saveFinancialHealth(health); }, [health]);
-  useEffect(() => { saveTransactions(transactions); }, [transactions]);
   useEffect(() => { saveSubscriptions(subscriptions); }, [subscriptions]);
-  useEffect(() => { saveImpulseItems(impulseItems); }, [impulseItems]);
   useEffect(() => { saveGoals(goals); }, [goals]);
   
   // Account Change Logic
   useEffect(() => { 
-      saveAccounts(accounts);
-      const savings = accounts.filter(a => ['CASH', 'SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type)).reduce((sum, a) => sum + a.balance, 0);
-      const hecs = accounts.filter(a => a.type === 'HECS').reduce((sum, a) => sum + a.balance, 0);
-      const otherDebts = accounts.filter(a => ['LOAN', 'CREDIT_CARD'].includes(a.type)).reduce((sum, a) => sum + a.balance, 0);
-      
-      const netWorth = savings - (hecs + otherDebts);
-      let newScore = 50;
-      if (netWorth > 10000) newScore += 10;
-      if (netWorth > 50000) newScore += 10;
-      if (otherDebts === 0) newScore += 20;
-      if (otherDebts > 5000) newScore -= 10;
-      
-      setHealth(prev => ({
-          ...prev,
-          savings,
-          hecsDebt: hecs,
-          otherDebts,
-          score: Math.min(100, Math.max(0, newScore))
-      }));
+    saveAccounts(accounts);
+    const savings = accounts.filter(a => ['CASH', 'SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type)).reduce((sum, a) => sum + a.balance, 0);
+    const hecs = accounts.filter(a => a.type === 'HECS').reduce((sum, a) => sum + a.balance, 0);
+    const otherDebts = accounts.filter(a => ['LOAN', 'CREDIT_CARD'].includes(a.type)).reduce((sum, a) => sum + a.balance, 0);
+    
+    const netWorth = savings - (hecs + otherDebts);
+    let newScore = 50;
+    if (netWorth > 10000) newScore += 10;
+    if (netWorth > 50000) newScore += 10;
+    if (otherDebts === 0) newScore += 20;
+    if (otherDebts > 5000) newScore -= 10;
+    
+    setHealth(prev => ({
+      ...prev,
+      savings,
+      hecsDebt: hecs,
+      otherDebts,
+      score: Math.min(100, Math.max(0, newScore))
+    }));
   }, [accounts]);
 
-  // Handle Tutorial Flow
-  const handleTutorialNext = () => {
-      const nextStep = tutorialStep + 1;
-      setTutorialStep(nextStep);
-      
-      // Auto-navigate views to match tutorial context
-      if (nextStep === 1) setView(AppView.DASHBOARD);
-      if (nextStep === 2) setView(AppView.LAUNCHPAD);
-      if (nextStep === 3) setView(AppView.CRISIS);
+  const handleWelcomeComplete = () => {
+    localStorage.setItem('BILLBOT_HAS_SEEN_TUTORIAL', 'true');
+    setShowWelcome(false);
   };
 
-  const handleTutorialClose = () => {
-      localStorage.setItem('BILLBOT_HAS_SEEN_TUTORIAL', 'true');
-      setShowTutorial(false);
-      setView(AppView.DASHBOARD);
-  };
-
-  const NavItem = ({ label, target, icon, onClick }: { label: string, target: AppView, icon: any, onClick?: () => void }) => {
-    const isActive = view === target;
-    return (
-        <button 
-            onClick={() => { setView(target); onClick?.(); }}
-            className={`relative group flex items-center gap-3 p-3 w-full rounded-xl mb-1 transition-all duration-300 overflow-hidden ${isActive ? 'bg-slate-800 text-white shadow-[0_0_20px_rgba(0,243,255,0.1)]' : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
-        >
-            {/* Active Indicator Strip */}
-            {isActive && (
-                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-neon-blue rounded-r-full shadow-[0_0_10px_#00f3ff]" />
-            )}
-            
-            {/* Icon Wrapper for animation */}
-            <div className={`relative z-10 transition-transform duration-300 ${isActive ? 'translate-x-1 scale-105' : 'group-hover:scale-110'}`}>
-                {icon}
-            </div>
-            
-            <span className={`relative z-10 font-bold text-sm tracking-wide transition-all duration-300 ${isActive ? 'translate-x-1' : ''}`}>
-                {label}
-            </span>
-        </button>
-    );
-  };
-
-  const projectedData = React.useMemo(() => {
-      if (timeYear === 2025) return { accounts, health, netWorthDelta: 0 };
-
-      const months = (timeYear - 2025) * 12;
-      
-      // Create deep copies for simulation
-      const projectedAccounts = accounts.map(a => ({...a}));
-      const projectedHealth = {...health};
-
-      let monthlyIncome = health.monthlyIncome;
-      let monthlyExpenses = health.monthlyExpenses;
-
-      // Turbo Logic: Optimization + Career Growth assumption
-      if (timeMode === 'TURBO') {
-          monthlyExpenses *= 0.9; // 10% Cut
-          monthlyIncome *= 1.05; // 5% Growth/Side Gig
-      }
-
-      const monthlySurplus = monthlyIncome - monthlyExpenses;
-      
-      // Simulation Loop
-      for (let i = 0; i < months; i++) {
-          if (monthlySurplus >= 0) {
-              // Add to savings
-              const savingsAccs = projectedAccounts.filter(a => ['SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type));
-              if (savingsAccs.length > 0) {
-                  const split = monthlySurplus / savingsAccs.length;
-                  savingsAccs.forEach(a => {
-                      const rate = timeMode === 'TURBO' ? 0.005 : 0.003; // Higher returns in turbo (better investment)
-                      a.balance += split + (a.balance * rate); 
-                  });
-              }
-          } else {
-              // Add to debt
-              const debtAccs = projectedAccounts.filter(a => ['CREDIT_CARD', 'LOAN'].includes(a.type));
-              if (debtAccs.length > 0) {
-                  const split = Math.abs(monthlySurplus) / debtAccs.length;
-                  debtAccs.forEach(a => {
-                      a.balance += split + (a.balance * 0.015); // 18% APR
-                  });
-              } else {
-                  // Create crisis debt if none exists to track the deficit
-                  const crisis = projectedAccounts.find(a => a.id === 'crisis-debt');
-                  if (crisis) {
-                      crisis.balance += Math.abs(monthlySurplus) + (crisis.balance * 0.015);
-                  } else {
-                      projectedAccounts.push({
-                          id: 'crisis-debt',
-                          name: 'Unpaid Bills',
-                          type: 'CREDIT_CARD',
-                          balance: Math.abs(monthlySurplus),
-                          interestRate: 18
-                      });
-                  }
-              }
-          }
-      }
-
-      // Calculate Net Worth Difference
-      const currentNetWorth = accounts.reduce((sum, a) => sum + (['LOAN','CREDIT_CARD','HECS'].includes(a.type) ? -a.balance : a.balance), 0);
-      const futureNetWorth = projectedAccounts.reduce((sum, a) => sum + (['LOAN','CREDIT_CARD','HECS'].includes(a.type) ? -a.balance : a.balance), 0);
-
-      return { 
-          accounts: projectedAccounts, 
-          health: projectedHealth,
-          netWorthDelta: Math.round(futureNetWorth - currentNetWorth)
-      };
-  }, [accounts, health, timeYear, timeMode]);
-
-  const cashflow = (health.monthlyIncome - health.monthlyExpenses);
-  const hasWeeds = subscriptions.some(s => s.isOptimizable);
-  const isCrisis = health.monthlyExpenses > health.monthlyIncome || health.survivalNumber > health.monthlyIncome;
+  const navItems = [
+    { view: AppView.HOME, icon: '🏙️', label: 'Home' },
+    { view: AppView.MONEY, icon: '💰', label: 'Money' },
+    { view: AppView.GOALS, icon: '🚀', label: 'Goals' },
+    { view: AppView.HELP, icon: '🆘', label: 'Help' },
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-950 flex text-slate-200 font-sans selection:bg-neon-blue selection:text-slate-900 relative">
+    <div className="min-h-screen bg-slate-950 text-slate-200 font-sans">
       
-      {showTutorial && (
-          <TutorialOverlay step={tutorialStep} onNext={handleTutorialNext} onClose={handleTutorialClose} />
-      )}
-
+      {showWelcome && <WelcomeOverlay onComplete={handleWelcomeComplete} />}
+      
       {showWeeklyBriefing && (
-          <WeeklyBriefing 
-            accounts={accounts}
-            onUpdateAccounts={setAccounts}
-            onComplete={() => setShowWeeklyBriefing(false)}
-          />
+        <WeeklyBriefing 
+          accounts={accounts}
+          onUpdateAccounts={setAccounts}
+          onComplete={() => {
+            setShowWeeklyBriefing(false);
+            setHealth(prev => ({
+              ...prev,
+              checkInStreak: (prev.checkInStreak || 0) + 1,
+              lastCheckIn: new Date().toISOString()
+            }));
+          }}
+        />
       )}
-
-      {/* Mobile Navigation Drawer */}
-      {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl animate-in fade-in slide-in-from-right-10 flex flex-col p-6">
-              <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-2xl font-black text-white italic">MENU</h2>
-                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 bg-slate-800 rounded-full text-white">✕</button>
-              </div>
-              <div className="flex-1 overflow-y-auto space-y-1">
-                <NavItem target={AppView.DASHBOARD} label="My City" icon={<span>🏙️</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.LAUNCHPAD} label="The Launchpad" icon={<span>🚀</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.WALLET} label="My Wallet" icon={<span>💳</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.DATA_IMPORT} label="The Shoebox" icon={<span>📦</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.SUBSCRIPTIONS} label="Subscriptions" icon={<span>📅</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.HANGAR} label="Impulse Hangar" icon={<span>🏗️</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.SIDE_QUESTS} label="Side Quests" icon={<span>⚔️</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.GIG_PORT} label="Gig Port" icon={<span>⚓</span>} onClick={() => setMobileMenuOpen(false)} />
-                <div className="my-2 h-px bg-slate-800"></div>
-                <NavItem target={AppView.CRISIS} label="Crisis Protocol" icon={<span className="text-red-500">☎️</span>} onClick={() => setMobileMenuOpen(false)} />
-                <NavItem target={AppView.ADVISOR} label="Advisor" icon={<span>🤖</span>} onClick={() => setMobileMenuOpen(false)} />
-              </div>
-          </div>
-      )}
-
-      {/* Sidebar (Desktop) */}
-      <aside className="w-64 border-r border-slate-800 flex-shrink-0 hidden md:flex flex-col bg-slate-900/50 backdrop-blur-sm fixed h-full z-20">
-        <div className="p-6">
-            <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2 group cursor-pointer" onClick={() => setView(AppView.DASHBOARD)}>
-                <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-600 rounded flex items-center justify-center shadow-lg group-hover:shadow-neon-blue/50 transition-shadow duration-300">
-                    B
-                </div>
-                BillBot
-            </h1>
-        </div>
-
-        <nav className="flex-1 px-4 mt-2">
-            <NavItem target={AppView.DASHBOARD} label="My City" icon={<span>🏙️</span>} />
-            <NavItem target={AppView.LAUNCHPAD} label="The Launchpad" icon={<span>🚀</span>} />
-            <NavItem target={AppView.WALLET} label="My Wallet" icon={<span>💳</span>} />
-            <NavItem target={AppView.DATA_IMPORT} label="The Shoebox" icon={<span>📦</span>} />
-            <NavItem target={AppView.SUBSCRIPTIONS} label="Subscriptions" icon={<span>📅</span>} />
-            <NavItem target={AppView.HANGAR} label="Impulse Hangar" icon={<span>🏗️</span>} />
-            <NavItem target={AppView.SIDE_QUESTS} label="Side Quests" icon={<span>⚔️</span>} />
-            <NavItem target={AppView.GIG_PORT} label="Gig Port" icon={<span>⚓</span>} />
-            
-            <div className="my-2 h-px bg-slate-800"></div>
-            
-            {/* Crisis Toggle - Always visible if condition met, otherwise nav item */}
-            <div className={`${isCrisis ? 'animate-pulse' : ''}`}>
-                <NavItem target={AppView.CRISIS} label="Crisis Protocol" icon={<span className="text-red-500">☎️</span>} />
-            </div>
-            
-            <div className="my-2 h-px bg-slate-800"></div>
-            <NavItem target={AppView.ADVISOR} label="Advisor" icon={<span>🤖</span>} />
-        </nav>
-
-        <div className="p-4">
-             <div className="bg-slate-900 border border-slate-700 rounded-xl p-4">
-                 <p className="text-xs text-slate-500 uppercase font-bold mb-1">Total Net Worth</p>
-                 <p className={`text-xl font-mono font-bold ${health.savings - (health.hecsDebt + health.otherDebts) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                     ${(health.savings - (health.hecsDebt + health.otherDebts)).toLocaleString()}
-                 </p>
-             </div>
-        </div>
-      </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-6 overflow-y-auto">
-        
-        {/* Mobile Header */}
-        <header className="md:hidden flex justify-between items-center mb-6">
-             <div className="flex items-center gap-2" onClick={() => setView(AppView.DASHBOARD)}>
-                 <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-600 rounded flex items-center justify-center text-xs font-bold text-black shadow-lg">B</div>
-                 <h1 className="text-xl font-black italic">BillBot</h1>
-             </div>
-             <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-white border border-slate-700 active:scale-95 transition-transform"
-             >
-                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-             </button>
-        </header>
-
-        {view === AppView.DASHBOARD && (
-            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-500 max-w-5xl mx-auto pb-24 md:pb-0">
-                
-                {/* 1. Hero Action: The "Can I Buy It?" Button */}
-                <PurchaseAdvisor health={health} />
-
-                {/* 2. Cashflow Monitor & Briefing Trigger */}
-                <div className="flex gap-4 items-stretch">
-                    <div className="flex-1">
-                        <CashflowMonitor income={health.monthlyIncome} expenses={health.monthlyExpenses} />
-                    </div>
-                    <button 
-                        onClick={() => setShowWeeklyBriefing(true)}
-                        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl px-6 flex flex-col justify-center items-center text-center group w-24 md:w-32 transition-all"
-                        title="Update Balances"
-                    >
-                        <span className="text-3xl mb-1 group-hover:scale-110 transition-transform">📅</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Weekly Check-in</span>
-                    </button>
-                </div>
-
-                {/* 3. Safe Zone Shield - Moved OUT of City Container for layout cleanliness */}
-                <SafeZoneShield health={health} />
-
-                {/* 4. The City Visualization (Center Stage) */}
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 p-1 relative overflow-hidden group hover:border-slate-700 transition-all shadow-2xl touch-none">
-                     <IsometricCity 
-                        onNavigate={setView}
-                        accounts={projectedData.accounts}
-                        health={projectedData.health}
-                        goals={goals}
-                        hasWeeds={hasWeeds}
-                        isFuture={timeYear > 2025}
-                        weeklyBuilds={impulseItems.map(i => ({
-                            id: i.id,
-                            name: i.name,
-                            target: i.price,
-                            saved: i.savedAmount
-                        }))}
-                        subscriptions={subscriptions}
-                     />
-                     
-                     <TimeTravelUI 
-                        year={timeYear}
-                        setYear={setTimeYear}
-                        mode={timeMode}
-                        setMode={setTimeMode}
-                        netWorthDelta={projectedData.netWorthDelta}
-                     />
-                </div>
-
-                {/* 5. Quick Actions */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <button onClick={() => setView(AppView.WALLET)} className="bg-slate-800 hover:bg-slate-700 p-6 rounded-xl border border-slate-700 text-left group transition-colors">
-                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform origin-left">👛</div>
-                        <h3 className="text-white font-bold">My Wallet</h3>
-                        <p className="text-slate-400 text-xs mt-1">Manage Banks & Debts.</p>
-                    </button>
-                    
-                    <button onClick={() => setView(AppView.HECS_CALCULATOR)} className="bg-slate-800 hover:bg-slate-700 p-6 rounded-xl border border-slate-700 text-left group transition-colors">
-                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform origin-left">🎓</div>
-                        <h3 className="text-white font-bold">HECS Strategy</h3>
-                        <p className="text-slate-400 text-xs mt-1">Debt Destruction Event</p>
-                    </button>
-
-                    <button onClick={() => setView(AppView.BATTERY_CALC)} className="bg-slate-800 hover:bg-slate-700 p-6 rounded-xl border border-slate-700 text-left group transition-colors col-span-2 md:col-span-1">
-                        <div className="text-3xl mb-2 group-hover:scale-110 transition-transform origin-left">🔋</div>
-                        <h3 className="text-white font-bold">Battery ROI</h3>
-                        <p className="text-slate-400 text-xs mt-1">2025 Solar Rebates</p>
-                    </button>
-                </div>
-
-            </div>
+      <main className="max-w-lg mx-auto px-4 pt-6">
+        {view === AppView.HOME && (
+          <HomeView 
+            health={health}
+            accounts={accounts}
+            goals={goals}
+            subscriptions={subscriptions}
+            impulseItems={impulseItems}
+            onNavigate={setView}
+            onShowCheckIn={() => setShowWeeklyBriefing(true)}
+          />
         )}
-
-        {view === AppView.ADVISOR && <Advisor health={health} />}
-        {view === AppView.WALLET && <WalletManager accounts={accounts} onUpdateAccounts={setAccounts} health={health} onUpdateHealth={setHealth} />}
-        {view === AppView.SUBSCRIPTIONS && <SubscriptionManager transactions={transactions} subscriptions={subscriptions} onUpdateSubscriptions={setSubscriptions} />}
-        {view === AppView.HECS_CALCULATOR && <div className="max-w-3xl mx-auto"><HECSCalculator /></div>}
-        {view === AppView.BATTERY_CALC && <BatteryROI />}
-        {view === AppView.DATA_IMPORT && <DataIngestion onDataLoaded={(d) => { setTransactions([...transactions, ...d]); setView(AppView.DASHBOARD); }} />}
-        {view === AppView.HANGAR && <ImpulseHangar health={health} onUpdateHealth={setHealth} items={impulseItems} onUpdateItems={setImpulseItems} />}
-        {view === AppView.GIG_PORT && <GigPort health={health} onUpdateHealth={setHealth} />}
-        {view === AppView.CRISIS && <CrisisCommand accounts={accounts} />}
-        {view === AppView.SIDE_QUESTS && <SideQuests />}
-        {view === AppView.LAUNCHPAD && <Launchpad health={health} onUpdateHealth={setHealth} goals={goals} onUpdateGoals={setGoals} />}
-
+        
+        {view === AppView.MONEY && (
+          <MoneyView 
+            health={health}
+            accounts={accounts}
+            subscriptions={subscriptions}
+            onUpdateHealth={setHealth}
+            onUpdateAccounts={setAccounts}
+            onUpdateSubscriptions={setSubscriptions}
+          />
+        )}
+        
+        {view === AppView.GOALS && (
+          <GoalsView 
+            health={health}
+            goals={goals}
+            onUpdateHealth={setHealth}
+            onUpdateGoals={setGoals}
+          />
+        )}
+        
+        {view === AppView.HELP && (
+          <HelpView health={health} accounts={accounts} />
+        )}
       </main>
+
+      {/* Bottom Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 safe-area-pb">
+        <div className="max-w-lg mx-auto flex">
+          {navItems.map(item => (
+            <button
+              key={item.view}
+              onClick={() => setView(item.view)}
+              className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all ${view === item.view ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <span className={`text-2xl transition-transform ${view === item.view ? 'scale-110' : ''}`}>{item.icon}</span>
+              <span className="text-xs font-bold">{item.label}</span>
+              {view === item.view && (
+                <div className="absolute bottom-1 w-1 h-1 bg-cyan-400 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 };
@@ -604,6 +1285,4 @@ if (rootElement) {
       <App />
     </ErrorBoundary>
   );
-} else {
-  console.error("Failed to find the root element");
 }
