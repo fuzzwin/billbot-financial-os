@@ -555,11 +555,27 @@ const LaunchPad = ({ position, goal }: { position: [number, number, number]; goa
 };
 
 // ============ CONSTRUCTION SITE (IMPULSE ITEMS) ============
-const ConstructionSite = ({ position, progress, name }: { position: [number, number, number]; progress: number; name?: string }) => {
+const ConstructionSite = ({ position, progress, name, price, saved }: { position: [number, number, number]; progress: number; name?: string; price?: number; saved?: number }) => {
   const builtH = 0.2 + progress * 1.2;
+  const { showTooltip } = useContext(TooltipContext);
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'construction',
+      title: name || 'Impulse Item',
+      subtitle: 'Building Savings',
+      value: price && saved ? `$${saved.toLocaleString()} / $${price.toLocaleString()}` : `${Math.round(progress * 100)}%`,
+      description: progress >= 1 
+        ? '✅ Fully saved! You can now decide: buy it or keep the cash (+50 Willpower).'
+        : `Parking this purchase. Save weekly to build it up. ${Math.round(progress * 100)}% complete.`,
+      icon: '🏗️',
+      color: COLORS.construction
+    });
+  };
   
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       {/* Foundation */}
       <mesh position={[0, 0.04, 0]} receiveShadow>
         <boxGeometry args={[1.0, 0.08, 1.0]} />
@@ -599,6 +615,7 @@ const HarborDock = ({ position, savings }: { position: [number, number, number];
   const waterLevel = Math.max(0.3, Math.min(1, savings / 50000));
   const boat1Ref = useRef<THREE.Group>(null);
   const boat2Ref = useRef<THREE.Group>(null);
+  const { showTooltip } = useContext(TooltipContext);
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -612,8 +629,21 @@ const HarborDock = ({ position, savings }: { position: [number, number, number];
     }
   });
 
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'harbor',
+      title: 'Liquidity Harbor',
+      subtitle: 'Available Cash',
+      value: `$${savings.toLocaleString()}`,
+      description: `Water level shows your liquid savings. ${waterLevel >= 0.8 ? 'Harbor is full - great reserves!' : waterLevel >= 0.5 ? 'Healthy water level.' : 'Low tide - build up your reserves.'}`,
+      icon: '⚓',
+      color: COLORS.water
+    });
+  };
+
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       {/* Water basin */}
       <mesh position={[0, -0.02, 0]} receiveShadow>
         <boxGeometry args={[2.8, 0.12 * waterLevel, 2.0]} />
@@ -648,6 +678,7 @@ const HarborDock = ({ position, savings }: { position: [number, number, number];
 const TaxVault = ({ position, amount }: { position: [number, number, number]; amount: number }) => {
   const fillLevel = Math.min(1, amount / 3000);
   const pulseRef = useRef<THREE.Mesh>(null);
+  const { showTooltip } = useContext(TooltipContext);
   
   useFrame(({ clock }) => {
     if (pulseRef.current && fillLevel > 0.3) {
@@ -655,8 +686,21 @@ const TaxVault = ({ position, amount }: { position: [number, number, number]; am
     }
   });
 
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'taxvault',
+      title: 'Tax Vault',
+      subtitle: 'Gig Economy Tax',
+      value: `$${amount.toLocaleString()}`,
+      description: 'Quarantined tax from gig income (30%). This money is set aside for your tax bill - don\'t spend it!',
+      icon: '🏛️',
+      color: COLORS.taxVault
+    });
+  };
+
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       {/* Base */}
       <mesh position={[0, 0.12, 0]} castShadow>
         <boxGeometry args={[0.7, 0.24, 0.7]} />
@@ -904,6 +948,7 @@ const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscrip
           height={Math.max(1.0, (acc.balance / maxBalance) * 3.0)}
           type={acc.type}
           balance={acc.balance}
+          name={acc.name}
         />
       ))}
 
@@ -914,7 +959,7 @@ const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscrip
 
       {/* === SW QUADRANT: CONSTRUCTION (IMPULSE ITEMS) === */}
       {weeklyBuilds.slice(0, constructionPositions.length).map((build, i) => (
-        <ConstructionSite key={build.id} position={constructionPositions[i]} progress={build.saved / build.target} name={build.name} />
+        <ConstructionSite key={build.id} position={constructionPositions[i]} progress={build.saved / build.target} name={build.name} price={build.target} saved={build.saved} />
       ))}
 
       {/* === SE QUADRANT: HARBOR === */}
@@ -997,31 +1042,31 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
   return (
     <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden`}>
       
-      {/* View Controls - Always visible in minimal mode too */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+      {/* View Controls - Left side vertical stack */}
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5">
         {/* Zoom Controls */}
-        <div className="flex items-center bg-slate-900/70 backdrop-blur rounded-lg overflow-hidden">
-          <button 
-            onClick={handleZoomOut}
-            className="px-2.5 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
-            title="Zoom Out"
-          >
-            −
-          </button>
-          <div className="w-px h-5 bg-slate-600"></div>
+        <div className="flex flex-col bg-slate-900/70 backdrop-blur rounded-lg overflow-hidden">
           <button 
             onClick={handleZoomIn}
-            className="px-2.5 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
+            className="px-2 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
             title="Zoom In"
           >
             +
+          </button>
+          <div className="h-px w-full bg-slate-600"></div>
+          <button 
+            onClick={handleZoomOut}
+            className="px-2 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
+            title="Zoom Out"
+          >
+            −
           </button>
         </div>
         
         {/* View Toggle */}
         <button 
           onClick={toggleView}
-          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'birdseye' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
+          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'birdseye' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
           title={viewMode === 'birdseye' ? 'Isometric View' : "Bird's Eye View"}
         >
           {viewMode === 'birdseye' ? '🏙️' : '🦅'}
@@ -1030,7 +1075,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
         {/* Auto Rotate */}
         <button 
           onClick={() => setAutoRotate(!autoRotate)} 
-          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${autoRotate ? 'bg-blue-500 text-white' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
+          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${autoRotate ? 'bg-blue-500 text-white' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
           title={autoRotate ? 'Stop Rotation' : 'Auto Rotate'}
         >
           ⟳

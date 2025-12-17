@@ -342,6 +342,35 @@ const HomeView = ({
   };
   const action = getNextAction();
   
+  // Generate contextual insight based on user data
+  const getInsight = (): { icon: string; text: string } => {
+    const totalSubs = subscriptions.length;
+    
+    // Priority-based insights
+    if (surplus < -500) {
+      return { icon: '⚡', text: `Spending exceeds income by $${Math.abs(surplus).toLocaleString()}. Let's find quick wins!` };
+    }
+    if (totalSubs > 5) {
+      return { icon: '📺', text: `${totalSubs} subscriptions active. Review to find hidden savings.` };
+    }
+    if (activeGoals === 0) {
+      return { icon: '🎯', text: 'No active targets. Add a goal to start building momentum!' };
+    }
+    if (surplus > 1000) {
+      return { icon: '🚀', text: `$${surplus.toLocaleString()} monthly surplus! Accelerate your targets.` };
+    }
+    if (netWorth > 50000) {
+      return { icon: '✨', text: 'Strong position. Consider diversifying into investments.' };
+    }
+    if (health.checkInStreak && health.checkInStreak >= 3) {
+      return { icon: '🔥', text: `${health.checkInStreak} day streak! Consistency builds wealth.` };
+    }
+    if (surplus > 0 && surplus < 500) {
+      return { icon: '💡', text: 'Tip: Review subscriptions to boost your monthly surplus.' };
+    }
+    return { icon: '💡', text: 'Track spending this week to unlock AI insights.' };
+  };
+  
   return (
     <div className="animate-in fade-in duration-500 -mx-4 -mt-6" style={{ height: 'calc(100vh - 80px)' }}>
       {/* Full-Screen City Container */}
@@ -365,34 +394,48 @@ const HomeView = ({
           />
         </div>
         
-        {/* TOP OVERLAY: Header Info */}
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent p-4 pb-12 pointer-events-none">
-          <div className="flex justify-between items-start pointer-events-auto">
-            <div>
-              <h1 className="text-lg font-black text-white drop-shadow-lg">The Grid</h1>
-              <p className="text-slate-400 text-xs">{accounts.length} accounts • {goals.length} targets</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`px-2 py-1 rounded-full text-xs font-bold backdrop-blur-sm ${surplus >= 0 ? 'bg-emerald-500/30 text-emerald-300' : 'bg-rose-500/30 text-rose-300'}`}>
-                {surplus >= 0 ? '↑' : '↓'} ${Math.abs(surplus).toLocaleString()}/mo
-              </div>
-              <div className="relative bg-slate-900/50 backdrop-blur-sm rounded-full p-1">
-                <svg className="w-10 h-10 transform -rotate-90">
-                  <circle cx="20" cy="20" r="16" stroke="#334155" strokeWidth="3" fill="none" />
+        {/* TOP OVERLAY: Header + Insight */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-transparent p-3 pb-16 pointer-events-none">
+          {/* Header Row */}
+          <div className="flex justify-between items-center pointer-events-auto mb-3">
+            <div className="flex items-center gap-3">
+              {/* Score Ring */}
+              <div className="relative">
+                <svg className="w-11 h-11 transform -rotate-90">
+                  <circle cx="22" cy="22" r="18" stroke="#334155" strokeWidth="3" fill="none" />
                   <circle 
-                    cx="20" cy="20" r="16" 
+                    cx="22" cy="22" r="18" 
                     stroke={health.score >= 70 ? '#10b981' : health.score >= 40 ? '#f59e0b' : '#ef4444'}
                     strokeWidth="3" 
                     fill="none"
                     strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 16}
-                    strokeDashoffset={(2 * Math.PI * 16) * (1 - health.score / 100)}
+                    strokeDasharray={2 * Math.PI * 18}
+                    strokeDashoffset={(2 * Math.PI * 18) * (1 - health.score / 100)}
                     className="transition-all duration-1000"
                   />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-black text-white">{health.score}</span>
+                  <span className="text-sm font-black text-white">{health.score}</span>
                 </div>
+              </div>
+              <div>
+                <h1 className="text-base font-black text-white drop-shadow-lg leading-tight">The Grid</h1>
+                <p className="text-slate-400 text-[10px]">{accounts.length} accounts • {goals.length} targets</p>
+              </div>
+            </div>
+            
+            {/* Surplus Badge */}
+            <div className={`px-2.5 py-1 rounded-lg text-xs font-bold backdrop-blur-sm border ${surplus >= 0 ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/20 border-rose-500/30 text-rose-300'}`}>
+              {surplus >= 0 ? '↑' : '↓'} ${Math.abs(surplus).toLocaleString()}/mo
+            </div>
+          </div>
+          
+          {/* Insight Card - Floating in the sky */}
+          <div className="flex justify-center pointer-events-auto">
+            <div className="bg-slate-900/60 backdrop-blur-md border border-slate-700/50 rounded-xl px-4 py-2 max-w-[280px]">
+              <div className="flex items-center gap-2">
+                <span className="text-base">{getInsight().icon}</span>
+                <p className="text-[11px] text-slate-300 leading-tight">{getInsight().text}</p>
               </div>
             </div>
           </div>
