@@ -1,5 +1,5 @@
 
-import { FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal } from "../types";
+import { FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal, Bill } from "../types";
 
 const HEALTH_KEY = 'BILLBOT_HEALTH_V1';
 const TX_KEY = 'BILLBOT_TRANSACTIONS_V1';
@@ -7,6 +7,7 @@ const SUB_KEY = 'BILLBOT_SUBSCRIPTIONS_V1';
 const ACC_KEY = 'BILLBOT_ACCOUNTS_V1';
 const IMPULSE_KEY = 'BILLBOT_IMPULSE_V1';
 const GOALS_KEY = 'BILLBOT_GOALS_V1';
+const BILLS_KEY = 'BILLBOT_BILLS_V1';
 
 // In a real Native App, this would connect to SQLite (via op-sqlite or GRDB.swift)
 // For this Web Prototype, we use LocalStorage to simulate "On-Device" persistence.
@@ -117,6 +118,24 @@ export const saveGoals = (goals: Goal[]) => {
     }
 }
 
+export const loadBills = (): Bill[] => {
+    try {
+        const data = localStorage.getItem(BILLS_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error("Failed to load bills", e);
+        return [];
+    }
+}
+
+export const saveBills = (bills: Bill[]) => {
+    try {
+        localStorage.setItem(BILLS_KEY, JSON.stringify(bills));
+    } catch (e) {
+        console.error("Failed save bills", e);
+    }
+}
+
 export const clearLocalData = () => {
     localStorage.removeItem(HEALTH_KEY);
     localStorage.removeItem(TX_KEY);
@@ -124,4 +143,5 @@ export const clearLocalData = () => {
     localStorage.removeItem(ACC_KEY);
     localStorage.removeItem(IMPULSE_KEY);
     localStorage.removeItem(GOALS_KEY);
+    localStorage.removeItem(BILLS_KEY);
 }

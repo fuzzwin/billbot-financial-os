@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AppView, FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal, AccountType } from './types';
+import { AppView, FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal, AccountType, Bill, BillCategory } from './types';
 import { IsometricCity } from './components/IsometricCity';
 import { WeeklyBriefing } from './components/WeeklyBriefing';
-import { loadFinancialHealth, saveFinancialHealth, loadTransactions, saveTransactions, loadSubscriptions, saveSubscriptions, loadAccounts, saveAccounts, loadImpulseItems, saveImpulseItems, loadGoals, saveGoals } from './services/storageService';
+import { loadFinancialHealth, saveFinancialHealth, loadTransactions, saveTransactions, loadSubscriptions, saveSubscriptions, loadAccounts, saveAccounts, loadImpulseItems, saveImpulseItems, loadGoals, saveGoals, loadBills, saveBills } from './services/storageService';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
@@ -66,6 +66,13 @@ const DUMMY_GOALS: Goal[] = [
   { id: 'g1', name: 'Japan Trip', targetAmount: 8000, currentAmount: 3200, deadline: '2026-03-01', category: 'travel', valueTag: 'Adventure', goalType: 'rocket', createdAt: new Date().toISOString(), emoji: '🌏' },
   { id: 'g2', name: 'Emergency Fund', targetAmount: 10000, currentAmount: 10000, deadline: '2025-12-01', category: 'emergency', valueTag: 'Security', goalType: 'rocket', createdAt: new Date().toISOString(), emoji: '🛡️' },
   { id: 'g3', name: 'PS5 Pro', targetAmount: 1200, currentAmount: 850, category: 'gadget', valueTag: 'Treat', goalType: 'impulse', weeklyTarget: 50, createdAt: new Date().toISOString(), emoji: '🎮' },
+];
+
+const DUMMY_BILLS: Bill[] = [
+  { id: 'b1', name: 'Rent', amount: 2200, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 7).toISOString().split('T')[0], category: 'RENT', isAutoPay: true },
+  { id: 'b2', name: 'AGL Electricity', amount: 180, cycle: 'QUARTERLY', nextDueDate: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0], category: 'UTILITIES', isAutoPay: false },
+  { id: 'b3', name: 'Telstra Internet', amount: 89, cycle: 'MONTHLY', nextDueDate: new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0], category: 'PHONE_INTERNET', isAutoPay: true },
+  { id: 'b4', name: 'NRMA Car Insurance', amount: 1200, cycle: 'YEARLY', nextDueDate: new Date(Date.now() + 86400000 * 90).toISOString().split('T')[0], category: 'INSURANCE', isAutoPay: false },
 ];
 
 // --- WELCOME OVERLAY ---
@@ -700,6 +707,153 @@ const SubscriptionModal = ({
   );
 };
 
+// --- BILL MODAL ---
+const BillModal = ({ 
+  bill,
+  onSave, 
+  onClose 
+}: { 
+  bill: Bill | null,
+  onSave: (b: Bill) => void, 
+  onClose: () => void 
+}) => {
+  const [name, setName] = useState(bill?.name || '');
+  const [amount, setAmount] = useState(bill?.amount?.toString() || '');
+  const [cycle, setCycle] = useState<Bill['cycle']>(bill?.cycle || 'MONTHLY');
+  const [category, setCategory] = useState<BillCategory>(bill?.category || 'UTILITIES');
+  const [nextDueDate, setNextDueDate] = useState(bill?.nextDueDate || new Date().toISOString().split('T')[0]);
+  const [isAutoPay, setIsAutoPay] = useState(bill?.isAutoPay || false);
+  const [notes, setNotes] = useState(bill?.notes || '');
+  
+  const handleSave = () => {
+    if (!name || !amount) return;
+    onSave({
+      id: bill?.id || Math.random().toString(36).substr(2, 9),
+      name,
+      amount: parseFloat(amount) || 0,
+      cycle,
+      nextDueDate,
+      category,
+      isAutoPay,
+      notes: notes || undefined
+    });
+  };
+  
+  const categoryLabels: Record<BillCategory, string> = {
+    'RENT': '🏠 Rent',
+    'MORTGAGE': '🏦 Mortgage',
+    'UTILITIES': '💡 Utilities',
+    'INSURANCE': '🛡️ Insurance',
+    'PHONE_INTERNET': '📱 Phone/Internet',
+    'TRANSPORT': '🚗 Transport',
+    'OTHER': '📋 Other'
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+        <h3 className="text-xl font-bold text-white mb-4">{bill ? 'Edit Bill' : 'Add Bill'}</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Category</label>
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value as BillCategory)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            >
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Name / Provider</label>
+            <input 
+              type="text" 
+              placeholder="e.g. AGL Electricity" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Amount ($)</label>
+            <input 
+              type="number" 
+              placeholder="0.00" 
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Billing Cycle</label>
+            <select 
+              value={cycle} 
+              onChange={(e) => setCycle(e.target.value as Bill['cycle'])}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            >
+              <option value="WEEKLY">Weekly</option>
+              <option value="FORTNIGHTLY">Fortnightly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="QUARTERLY">Quarterly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Next Due Date</label>
+            <input 
+              type="date" 
+              value={nextDueDate}
+              onChange={(e) => setNextDueDate(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Notes (optional)</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Account #12345" 
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <label className="flex items-center gap-3 p-3 bg-slate-800 rounded-xl cursor-pointer">
+            <input 
+              type="checkbox"
+              checked={isAutoPay}
+              onChange={(e) => setIsAutoPay(e.target.checked)}
+              className="w-5 h-5 rounded accent-cyan-500"
+            />
+            <span className="text-white">Auto-pay enabled</span>
+          </label>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 text-slate-400 hover:text-white font-bold rounded-xl">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={!name || !amount}
+            className="flex-1 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold py-3 rounded-xl transition-colors"
+          >
+            {bill ? 'Update Bill' : 'Add Bill'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- IMPORT MODAL ---
 const ImportModal = ({ 
   onAddTransaction,
@@ -807,26 +961,32 @@ const MoneyView = ({
   accounts, 
   subscriptions,
   transactions,
+  bills,
   onUpdateHealth,
   onUpdateAccounts,
   onUpdateSubscriptions,
-  onUpdateTransactions
+  onUpdateTransactions,
+  onUpdateBills
 }: { 
   health: FinancialHealth, 
   accounts: AccountItem[], 
   subscriptions: Subscription[],
   transactions: Transaction[],
+  bills: Bill[],
   onUpdateHealth: (h: FinancialHealth) => void,
   onUpdateAccounts: (a: AccountItem[]) => void,
   onUpdateSubscriptions: (s: Subscription[]) => void,
-  onUpdateTransactions: (t: Transaction[]) => void
+  onUpdateTransactions: (t: Transaction[]) => void,
+  onUpdateBills: (b: Bill[]) => void
 }) => {
   const [showAddIncome, setShowAddIncome] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'subscriptions' | 'transactions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'bills' | 'subscriptions' | 'transactions'>('overview');
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSubModal, setShowSubModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AccountItem | null>(null);
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [newAccountType, setNewAccountType] = useState<AccountType>('SAVINGS');
   
   const monthlySubTotal = subscriptions.reduce((sum, s) => {
@@ -834,6 +994,24 @@ const MoneyView = ({
     if (s.cycle === 'YEARLY') return sum + (s.amount / 12);
     return sum + s.amount;
   }, 0);
+  
+  const monthlyBillsTotal = bills.reduce((sum, b) => {
+    if (b.cycle === 'WEEKLY') return sum + (b.amount * 4.33);
+    if (b.cycle === 'FORTNIGHTLY') return sum + (b.amount * 2.17);
+    if (b.cycle === 'QUARTERLY') return sum + (b.amount / 3);
+    if (b.cycle === 'YEARLY') return sum + (b.amount / 12);
+    return sum + b.amount;
+  }, 0);
+  
+  const categoryIcons: Record<BillCategory, string> = {
+    'RENT': '🏠',
+    'MORTGAGE': '🏦',
+    'UTILITIES': '💡',
+    'INSURANCE': '🛡️',
+    'PHONE_INTERNET': '📱',
+    'TRANSPORT': '🚗',
+    'OTHER': '📋'
+  };
   
   const killSubscription = (id: string) => {
     onUpdateSubscriptions(subscriptions.filter(s => s.id !== id));
@@ -857,14 +1035,14 @@ const MoneyView = ({
       </div>
       
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-slate-900/50 p-1 rounded-xl">
-        {(['overview', 'accounts', 'subscriptions', 'transactions'] as const).map(tab => (
+      <div className="flex gap-1 bg-slate-900/50 p-1 rounded-xl overflow-x-auto">
+        {(['overview', 'accounts', 'bills', 'subscriptions', 'transactions'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 px-2 rounded-lg font-bold text-xs transition-all ${activeTab === tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-white'}`}
+            className={`flex-1 py-2 px-2 rounded-lg font-bold text-xs transition-all whitespace-nowrap ${activeTab === tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-white'}`}
           >
-            {tab === 'overview' ? '📊' : tab === 'accounts' ? '🏦' : tab === 'subscriptions' ? '📅' : '💳'} {tab.charAt(0).toUpperCase() + tab.slice(1, 4)}
+            {tab === 'overview' ? '📊' : tab === 'accounts' ? '🏦' : tab === 'bills' ? '🧾' : tab === 'subscriptions' ? '📺' : '💳'}
           </button>
         ))}
       </div>
@@ -932,18 +1110,22 @@ const MoneyView = ({
             
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-slate-800">
-                <span className="text-slate-400">Fixed Expenses</span>
-                <span className="text-white font-bold">${health.monthlyExpenses.toLocaleString()}/mo</span>
+                <span className="text-slate-400">🧾 Bills & Expenses</span>
+                <span className="text-white font-bold">${monthlyBillsTotal.toFixed(0)}/mo</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-slate-800">
-                <span className="text-slate-400">Subscriptions</span>
+                <span className="text-slate-400">📺 Subscriptions</span>
                 <span className="text-white font-bold">${monthlySubTotal.toFixed(0)}/mo</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-800">
+                <span className="text-slate-400">🛒 Other Spending</span>
+                <span className="text-white font-bold">${health.monthlyExpenses.toLocaleString()}/mo</span>
               </div>
             </div>
             
             <div className="mt-4 pt-4 border-t border-slate-700 flex justify-between items-center">
               <span className="text-slate-300 font-bold">Total Outflow</span>
-              <span className="text-rose-400 font-black text-xl">${(health.monthlyExpenses + monthlySubTotal).toLocaleString()}</span>
+              <span className="text-rose-400 font-black text-xl">${(health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal).toFixed(0)}</span>
             </div>
           </div>
           
@@ -1077,11 +1259,112 @@ const MoneyView = ({
         </div>
       )}
       
+      {activeTab === 'bills' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-4 flex-1">
+              <p className="text-indigo-300 font-bold">🧾 Bills total ${monthlyBillsTotal.toFixed(0)}/month (${(monthlyBillsTotal * 12).toFixed(0)}/year)</p>
+            </div>
+            <button 
+              onClick={() => { setEditingBill(null); setShowBillModal(true); }}
+              className="ml-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-4 py-3 rounded-xl transition-colors"
+            >
+              + Add
+            </button>
+          </div>
+          
+          {/* Group bills by category */}
+          {Object.entries(
+            bills.reduce((acc, bill) => {
+              if (!acc[bill.category]) acc[bill.category] = [];
+              acc[bill.category].push(bill);
+              return acc;
+            }, {} as Record<BillCategory, Bill[]>)
+          ).map(([category, categoryBills]) => (
+            <div key={category} className="space-y-2">
+              <h4 className="text-slate-400 text-sm font-bold flex items-center gap-2">
+                {categoryIcons[category as BillCategory]} {category.replace('_', ' ')}
+              </h4>
+              {categoryBills.map(bill => {
+                const dueDate = new Date(bill.nextDueDate);
+                const today = new Date();
+                const daysUntil = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const isOverdue = daysUntil < 0;
+                const isDueSoon = daysUntil >= 0 && daysUntil <= 7;
+                
+                return (
+                  <div 
+                    key={bill.id} 
+                    className={`bg-slate-900/80 border rounded-xl p-4 ${isOverdue ? 'border-rose-500/50' : isDueSoon ? 'border-amber-500/50' : 'border-slate-800'}`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-white font-bold">{bill.name}</p>
+                          {bill.isAutoPay && <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">Auto</span>}
+                          {isOverdue && <span className="text-xs bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded">Overdue</span>}
+                          {isDueSoon && !isOverdue && <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Due soon</span>}
+                        </div>
+                        <p className="text-slate-500 text-sm">${bill.amount} / {bill.cycle.toLowerCase()} • Due {bill.nextDueDate}</p>
+                        {bill.notes && <p className="text-slate-600 text-xs mt-1">{bill.notes}</p>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-bold">${bill.amount}</span>
+                        <button 
+                          onClick={() => { setEditingBill(bill); setShowBillModal(true); }}
+                          className="text-slate-500 hover:text-white p-1"
+                        >
+                          ✏️
+                        </button>
+                        <button 
+                          onClick={() => onUpdateBills(bills.filter(b => b.id !== bill.id))}
+                          className="text-slate-500 hover:text-rose-400 p-1"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+          
+          {bills.length === 0 && (
+            <button 
+              onClick={() => { setEditingBill(null); setShowBillModal(true); }}
+              className="w-full py-8 border-2 border-dashed border-slate-700 rounded-2xl text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+            >
+              <p className="text-4xl mb-2">🧾</p>
+              <p className="font-bold">Add your first bill</p>
+              <p className="text-sm mt-1">Rent, utilities, insurance, etc.</p>
+            </button>
+          )}
+          
+          {/* Bill Modal */}
+          {showBillModal && (
+            <BillModal 
+              bill={editingBill}
+              onSave={(b) => {
+                if (editingBill) {
+                  onUpdateBills(bills.map(bill => bill.id === b.id ? b : bill));
+                } else {
+                  onUpdateBills([...bills, b]);
+                }
+                setShowBillModal(false);
+                setEditingBill(null);
+              }}
+              onClose={() => { setShowBillModal(false); setEditingBill(null); }}
+            />
+          )}
+        </div>
+      )}
+      
       {activeTab === 'subscriptions' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 flex-1">
-              <p className="text-amber-400 font-bold">💡 Subscriptions cost you ${(monthlySubTotal * 12).toFixed(0)}/year</p>
+              <p className="text-amber-400 font-bold">📺 Subscriptions cost you ${(monthlySubTotal * 12).toFixed(0)}/year</p>
             </div>
             <button 
               onClick={() => setShowSubModal(true)}
@@ -2074,6 +2357,7 @@ const App = () => {
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [impulseItems, setImpulseItems] = useState<ImpulseItem[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [bills, setBills] = useState<Bill[]>([]);
   
   // UI State
   const [showWelcome, setShowWelcome] = useState(false);
@@ -2114,6 +2398,10 @@ const App = () => {
     
     if (savedGoals.length > 0) setGoals(savedGoals);
     else setGoals(DUMMY_GOALS);
+    
+    const savedBills = loadBills();
+    if (savedBills.length > 0) setBills(savedBills);
+    else setBills(DUMMY_BILLS);
 
     // Check Welcome Status
     const hasSeenWelcome = localStorage.getItem('BILLBOT_HAS_SEEN_TUTORIAL');
@@ -2126,6 +2414,7 @@ const App = () => {
   useEffect(() => { saveFinancialHealth(health); }, [health]);
   useEffect(() => { saveSubscriptions(subscriptions); }, [subscriptions]);
   useEffect(() => { saveGoals(goals); }, [goals]);
+  useEffect(() => { saveBills(bills); }, [bills]);
   
   // Account Change Logic
   useEffect(() => { 
@@ -2202,10 +2491,12 @@ const App = () => {
             accounts={accounts}
             subscriptions={subscriptions}
             transactions={transactions}
+            bills={bills}
             onUpdateHealth={setHealth}
             onUpdateAccounts={setAccounts}
             onUpdateSubscriptions={setSubscriptions}
             onUpdateTransactions={setTransactions}
+            onUpdateBills={setBills}
           />
         )}
         

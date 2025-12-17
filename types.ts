@@ -19,6 +19,21 @@ export interface Subscription {
   isOptimizable: boolean; // AI flag for "You might want to cancel this"
 }
 
+// Recurring bills/expenses - rent, utilities, insurance, etc.
+export type BillCategory = 'RENT' | 'MORTGAGE' | 'UTILITIES' | 'INSURANCE' | 'PHONE_INTERNET' | 'TRANSPORT' | 'OTHER';
+
+export interface Bill {
+  id: string;
+  name: string; // e.g. "AGL Electricity", "Landlord - Rent"
+  amount: number;
+  cycle: 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  nextDueDate: string;
+  category: BillCategory;
+  isAutoPay: boolean; // Auto-debit from account?
+  isPaid?: boolean; // Mark as paid for current period
+  notes?: string; // e.g. "Account #12345"
+}
+
 export interface ImpulseItem {
   id: string;
   name: string;
