@@ -542,6 +542,58 @@ Keys:
 
 ## 13. Changelog
 
+### v3.0 - Major UI Overhaul: 4-Zone Navigation (Dec 18, 2025)
+**Philosophy Change:** From "Swiss Army Knife with Everything" to "Financial Fitness in 5 Minutes a Week"
+
+**Navigation Simplification:**
+- Consolidated 12+ screens into 4 main zones:
+  - **HOME** (🏙️): Dashboard with city, health score ring, cash left, AI-powered "Next Action", weekly check-in CTA
+  - **MONEY** (💰): Unified cash flow view with Overview/Accounts/Subscriptions tabs
+  - **GOALS** (🚀): Merged Launchpad rockets + Impulse Hangar into single goal system
+  - **HELP** (🆘): Merged Crisis Command + AI Advisor + Tools
+- Bottom tab navigation (mobile-first design)
+- Removed Battery ROI (too niche)
+- Removed separate Gig Port, Side Quests screens (merged into main flows)
+
+**New Components:**
+- `HealthScoreRing` - Circular progress indicator for health score
+- `CashLeftCard` - Shows monthly surplus with visual bar
+- `NextActionCard` - AI-powered suggestions for next financial action
+- `QuickStats` - Net worth, active goals, willpower points
+- `WelcomeOverlay` - 4-step onboarding for new users
+
+**Goal System Unification:**
+- Single `Goal` type with `goalType: 'rocket' | 'impulse'`
+- Rockets = serious goals with deadlines
+- Impulse = "maybe buys" with skip option (+50 WP)
+- Visual fuel progress with +$50/+$100/+$500 buttons
+- Launch celebration when goal is reached
+
+**Money Flow Features:**
+- Tabbed interface: Overview, Accounts, Subscriptions
+- Inline subscription "Kill" buttons
+- Income editor with gig income + tax vault display
+- Monthly surplus calculation with health indicator
+
+**Help Center Features:**
+- Embedded chat interface (placeholder for Gemini)
+- Crisis priority guide (Roof > Assets > Debt)
+- Quick action buttons for hardship letters, financial counsellors
+- Tools section for HECS strategy, tax deductions, ABN validation
+
+**Progress Tracking (New Fields):**
+- `checkInStreak` - Weekly check-in streak counter
+- `lastCheckIn` - ISO date of last check-in
+- `subscriptionsKilled` - Count of killed subscriptions
+- `goalsCompleted` - Count of launched goals
+- `totalSavedSinceStart` - Running savings total
+
+**Mobile/PWA Improvements:**
+- Safe area padding for notches/home indicators
+- PWA meta tags for home screen installation
+- Bottom navigation with z-50 to stay above Three.js canvas
+- Touch-friendly tap areas
+
 ### v2.2 - Meaningful City Elements (Dec 17, 2025)
 **Changes:**
 1. **Themed Quadrants** - Each quadrant now has a purpose:
