@@ -256,39 +256,48 @@ const AssetBuilding = ({ position, height, type, balance, name }: {
     }
   };
   
-  const floors = Math.min(Math.floor(height / 0.4), 8);
+  const floors = Math.min(Math.floor(height / 0.35), 10);
+  const width = 0.95; // Slightly larger for mobile visibility
   
   return (
     <group position={position}>
       {/* Main building */}
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.85, height, 0.85]} />
+        <boxGeometry args={[width, height, width]} />
         <meshStandardMaterial color={getColor()} roughness={0.4} />
       </mesh>
-      {/* Windows */}
+      {/* Windows on all sides */}
       {Array.from({ length: floors }).map((_, f) => (
         <group key={f}>
-          <Window position={[0.44, 0.25 + f * 0.4, 0]} size={[0.02, 0.15, 0.5]} />
-          <Window position={[-0.44, 0.25 + f * 0.4, 0]} size={[0.02, 0.15, 0.5]} />
+          <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
+          <Window position={[-width/2 - 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
+          <Window position={[0, 0.22 + f * 0.35, width/2 + 0.01]} size={[width * 0.6, 0.14, 0.02]} />
+          <Window position={[0, 0.22 + f * 0.35, -width/2 - 0.01]} size={[width * 0.6, 0.14, 0.02]} />
         </group>
       ))}
       {/* Roof feature by type */}
       {type === 'SAVINGS' && (
-        <mesh position={[0, height, 0]}>
-          <sphereGeometry args={[0.15, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#FFC107" metalness={0.6} roughness={0.3} />
+        <mesh position={[0, height + 0.01, 0]}>
+          <sphereGeometry args={[0.18, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color="#FFC107" metalness={0.7} roughness={0.2} />
         </mesh>
       )}
       {type === 'INVESTMENT' && (
         <group position={[0, height, 0]}>
-          <mesh position={[0, 0.15, 0]}><cylinderGeometry args={[0.02, 0.03, 0.3, 6]} /><meshStandardMaterial color="#607D8B" /></mesh>
-          <mesh position={[0, 0.32, 0]}><sphereGeometry args={[0.04, 8, 8]} /><meshStandardMaterial color="#4CAF50" emissive="#4CAF50" emissiveIntensity={0.5} /></mesh>
+          <mesh position={[0, 0.18, 0]}><cylinderGeometry args={[0.025, 0.035, 0.35, 6]} /><meshStandardMaterial color="#607D8B" /></mesh>
+          <mesh position={[0, 0.38, 0]}><sphereGeometry args={[0.05, 8, 8]} /><meshStandardMaterial color="#4CAF50" emissive="#4CAF50" emissiveIntensity={0.6} /></mesh>
         </group>
       )}
       {type === 'SUPER' && (
-        <mesh position={[0, height + 0.08, 0]}>
-          <sphereGeometry args={[0.12, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <mesh position={[0, height + 0.1, 0]}>
+          <sphereGeometry args={[0.15, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
           <meshStandardMaterial color="#9C27B0" metalness={0.5} />
+        </mesh>
+      )}
+      {type === 'CASH' && (
+        <mesh position={[0, height + 0.08, 0]}>
+          <boxGeometry args={[0.3, 0.08, 0.3]} />
+          <meshStandardMaterial color="#1565C0" />
         </mesh>
       )}
     </group>
@@ -307,39 +316,42 @@ const DebtBuilding = ({ position, height, type, balance }: {
   useFrame(({ clock }) => {
     if (smokeRef.current) {
       smokeRef.current.children.forEach((child, i) => {
-        child.position.y = 0.1 + Math.sin(clock.elapsedTime * 2 + i) * 0.08 + i * 0.1;
-        (child as THREE.Mesh).scale.setScalar(0.8 + Math.sin(clock.elapsedTime * 3 + i) * 0.2);
+        child.position.y = 0.12 + Math.sin(clock.elapsedTime * 2 + i) * 0.1 + i * 0.12;
+        (child as THREE.Mesh).scale.setScalar(0.8 + Math.sin(clock.elapsedTime * 3 + i) * 0.25);
       });
     }
   });
   
-  const floors = Math.min(Math.floor(height / 0.4), 6);
+  const floors = Math.min(Math.floor(height / 0.35), 8);
+  const width = 0.9;
   
   return (
     <group position={position}>
       {/* Main building */}
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.8, height, 0.8]} />
+        <boxGeometry args={[width, height, width]} />
         <meshStandardMaterial color={COLORS.debt} roughness={0.5} />
       </mesh>
       {/* Windows */}
       {Array.from({ length: floors }).map((_, f) => (
         <group key={f}>
-          <Window position={[0.41, 0.25 + f * 0.4, 0]} size={[0.02, 0.12, 0.45]} />
-          <Window position={[-0.41, 0.25 + f * 0.4, 0]} size={[0.02, 0.12, 0.45]} />
+          <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.12, width * 0.55]} />
+          <Window position={[-width/2 - 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.12, width * 0.55]} />
+          <Window position={[0, 0.22 + f * 0.35, width/2 + 0.01]} size={[width * 0.55, 0.12, 0.02]} />
+          <Window position={[0, 0.22 + f * 0.35, -width/2 - 0.01]} size={[width * 0.55, 0.12, 0.02]} />
         </group>
       ))}
-      {/* Warning beacon */}
-      <mesh position={[0, height + 0.12, 0]}>
-        <sphereGeometry args={[0.08, 8, 8]} />
-        <meshStandardMaterial color="#FF1744" emissive="#FF1744" emissiveIntensity={0.8} />
+      {/* Warning beacon - larger and more visible */}
+      <mesh position={[0, height + 0.15, 0]}>
+        <sphereGeometry args={[0.1, 10, 10]} />
+        <meshStandardMaterial color="#FF1744" emissive="#FF1744" emissiveIntensity={1} />
       </mesh>
-      {/* Smoke */}
-      <group ref={smokeRef} position={[0, height + 0.2, 0]}>
-        {[0, 1, 2].map(i => (
-          <mesh key={i} position={[0, i * 0.1, 0]}>
-            <sphereGeometry args={[0.05 + i * 0.015, 8, 8]} />
-            <meshStandardMaterial color={COLORS.smoke} transparent opacity={0.35 - i * 0.08} />
+      {/* Smoke - larger puffs */}
+      <group ref={smokeRef} position={[0, height + 0.25, 0]}>
+        {[0, 1, 2, 3].map(i => (
+          <mesh key={i} position={[0, i * 0.12, 0]}>
+            <sphereGeometry args={[0.06 + i * 0.02, 8, 8]} />
+            <meshStandardMaterial color={COLORS.smoke} transparent opacity={0.4 - i * 0.08} />
           </mesh>
         ))}
       </group>
@@ -351,7 +363,7 @@ const DebtBuilding = ({ position, height, type, balance }: {
 const LaunchPad = ({ position, goal }: { position: [number, number, number]; goal: Goal }) => {
   const progress = Math.min(goal.currentAmount / goal.targetAmount, 1);
   const flameRef = useRef<THREE.Mesh>(null);
-  const rocketHeight = 0.3 + progress * 0.5;
+  const rocketHeight = 0.4 + progress * 0.7;
   
   useFrame(({ clock }) => {
     if (flameRef.current && progress >= 1) {
@@ -361,54 +373,59 @@ const LaunchPad = ({ position, goal }: { position: [number, number, number]; goa
   
   return (
     <group position={position}>
-      {/* Launch platform */}
-      <mesh position={[0, 0.06, 0]} receiveShadow>
-        <cylinderGeometry args={[0.5, 0.55, 0.12, 16]} />
+      {/* Launch platform - larger for mobile visibility */}
+      <mesh position={[0, 0.08, 0]} receiveShadow>
+        <cylinderGeometry args={[0.6, 0.65, 0.16, 16]} />
         <meshStandardMaterial color={COLORS.concrete} />
       </mesh>
-      {/* Platform markings */}
-      <mesh position={[0, 0.13, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.35, 0.42, 16]} />
+      {/* Platform inner ring */}
+      <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.4, 0.5, 16]} />
         <meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#FFC107'} />
       </mesh>
-      {/* Support tower */}
-      <mesh position={[0.35, 0.5, 0]}>
-        <boxGeometry args={[0.08, 1, 0.08]} />
+      {/* Support tower - taller */}
+      <mesh position={[0.45, 0.65, 0]}>
+        <boxGeometry args={[0.1, 1.3, 0.1]} />
+        <meshStandardMaterial color="#607D8B" />
+      </mesh>
+      {/* Tower arm */}
+      <mesh position={[0.25, 1.2, 0]}>
+        <boxGeometry args={[0.4, 0.06, 0.06]} />
         <meshStandardMaterial color="#607D8B" />
       </mesh>
       {/* Rocket */}
-      {progress > 0.1 && (
-        <group position={[0, 0.15, 0]}>
-          {/* Body */}
+      {progress > 0.05 && (
+        <group position={[0, 0.2, 0]}>
+          {/* Body - larger */}
           <mesh position={[0, rocketHeight / 2, 0]} castShadow>
-            <cylinderGeometry args={[0.08, 0.1, rocketHeight, 12]} />
+            <cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} />
             <meshStandardMaterial color={COLORS.rocket} metalness={0.3} />
           </mesh>
           {/* Nose cone */}
-          <mesh position={[0, rocketHeight + 0.1, 0]}>
-            <coneGeometry args={[0.08, 0.2, 12]} />
+          <mesh position={[0, rocketHeight + 0.12, 0]}>
+            <coneGeometry args={[0.1, 0.25, 12]} />
             <meshStandardMaterial color={COLORS.rocketAccent} />
           </mesh>
-          {/* Fins */}
+          {/* Fins - larger */}
           {[0, 1, 2].map(i => (
-            <mesh key={i} position={[Math.cos(i * Math.PI * 2 / 3) * 0.1, 0.12, Math.sin(i * Math.PI * 2 / 3) * 0.1]} rotation={[0, i * Math.PI * 2 / 3, 0]}>
-              <boxGeometry args={[0.02, 0.12, 0.08]} />
+            <mesh key={i} position={[Math.cos(i * Math.PI * 2 / 3) * 0.12, 0.15, Math.sin(i * Math.PI * 2 / 3) * 0.12]} rotation={[0, i * Math.PI * 2 / 3, 0]}>
+              <boxGeometry args={[0.025, 0.15, 0.1]} />
               <meshStandardMaterial color={COLORS.rocketAccent} />
             </mesh>
           ))}
-          {/* Flame when ready */}
+          {/* Flame when ready - bigger */}
           {progress >= 1 && (
             <mesh ref={flameRef} position={[0, -0.02, 0]} rotation={[Math.PI, 0, 0]}>
-              <coneGeometry args={[0.06, 0.25, 8]} />
-              <meshStandardMaterial color="#FF9800" emissive="#FF5722" emissiveIntensity={1.2} transparent opacity={0.9} />
+              <coneGeometry args={[0.08, 0.35, 8]} />
+              <meshStandardMaterial color="#FF9800" emissive="#FF5722" emissiveIntensity={1.5} transparent opacity={0.9} />
             </mesh>
           )}
         </group>
       )}
-      {/* Progress ring */}
+      {/* Progress ring - outer glow */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.5, 0.55, 32, 1, 0, progress * Math.PI * 2]} />
-        <meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#2196F3'} />
+        <ringGeometry args={[0.6, 0.68, 32, 1, 0, progress * Math.PI * 2]} />
+        <meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#2196F3'} emissive={progress >= 1 ? '#4CAF50' : '#2196F3'} emissiveIntensity={0.4} />
       </mesh>
     </group>
   );
@@ -652,21 +669,38 @@ const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscrip
   const debts = useMemo(() => accounts.filter(a => ['LOAN', 'CREDIT_CARD', 'HECS'].includes(a.type)), [accounts]);
   const maxBalance = useMemo(() => Math.max(...accounts.map(a => a.balance), 1), [accounts]);
 
-  // Fixed positions for each quadrant
-  const assetPositions: [number, number, number][] = [[-4.2, 0.1, -4.2], [-3.0, 0.1, -4.8], [-4.8, 0.1, -3.0], [-3.0, 0.1, -3.0]];
-  const debtPositions: [number, number, number][] = [[4.2, 0.1, -4.2], [3.2, 0.1, -3.2], [4.8, 0.1, -3.2]];
-  const launchPositions: [number, number, number][] = [[-4.2, 0.1, 4.2], [-3.0, 0.1, 3.2], [-4.8, 0.1, 3.0]];
-  const constructionPositions: [number, number, number][] = [[-3.0, 0.1, 4.8]];
+  // COMPACT positions - tighter groupings for better mobile visibility
+  // NW: Assets - 2x2 grid
+  const assetPositions: [number, number, number][] = [
+    [-4.0, 0.1, -4.0], [-2.8, 0.1, -4.0], 
+    [-4.0, 0.1, -2.8], [-2.8, 0.1, -2.8]
+  ];
+  // NE: Debts - tight cluster
+  const debtPositions: [number, number, number][] = [
+    [4.0, 0.1, -4.0], [2.8, 0.1, -4.0], 
+    [4.0, 0.1, -2.8]
+  ];
+  // SW: Launchpads - row formation
+  const launchPositions: [number, number, number][] = [
+    [-4.2, 0.1, 3.5], [-3.0, 0.1, 3.5], [-4.2, 0.1, 4.8]
+  ];
+  // Construction next to launchpads
+  const constructionPositions: [number, number, number][] = [[-2.8, 0.1, 4.8]];
 
   // Traffic
   const directions: CarDirection[] = ['EAST', 'WEST', 'NORTH', 'SOUTH'];
   const pedPaths: PedestrianPath[] = ['QUADRANT_NW', 'QUADRANT_NE', 'QUADRANT_SW', 'QUADRANT_SE'];
 
-  // Tree positions (corners & edges)
+  // Tree positions - denser for better visual fill
   const treePositions: [number, number, number][] = [
-    [-5.8, 0.08, -5.8], [5.8, 0.08, -5.8], [-5.8, 0.08, 5.8], [5.8, 0.08, 5.8],
-    [-5.8, 0.08, -2.5], [-5.8, 0.08, 2.5], [5.8, 0.08, -2.5], [5.8, 0.08, 2.5],
-    [-2.5, 0.08, -5.8], [2.5, 0.08, -5.8], [-2.5, 0.08, 5.8], [2.5, 0.08, 5.8],
+    // Corners
+    [-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5],
+    // Edges
+    [-5.5, 0.08, -2.0], [-5.5, 0.08, 2.0], [5.5, 0.08, -2.0], [5.5, 0.08, 2.0],
+    [-2.0, 0.08, -5.5], [2.0, 0.08, -5.5], [-2.0, 0.08, 5.5], [2.0, 0.08, 5.5],
+    // Fill corners inside quadrants
+    [-5.0, 0.08, -1.8], [5.0, 0.08, -1.8], [-5.0, 0.08, 1.8], [5.0, 0.08, 1.8],
+    [-1.8, 0.08, -5.0], [1.8, 0.08, -5.0], [-1.8, 0.08, 5.0], [1.8, 0.08, 5.0],
   ];
 
   const lampPositions: [number, number, number][] = [
@@ -732,7 +766,7 @@ const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscrip
         <AssetBuilding
           key={acc.id}
           position={assetPositions[i]}
-          height={Math.max(1, (acc.balance / maxBalance) * 3.5)}
+          height={Math.max(1.2, (acc.balance / maxBalance) * 4.0)}
           type={acc.type}
           balance={acc.balance}
           name={acc.name}
@@ -744,7 +778,7 @@ const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscrip
         <DebtBuilding
           key={acc.id}
           position={debtPositions[i]}
-          height={Math.max(0.8, (acc.balance / maxBalance) * 2.5)}
+          height={Math.max(1.0, (acc.balance / maxBalance) * 3.0)}
           type={acc.type}
           balance={acc.balance}
         />
@@ -761,10 +795,10 @@ const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscrip
       ))}
 
       {/* === SE QUADRANT: HARBOR === */}
-      <HarborDock position={[4.0, 0.08, 4.0]} savings={health.savings} />
+      <HarborDock position={[3.5, 0.08, 3.8]} savings={health.savings} />
 
       {/* === SE QUADRANT: TAX VAULT === */}
-      {health.taxVault > 0 && <TaxVault position={[3.2, 0.1, 3.2]} amount={health.taxVault} />}
+      {health.taxVault > 0 && <TaxVault position={[4.8, 0.1, 2.8]} amount={health.taxVault} />}
 
       {/* Trees */}
       {treePositions.map((pos, i) => <Tree key={i} position={pos} scale={0.75 + (i % 3) * 0.15} />)}
@@ -805,9 +839,10 @@ interface IsometricCityProps {
   isFuture: boolean;
   weeklyBuilds: WeeklyBuild[];
   subscriptions?: Subscription[];
+  minimal?: boolean; // When true, hides all overlays for cleaner embedding
 }
 
-export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accounts, health, goals, hasWeeds, isFuture, weeklyBuilds, subscriptions = [] }) => {
+export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accounts, health, goals, hasWeeds, isFuture, weeklyBuilds, subscriptions = [], minimal = false }) => {
   const [autoRotate, setAutoRotate] = useState(true);
   const isLowScore = health.score < 40;
   const monthlySurplus = health.monthlyIncome - health.monthlyExpenses;
@@ -821,66 +856,72 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
   };
 
   return (
-    <div className={`w-full h-[500px] md:h-[600px] ${getSkyClass()} relative rounded-2xl overflow-hidden`}>
-      {/* Header */}
-      <div className="absolute top-4 left-4 z-10 pointer-events-none">
-        <h2 className="text-slate-800 font-black text-xl drop-shadow-md">{isFuture ? 'FUTURE CITY' : 'WEALTH CITY'}</h2>
-        <p className="text-slate-700 text-xs font-bold">{accounts.length} accounts • {goals.length} goals</p>
-      </div>
+    <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden`}>
+      {/* Overlays - only show when not in minimal mode */}
+      {!minimal && (
+        <>
+          {/* Header */}
+          <div className="absolute top-4 left-4 z-10 pointer-events-none">
+            <h2 className="text-slate-800 font-black text-xl drop-shadow-md">{isFuture ? 'FUTURE CITY' : 'WEALTH CITY'}</h2>
+            <p className="text-slate-700 text-xs font-bold">{accounts.length} accounts • {goals.length} goals</p>
+          </div>
 
-      {/* Score & Controls */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
-        <div className={`px-3 py-1.5 rounded-full text-sm font-bold shadow ${health.score > 70 ? 'bg-green-500 text-white' : health.score > 40 ? 'bg-yellow-500 text-slate-800' : 'bg-red-500 text-white'}`}>
-          Score: {health.score}
-        </div>
-        <button onClick={() => setAutoRotate(!autoRotate)} className={`px-2.5 py-1.5 rounded-full text-xs shadow cursor-pointer ${autoRotate ? 'bg-blue-500 text-white' : 'bg-white/80 text-slate-600'}`}>⟳</button>
-      </div>
-
-      {/* Cashflow Indicator */}
-      <div className="absolute top-16 left-4 z-10 bg-white/90 backdrop-blur rounded-lg px-3 py-1.5 shadow text-xs flex items-center gap-2">
-        <span className={`font-bold ${monthlySurplus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {monthlySurplus >= 0 ? '↑' : '↓'} ${Math.abs(monthlySurplus).toLocaleString()}/mo
-        </span>
-        {totalSubCost > 0 && <>
-          <span className="text-slate-400">|</span>
-          <span className="text-orange-600">💧 ${Math.round(totalSubCost)}/mo</span>
-        </>}
-      </div>
-
-      {/* Goals Panel */}
-      <div className="absolute bottom-4 right-4 z-10 bg-white/90 backdrop-blur rounded-lg p-3 shadow-lg max-w-[180px]">
-        <p className="text-slate-500 text-xs font-semibold mb-1.5 flex justify-between">
-          <span>🚀 MISSIONS</span>
-          {hasWeeds && <span className="text-red-500 animate-pulse">🌿</span>}
-        </p>
-        {goals.length === 0 && <p className="text-[10px] text-slate-400">No active goals.</p>}
-        {goals.slice(0, 3).map(g => {
-          const p = Math.min(g.currentAmount / g.targetAmount, 1);
-          return (
-            <div key={g.id} className="text-xs mb-1.5">
-              <div className="flex justify-between text-slate-700">
-                <span className="truncate max-w-[80px]">{g.name}</span>
-                <span className={p >= 1 ? 'text-green-600 font-bold' : ''}>{p >= 1 ? '✓' : `${Math.round(p * 100)}%`}</span>
-              </div>
-              <div className="w-full h-1 bg-slate-200 rounded-full mt-0.5">
-                <div className={`h-full rounded-full ${p >= 1 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${p * 100}%` }} />
-              </div>
+          {/* Score & Controls */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <div className={`px-3 py-1.5 rounded-full text-sm font-bold shadow ${health.score > 70 ? 'bg-green-500 text-white' : health.score > 40 ? 'bg-yellow-500 text-slate-800' : 'bg-red-500 text-white'}`}>
+              Score: {health.score}
             </div>
-          );
-        })}
-      </div>
+            <button onClick={() => setAutoRotate(!autoRotate)} className={`px-2.5 py-1.5 rounded-full text-xs shadow cursor-pointer ${autoRotate ? 'bg-blue-500 text-white' : 'bg-white/80 text-slate-600'}`}>⟳</button>
+          </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur rounded-lg p-2 shadow text-[10px] space-y-0.5">
-        <div className="font-semibold text-slate-600 mb-1">QUADRANTS</div>
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-yellow-400"></div> NW: Banks</div>
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-red-400"></div> NE: Debts</div>
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-blue-400"></div> SW: Goals</div>
-        <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-cyan-400"></div> SE: Harbor</div>
-      </div>
+          {/* Cashflow Indicator */}
+          <div className="absolute top-16 left-4 z-10 bg-white/90 backdrop-blur rounded-lg px-3 py-1.5 shadow text-xs flex items-center gap-2">
+            <span className={`font-bold ${monthlySurplus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {monthlySurplus >= 0 ? '↑' : '↓'} ${Math.abs(monthlySurplus).toLocaleString()}/mo
+            </span>
+            {totalSubCost > 0 && <>
+              <span className="text-slate-400">|</span>
+              <span className="text-orange-600">💧 ${Math.round(totalSubCost)}/mo</span>
+            </>}
+          </div>
+
+          {/* Goals Panel */}
+          <div className="absolute bottom-4 right-4 z-10 bg-white/90 backdrop-blur rounded-lg p-3 shadow-lg max-w-[180px]">
+            <p className="text-slate-500 text-xs font-semibold mb-1.5 flex justify-between">
+              <span>🚀 MISSIONS</span>
+              {hasWeeds && <span className="text-red-500 animate-pulse">🌿</span>}
+            </p>
+            {goals.length === 0 && <p className="text-[10px] text-slate-400">No active goals.</p>}
+            {goals.slice(0, 3).map(g => {
+              const p = Math.min(g.currentAmount / g.targetAmount, 1);
+              return (
+                <div key={g.id} className="text-xs mb-1.5">
+                  <div className="flex justify-between text-slate-700">
+                    <span className="truncate max-w-[80px]">{g.name}</span>
+                    <span className={p >= 1 ? 'text-green-600 font-bold' : ''}>{p >= 1 ? '✓' : `${Math.round(p * 100)}%`}</span>
+                  </div>
+                  <div className="w-full h-1 bg-slate-200 rounded-full mt-0.5">
+                    <div className={`h-full rounded-full ${p >= 1 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${p * 100}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur rounded-lg p-2 shadow text-[10px] space-y-0.5">
+            <div className="font-semibold text-slate-600 mb-1">QUADRANTS</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-yellow-400"></div> NW: Banks</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-red-400"></div> NE: Debts</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-blue-400"></div> SW: Goals</div>
+            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-cyan-400"></div> SE: Harbor</div>
+          </div>
+        </>
+      )}
 
       <Canvas shadows dpr={[1, 2]}>
-        <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={40} near={-50} far={200} />
+        {/* Increased zoom for better mobile visibility */}
+        <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={48} near={-50} far={200} />
         <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 3} />
         <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
         <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />

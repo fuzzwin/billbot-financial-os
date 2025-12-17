@@ -329,42 +329,43 @@ const HomeView = ({
 }) => {
   const surplus = health.monthlyIncome - health.monthlyExpenses;
   const netWorth = health.savings - (health.hecsDebt + health.otherDebts);
+  const activeGoals = goals.filter(g => g.currentAmount < g.targetAmount).length;
   
   return (
-    <div className="space-y-4 pb-24 animate-in fade-in duration-500">
-      {/* Compact Header with Score */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-3 pb-24 animate-in fade-in duration-500">
+      {/* Compact Header */}
+      <div className="flex justify-between items-center px-1">
         <div>
           <h1 className="text-xl font-black text-white">Wealth City</h1>
           <p className="text-slate-500 text-xs">{accounts.length} accounts • {goals.length} goals</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className={`px-3 py-1 rounded-full text-sm font-bold ${surplus >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+        <div className="flex items-center gap-2">
+          <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${surplus >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
             {surplus >= 0 ? '↑' : '↓'} ${Math.abs(surplus).toLocaleString()}/mo
           </div>
           <div className="relative">
-            <svg className="w-14 h-14 transform -rotate-90">
-              <circle cx="28" cy="28" r="24" stroke="#1e293b" strokeWidth="4" fill="none" />
+            <svg className="w-12 h-12 transform -rotate-90">
+              <circle cx="24" cy="24" r="20" stroke="#1e293b" strokeWidth="3" fill="none" />
               <circle 
-                cx="28" cy="28" r="24" 
+                cx="24" cy="24" r="20" 
                 stroke={health.score >= 70 ? '#10b981' : health.score >= 40 ? '#f59e0b' : '#ef4444'}
-                strokeWidth="4" 
+                strokeWidth="3" 
                 fill="none"
                 strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 24}
-                strokeDashoffset={(2 * Math.PI * 24) * (1 - health.score / 100)}
+                strokeDasharray={2 * Math.PI * 20}
+                strokeDashoffset={(2 * Math.PI * 20) * (1 - health.score / 100)}
                 className="transition-all duration-1000"
               />
             </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-black text-white">{health.score}</span>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-black text-white">{health.score}</span>
             </div>
           </div>
         </div>
       </div>
       
-      {/* HERO: City Visualization - Full Width, Taller */}
-      <div className="rounded-2xl overflow-hidden relative" style={{ height: 'calc(45vh - 60px)', minHeight: '280px', maxHeight: '400px' }}>
+      {/* HERO: City Visualization with Embedded Stats */}
+      <div className="rounded-2xl overflow-hidden relative bg-gradient-to-b from-sky-400 to-sky-300" style={{ height: 'calc(55vh - 40px)', minHeight: '320px', maxHeight: '480px' }}>
         <IsometricCity 
           accounts={accounts}
           health={health}
@@ -372,6 +373,7 @@ const HomeView = ({
           hasWeeds={subscriptions.some(s => s.isOptimizable)}
           isFuture={false}
           onNavigate={onNavigate}
+          minimal={true}
           weeklyBuilds={impulseItems.map(i => ({
             id: i.id,
             name: i.name,
@@ -379,27 +381,29 @@ const HomeView = ({
             saved: i.savedAmount
           }))}
         />
+        
+        {/* Stats Overlay at Bottom */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent pt-8 pb-3 px-3">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
+              <p className={`text-base font-black ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                ${Math.abs(netWorth).toLocaleString()}
+              </p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Net Worth</p>
+            </div>
+            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
+              <p className="text-base font-black text-cyan-400">{activeGoals}</p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Active Goals</p>
+            </div>
+            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
+              <p className="text-base font-black text-amber-400">{health.willpowerPoints || 0}</p>
+              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Willpower</p>
+            </div>
+          </div>
+        </div>
       </div>
       
-      {/* Compact Stats Row */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
-          <p className={`text-lg font-black ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-            ${Math.abs(netWorth).toLocaleString()}
-          </p>
-          <p className="text-[10px] text-slate-500 uppercase">Net Worth</p>
-        </div>
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
-          <p className="text-lg font-black text-cyan-400">{goals.filter(g => g.currentAmount < g.targetAmount).length}</p>
-          <p className="text-[10px] text-slate-500 uppercase">Active Goals</p>
-        </div>
-        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
-          <p className="text-lg font-black text-amber-400">{health.willpowerPoints || 0}</p>
-          <p className="text-[10px] text-slate-500 uppercase">Willpower</p>
-        </div>
-      </div>
-      
-      {/* Next Action - More Compact */}
+      {/* Next Action */}
       <NextActionCard 
         health={health} 
         subscriptions={subscriptions} 
@@ -407,13 +411,13 @@ const HomeView = ({
         onAction={onNavigate}
       />
       
-      {/* Weekly Check-in - Compact */}
+      {/* Weekly Check-in */}
       <button 
         onClick={onShowCheckIn}
-        className="w-full bg-gradient-to-r from-violet-600/80 to-fuchsia-600/80 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl p-4 flex items-center justify-between group transition-all"
+        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl p-3.5 flex items-center justify-between group transition-all"
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl">📊</span>
+          <span className="text-xl">📊</span>
           <div className="text-left">
             <h3 className="font-bold text-sm">Weekly Check-in</h3>
             <p className="text-violet-200 text-xs opacity-80">2 min • Keep your city alive</p>
