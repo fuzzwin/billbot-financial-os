@@ -844,9 +844,16 @@ interface IsometricCityProps {
 
 export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accounts, health, goals, hasWeeds, isFuture, weeklyBuilds, subscriptions = [], minimal = false }) => {
   const [autoRotate, setAutoRotate] = useState(true);
+  const [zoom, setZoom] = useState(38);
+  const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
+  
   const isLowScore = health.score < 40;
   const monthlySurplus = health.monthlyIncome - health.monthlyExpenses;
   const totalSubCost = subscriptions.reduce((sum, s) => sum + (s.cycle === 'YEARLY' ? s.amount / 12 : s.cycle === 'WEEKLY' ? s.amount * 4 : s.amount), 0);
+
+  const handleZoomIn = () => setZoom(z => Math.min(z + 8, 70));
+  const handleZoomOut = () => setZoom(z => Math.max(z - 8, 22));
+  const toggleView = () => setViewMode(v => v === 'isometric' ? 'birdseye' : 'isometric');
 
   const getSkyClass = () => {
     if (isFuture) return "bg-gradient-to-b from-indigo-900 to-purple-900";
@@ -855,8 +862,58 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
     return "bg-gradient-to-b from-sky-400 to-slate-400";
   };
 
+  // Camera settings based on view mode
+  const cameraPosition: [number, number, number] = viewMode === 'birdseye' 
+    ? [0, 30, 0.1]  // Top-down view
+    : [20, 20, 20]; // Isometric view
+  
+  const polarAngle = viewMode === 'birdseye' 
+    ? { min: 0, max: 0.1 }  // Lock to top-down
+    : { min: Math.PI / 4, max: Math.PI / 3 }; // Normal isometric range
+
   return (
     <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden`}>
+      
+      {/* View Controls - Always visible in minimal mode too */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5">
+        {/* Zoom Controls */}
+        <div className="flex items-center bg-slate-900/70 backdrop-blur rounded-lg overflow-hidden">
+          <button 
+            onClick={handleZoomOut}
+            className="px-2.5 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
+            title="Zoom Out"
+          >
+            −
+          </button>
+          <div className="w-px h-5 bg-slate-600"></div>
+          <button 
+            onClick={handleZoomIn}
+            className="px-2.5 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
+            title="Zoom In"
+          >
+            +
+          </button>
+        </div>
+        
+        {/* View Toggle */}
+        <button 
+          onClick={toggleView}
+          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'birdseye' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
+          title={viewMode === 'birdseye' ? 'Isometric View' : "Bird's Eye View"}
+        >
+          {viewMode === 'birdseye' ? '🏙️' : '🦅'}
+        </button>
+        
+        {/* Auto Rotate */}
+        <button 
+          onClick={() => setAutoRotate(!autoRotate)} 
+          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${autoRotate ? 'bg-blue-500 text-white' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
+          title={autoRotate ? 'Stop Rotation' : 'Auto Rotate'}
+        >
+          ⟳
+        </button>
+      </div>
+
       {/* Overlays - only show when not in minimal mode */}
       {!minimal && (
         <>
@@ -866,12 +923,11 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
             <p className="text-slate-700 text-xs font-bold">{accounts.length} accounts • {goals.length} goals</p>
           </div>
 
-          {/* Score & Controls */}
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+          {/* Score Badge */}
+          <div className="absolute top-14 right-4 z-10">
             <div className={`px-3 py-1.5 rounded-full text-sm font-bold shadow ${health.score > 70 ? 'bg-green-500 text-white' : health.score > 40 ? 'bg-yellow-500 text-slate-800' : 'bg-red-500 text-white'}`}>
               Score: {health.score}
             </div>
-            <button onClick={() => setAutoRotate(!autoRotate)} className={`px-2.5 py-1.5 rounded-full text-xs shadow cursor-pointer ${autoRotate ? 'bg-blue-500 text-white' : 'bg-white/80 text-slate-600'}`}>⟳</button>
           </div>
 
           {/* Cashflow Indicator */}
@@ -920,9 +976,15 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
       )}
 
       <Canvas shadows dpr={[1, 2]}>
-        {/* Increased zoom for better mobile visibility */}
-        <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={38} near={-50} far={200} />
-        <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 3} />
+        <OrthographicCamera makeDefault position={cameraPosition} zoom={zoom} near={-50} far={200} />
+        <OrbitControls 
+          autoRotate={autoRotate} 
+          autoRotateSpeed={0.5} 
+          enableZoom={false} 
+          enablePan={false} 
+          minPolarAngle={polarAngle.min} 
+          maxPolarAngle={polarAngle.max}
+        />
         <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
         <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
         {isFuture && <pointLight position={[-5, 5, -5]} intensity={1} color="#bc13fe" distance={20} />}
