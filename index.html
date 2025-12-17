@@ -3,7 +3,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>BillBot | Financial Operating System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -34,8 +37,14 @@
     </script>
     <style>
       body {
-        background-color: #0f172a;
+        background-color: #020617;
         color: #e2e8f0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      
+      /* Safe area padding for mobile notches/home indicators */
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
       }
       
       /* Rocket Launch Animation */
@@ -43,6 +52,17 @@
           0% { transform: translateY(0) scale(1); opacity: 1; }
           20% { transform: translateY(10px) scale(1.05); } 
           100% { transform: translateY(-1000px) scale(0.5); opacity: 0; }
+      }
+      
+      /* Smooth scrolling */
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      /* Fix for Three.js canvas not blocking nav clicks */
+      canvas {
+        touch-action: none;
+        pointer-events: auto;
       }
     </style>
   <script type="importmap">

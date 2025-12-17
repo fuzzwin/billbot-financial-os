@@ -1256,18 +1256,18 @@ const App = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 safe-area-pb">
+      <nav className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 z-50 pb-safe">
         <div className="max-w-lg mx-auto flex">
           {navItems.map(item => (
             <button
               key={item.view}
               onClick={() => setView(item.view)}
-              className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all ${view === item.view ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all relative ${view === item.view ? 'text-cyan-400' : 'text-slate-500 hover:text-slate-300'}`}
             >
               <span className={`text-2xl transition-transform ${view === item.view ? 'scale-110' : ''}`}>{item.icon}</span>
               <span className="text-xs font-bold">{item.label}</span>
               {view === item.view && (
-                <div className="absolute bottom-1 w-1 h-1 bg-cyan-400 rounded-full" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-cyan-400 rounded-full" />
               )}
             </button>
           ))}
