@@ -268,15 +268,15 @@ const NextActionCard = ({
   return (
     <button 
       onClick={() => onAction(action.view)}
-      className={`w-full text-left bg-gradient-to-r ${action.urgent ? 'from-rose-900/40 to-orange-900/40 border-rose-500/30' : 'from-cyan-900/30 to-purple-900/30 border-cyan-500/20'} border rounded-2xl p-5 group hover:scale-[1.02] transition-all duration-300`}
+      className={`w-full text-left bg-gradient-to-r ${action.urgent ? 'from-rose-900/50 to-orange-900/50 border-rose-500/40' : 'from-slate-800/80 to-slate-800/40 border-slate-700/50'} border rounded-xl p-4 group hover:scale-[1.01] transition-all duration-200`}
     >
-      <div className="flex items-start gap-4">
-        <div className={`text-3xl ${action.urgent ? 'animate-pulse' : ''}`}>{action.icon}</div>
-        <div className="flex-1">
-          <h3 className="text-white font-bold mb-1">{action.title}</h3>
-          <p className="text-slate-400 text-sm">{action.description}</p>
+      <div className="flex items-center gap-3">
+        <div className={`text-2xl ${action.urgent ? 'animate-pulse' : ''}`}>{action.icon}</div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-white font-bold text-sm truncate">{action.title}</h3>
+          <p className="text-slate-400 text-xs truncate">{action.description}</p>
         </div>
-        <div className={`px-4 py-2 rounded-lg font-bold text-sm ${action.urgent ? 'bg-rose-500 text-white' : 'bg-cyan-500/20 text-cyan-400'} group-hover:scale-105 transition-transform`}>
+        <div className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${action.urgent ? 'bg-rose-500 text-white' : 'bg-cyan-500/20 text-cyan-400'}`}>
           {action.action} →
         </div>
       </div>
@@ -327,19 +327,44 @@ const HomeView = ({
   onShowCheckIn: () => void,
   impulseItems: ImpulseItem[]
 }) => {
+  const surplus = health.monthlyIncome - health.monthlyExpenses;
+  const netWorth = health.savings - (health.hecsDebt + health.otherDebts);
+  
   return (
-    <div className="space-y-5 pb-24 animate-in fade-in duration-500">
-      {/* Header */}
+    <div className="space-y-4 pb-24 animate-in fade-in duration-500">
+      {/* Compact Header with Score */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-white">Your City</h1>
-          <p className="text-slate-500 text-sm">Financial health at a glance</p>
+          <h1 className="text-xl font-black text-white">Wealth City</h1>
+          <p className="text-slate-500 text-xs">{accounts.length} accounts • {goals.length} goals</p>
         </div>
-        <HealthScoreRing score={health.score} />
+        <div className="flex items-center gap-3">
+          <div className={`px-3 py-1 rounded-full text-sm font-bold ${surplus >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+            {surplus >= 0 ? '↑' : '↓'} ${Math.abs(surplus).toLocaleString()}/mo
+          </div>
+          <div className="relative">
+            <svg className="w-14 h-14 transform -rotate-90">
+              <circle cx="28" cy="28" r="24" stroke="#1e293b" strokeWidth="4" fill="none" />
+              <circle 
+                cx="28" cy="28" r="24" 
+                stroke={health.score >= 70 ? '#10b981' : health.score >= 40 ? '#f59e0b' : '#ef4444'}
+                strokeWidth="4" 
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 24}
+                strokeDashoffset={(2 * Math.PI * 24) * (1 - health.score / 100)}
+                className="transition-all duration-1000"
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-lg font-black text-white">{health.score}</span>
+            </div>
+          </div>
+        </div>
       </div>
       
-      {/* City Visualization */}
-      <div className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden h-64 relative">
+      {/* HERO: City Visualization - Full Width, Taller */}
+      <div className="rounded-2xl overflow-hidden relative" style={{ height: 'calc(45vh - 60px)', minHeight: '280px', maxHeight: '400px' }}>
         <IsometricCity 
           accounts={accounts}
           health={health}
@@ -354,15 +379,27 @@ const HomeView = ({
             saved: i.savedAmount
           }))}
         />
-        <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur px-3 py-1.5 rounded-full">
-          <span className="text-xs text-slate-400">🏙️ Wealth City • Level {Math.floor(health.score / 20) + 1}</span>
+      </div>
+      
+      {/* Compact Stats Row */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <p className={`text-lg font-black ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            ${Math.abs(netWorth).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-slate-500 uppercase">Net Worth</p>
+        </div>
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <p className="text-lg font-black text-cyan-400">{goals.filter(g => g.currentAmount < g.targetAmount).length}</p>
+          <p className="text-[10px] text-slate-500 uppercase">Active Goals</p>
+        </div>
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <p className="text-lg font-black text-amber-400">{health.willpowerPoints || 0}</p>
+          <p className="text-[10px] text-slate-500 uppercase">Willpower</p>
         </div>
       </div>
       
-      {/* Cash Left */}
-      <CashLeftCard income={health.monthlyIncome} expenses={health.monthlyExpenses} />
-      
-      {/* Next Action */}
+      {/* Next Action - More Compact */}
       <NextActionCard 
         health={health} 
         subscriptions={subscriptions} 
@@ -370,25 +407,22 @@ const HomeView = ({
         onAction={onNavigate}
       />
       
-      {/* Weekly Check-in CTA */}
+      {/* Weekly Check-in - Compact */}
       <button 
         onClick={onShowCheckIn}
-        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-2xl p-5 flex items-center justify-between group transition-all hover:scale-[1.02]"
+        className="w-full bg-gradient-to-r from-violet-600/80 to-fuchsia-600/80 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl p-4 flex items-center justify-between group transition-all"
       >
-        <div className="flex items-center gap-4">
-          <div className="text-3xl">📊</div>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📊</span>
           <div className="text-left">
-            <h3 className="font-bold">Weekly Check-in</h3>
-            <p className="text-violet-200 text-sm">2 min update • Keep your city alive</p>
+            <h3 className="font-bold text-sm">Weekly Check-in</h3>
+            <p className="text-violet-200 text-xs opacity-80">2 min • Keep your city alive</p>
           </div>
         </div>
-        <div className="bg-white/20 px-4 py-2 rounded-lg font-bold group-hover:bg-white/30 transition-colors">
+        <div className="bg-white/20 px-3 py-1.5 rounded-lg font-bold text-sm">
           {health.checkInStreak || 0} 🔥
         </div>
       </button>
-      
-      {/* Quick Stats */}
-      <QuickStats health={health} goals={goals} />
     </div>
   );
 };
