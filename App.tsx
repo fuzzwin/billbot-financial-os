@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { AppView, FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal } from './types';
+import { AppView, FinancialHealth, Transaction, Subscription, AccountItem, ImpulseItem, Goal, AccountType } from './types';
 import { IsometricCity } from './components/IsometricCity';
 import { WeeklyBriefing } from './components/WeeklyBriefing';
 import { loadFinancialHealth, saveFinancialHealth, loadTransactions, saveTransactions, loadSubscriptions, saveSubscriptions, loadAccounts, saveAccounts, loadImpulseItems, saveImpulseItems, loadGoals, saveGoals } from './services/storageService';
@@ -488,24 +488,346 @@ const HomeView = ({
   );
 };
 
+// --- ACCOUNT MODAL ---
+const AccountModal = ({ 
+  account, 
+  defaultType,
+  onSave, 
+  onClose 
+}: { 
+  account: AccountItem | null, 
+  defaultType: AccountType,
+  onSave: (acc: AccountItem) => void, 
+  onClose: () => void 
+}) => {
+  const [name, setName] = useState(account?.name || '');
+  const [type, setType] = useState<AccountType>(account?.type || defaultType);
+  const [balance, setBalance] = useState(account?.balance?.toString() || '');
+  const [interestRate, setInterestRate] = useState(account?.interestRate?.toString() || '');
+  
+  const isDebt = ['LOAN', 'CREDIT_CARD', 'HECS'].includes(type);
+  
+  const handleSave = () => {
+    if (!name || !balance) return;
+    onSave({
+      id: account?.id || '',
+      name,
+      type,
+      balance: parseFloat(balance) || 0,
+      interestRate: interestRate ? parseFloat(interestRate) : undefined
+    });
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
+        <h3 className="text-xl font-bold text-white mb-4">{account ? 'Edit Account' : 'Add Account'}</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Type</label>
+            <select 
+              value={type} 
+              onChange={(e) => setType(e.target.value as AccountType)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            >
+              <option value="SAVINGS">Savings Account</option>
+              <option value="CASH">Cash / Everyday</option>
+              <option value="INVESTMENT">Investment / Shares</option>
+              <option value="SUPER">Superannuation</option>
+              <option value="CREDIT_CARD">Credit Card</option>
+              <option value="LOAN">Personal/Car Loan</option>
+              <option value="HECS">HECS / HELP Debt</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Account Name</label>
+            <input 
+              type="text" 
+              placeholder="e.g. NAB Rewards" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Current Balance ($)</label>
+            <input 
+              type="number" 
+              placeholder="0.00" 
+              value={balance}
+              onChange={(e) => setBalance(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          {isDebt && type !== 'HECS' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1">Interest Rate (% APR)</label>
+              <input 
+                type="number" 
+                placeholder="e.g. 18.5" 
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 text-slate-400 hover:text-white font-bold rounded-xl">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={!name || !balance}
+            className="flex-1 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold py-3 rounded-xl transition-colors"
+          >
+            {account ? 'Update' : 'Add Account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- SUBSCRIPTION MODAL ---
+const SubscriptionModal = ({ 
+  onSave, 
+  onClose 
+}: { 
+  onSave: (sub: Subscription) => void, 
+  onClose: () => void 
+}) => {
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [cycle, setCycle] = useState<'MONTHLY' | 'YEARLY' | 'WEEKLY'>('MONTHLY');
+  const [category, setCategory] = useState('Entertainment');
+  
+  const handleSave = () => {
+    if (!name || !amount) return;
+    const nextDue = new Date();
+    if (cycle === 'MONTHLY') nextDue.setMonth(nextDue.getMonth() + 1);
+    else if (cycle === 'YEARLY') nextDue.setFullYear(nextDue.getFullYear() + 1);
+    else nextDue.setDate(nextDue.getDate() + 7);
+    
+    onSave({
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      amount: parseFloat(amount) || 0,
+      cycle,
+      nextDueDate: nextDue.toISOString().split('T')[0],
+      category,
+      isOptimizable: false
+    });
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
+        <h3 className="text-xl font-bold text-white mb-4">Add Subscription</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Name</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Netflix" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Amount ($)</label>
+            <input 
+              type="number" 
+              placeholder="0.00" 
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Billing Cycle</label>
+            <select 
+              value={cycle} 
+              onChange={(e) => setCycle(e.target.value as 'MONTHLY' | 'YEARLY' | 'WEEKLY')}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            >
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Category</label>
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            >
+              <option value="Entertainment">Entertainment</option>
+              <option value="Health">Health & Fitness</option>
+              <option value="Software">Software & Apps</option>
+              <option value="News">News & Media</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 text-slate-400 hover:text-white font-bold rounded-xl">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={!name || !amount}
+            className="flex-1 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold py-3 rounded-xl transition-colors"
+          >
+            Add Subscription
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- IMPORT MODAL ---
+const ImportModal = ({ 
+  onAddTransaction,
+  onClose 
+}: { 
+  onAddTransaction: (t: Transaction) => void,
+  onClose: () => void 
+}) => {
+  const [merchant, setMerchant] = useState('');
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [category, setCategory] = useState('Shopping');
+  
+  const handleSave = () => {
+    if (!merchant || !amount) return;
+    onAddTransaction({
+      id: Math.random().toString(36).substr(2, 9),
+      date,
+      merchant,
+      amount: parseFloat(amount) || 0,
+      category,
+      isDeductible: false,
+      gstIncluded: true
+    });
+    onClose();
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95">
+        <h3 className="text-xl font-bold text-white mb-4">📝 Add Transaction</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Merchant/Description</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Woolworths" 
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Amount ($)</label>
+            <input 
+              type="number" 
+              placeholder="0.00" 
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Date</label>
+            <input 
+              type="date" 
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Category</label>
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            >
+              <option value="Shopping">Shopping</option>
+              <option value="Groceries">Groceries</option>
+              <option value="Transport">Transport</option>
+              <option value="Dining">Dining Out</option>
+              <option value="Entertainment">Entertainment</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Health">Health</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 text-slate-400 hover:text-white font-bold rounded-xl">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={!merchant || !amount}
+            className="flex-1 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold py-3 rounded-xl transition-colors"
+          >
+            Add Transaction
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- MONEY VIEW ---
 const MoneyView = ({ 
   health, 
   accounts, 
   subscriptions,
+  transactions,
   onUpdateHealth,
   onUpdateAccounts,
-  onUpdateSubscriptions
+  onUpdateSubscriptions,
+  onUpdateTransactions
 }: { 
   health: FinancialHealth, 
   accounts: AccountItem[], 
   subscriptions: Subscription[],
+  transactions: Transaction[],
   onUpdateHealth: (h: FinancialHealth) => void,
   onUpdateAccounts: (a: AccountItem[]) => void,
-  onUpdateSubscriptions: (s: Subscription[]) => void
+  onUpdateSubscriptions: (s: Subscription[]) => void,
+  onUpdateTransactions: (t: Transaction[]) => void
 }) => {
   const [showAddIncome, setShowAddIncome] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'subscriptions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'subscriptions' | 'transactions'>('overview');
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showSubModal, setShowSubModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<AccountItem | null>(null);
+  const [newAccountType, setNewAccountType] = useState<AccountType>('SAVINGS');
   
   const monthlySubTotal = subscriptions.reduce((sum, s) => {
     if (s.cycle === 'WEEKLY') return sum + (s.amount * 4.33);
@@ -535,14 +857,14 @@ const MoneyView = ({
       </div>
       
       {/* Tab Navigation */}
-      <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
-        {(['overview', 'accounts', 'subscriptions'] as const).map(tab => (
+      <div className="flex gap-1 bg-slate-900/50 p-1 rounded-xl">
+        {(['overview', 'accounts', 'subscriptions', 'transactions'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2 px-4 rounded-lg font-bold text-sm transition-all ${activeTab === tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-white'}`}
+            className={`flex-1 py-2 px-2 rounded-lg font-bold text-xs transition-all ${activeTab === tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-white'}`}
           >
-            {tab === 'overview' ? '📊 Overview' : tab === 'accounts' ? '🏦 Accounts' : '📅 Subs'}
+            {tab === 'overview' ? '📊' : tab === 'accounts' ? '🏦' : tab === 'subscriptions' ? '📅' : '💳'} {tab.charAt(0).toUpperCase() + tab.slice(1, 4)}
           </button>
         ))}
       </div>
@@ -646,34 +968,87 @@ const MoneyView = ({
         <div className="space-y-4">
           {/* Assets */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
-            <h3 className="text-emerald-400 font-bold mb-4">💚 Assets</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-emerald-400 font-bold">💚 Assets</h3>
+              <button 
+                onClick={() => { setEditingAccount(null); setShowAccountModal(true); setNewAccountType('SAVINGS'); }}
+                className="text-emerald-400 text-sm font-bold hover:text-emerald-300"
+              >
+                + Add
+              </button>
+            </div>
             <div className="space-y-3">
               {assets.map(acc => (
-                <div key={acc.id} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                <div key={acc.id} className="flex justify-between items-center py-3 px-3 bg-slate-800/50 rounded-xl">
                   <div>
                     <p className="text-white font-medium">{acc.name}</p>
                     <p className="text-xs text-slate-500">{acc.type}</p>
                   </div>
-                  <span className="text-emerald-400 font-bold">${acc.balance.toLocaleString()}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-emerald-400 font-bold">${acc.balance.toLocaleString()}</span>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => { setEditingAccount(acc); setShowAccountModal(true); }}
+                        className="text-slate-500 hover:text-white p-1"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => onUpdateAccounts(accounts.filter(a => a.id !== acc.id))}
+                        className="text-slate-500 hover:text-rose-400 p-1"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
               {assets.length === 0 && (
-                <p className="text-slate-500 text-center py-4">No assets yet</p>
+                <button 
+                  onClick={() => { setEditingAccount(null); setShowAccountModal(true); setNewAccountType('SAVINGS'); }}
+                  className="w-full py-4 border-2 border-dashed border-slate-700 rounded-xl text-slate-500 hover:border-emerald-500 hover:text-emerald-400 transition-colors"
+                >
+                  + Add your first asset
+                </button>
               )}
             </div>
           </div>
           
           {/* Liabilities */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
-            <h3 className="text-rose-400 font-bold mb-4">❤️ Liabilities</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-rose-400 font-bold">❤️ Liabilities</h3>
+              <button 
+                onClick={() => { setEditingAccount(null); setShowAccountModal(true); setNewAccountType('CREDIT_CARD'); }}
+                className="text-rose-400 text-sm font-bold hover:text-rose-300"
+              >
+                + Add
+              </button>
+            </div>
             <div className="space-y-3">
               {liabilities.map(acc => (
-                <div key={acc.id} className="flex justify-between items-center py-2 border-b border-slate-800 last:border-0">
+                <div key={acc.id} className="flex justify-between items-center py-3 px-3 bg-slate-800/50 rounded-xl">
                   <div>
                     <p className="text-white font-medium">{acc.name}</p>
                     <p className="text-xs text-slate-500">{acc.type} {acc.interestRate && `• ${acc.interestRate}% APR`}</p>
                   </div>
-                  <span className="text-rose-400 font-bold">-${acc.balance.toLocaleString()}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-rose-400 font-bold">-${acc.balance.toLocaleString()}</span>
+                    <div className="flex gap-1">
+                      <button 
+                        onClick={() => { setEditingAccount(acc); setShowAccountModal(true); }}
+                        className="text-slate-500 hover:text-white p-1"
+                      >
+                        ✏️
+                      </button>
+                      <button 
+                        onClick={() => onUpdateAccounts(accounts.filter(a => a.id !== acc.id))}
+                        className="text-slate-500 hover:text-rose-400 p-1"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ))}
               {liabilities.length === 0 && (
@@ -681,13 +1056,39 @@ const MoneyView = ({
               )}
             </div>
           </div>
+          
+          {/* Account Add/Edit Modal */}
+          {showAccountModal && (
+            <AccountModal 
+              account={editingAccount}
+              defaultType={newAccountType}
+              onSave={(acc) => {
+                if (editingAccount) {
+                  onUpdateAccounts(accounts.map(a => a.id === acc.id ? acc : a));
+                } else {
+                  onUpdateAccounts([...accounts, { ...acc, id: Math.random().toString(36).substr(2, 9) }]);
+                }
+                setShowAccountModal(false);
+                setEditingAccount(null);
+              }}
+              onClose={() => { setShowAccountModal(false); setEditingAccount(null); }}
+            />
+          )}
         </div>
       )}
       
       {activeTab === 'subscriptions' && (
         <div className="space-y-4">
-          <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
-            <p className="text-amber-400 font-bold">💡 Subscriptions cost you ${(monthlySubTotal * 12).toFixed(0)}/year</p>
+          <div className="flex justify-between items-center">
+            <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 flex-1">
+              <p className="text-amber-400 font-bold">💡 Subscriptions cost you ${(monthlySubTotal * 12).toFixed(0)}/year</p>
+            </div>
+            <button 
+              onClick={() => setShowSubModal(true)}
+              className="ml-3 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-4 py-3 rounded-xl transition-colors"
+            >
+              + Add
+            </button>
           </div>
           
           {subscriptions.map(sub => (
@@ -700,7 +1101,7 @@ const MoneyView = ({
                   <p className="text-white font-bold">{sub.name}</p>
                   {sub.isOptimizable && <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Cut this?</span>}
                 </div>
-                <p className="text-slate-500 text-sm">${sub.amount}/{sub.cycle.toLowerCase()}</p>
+                <p className="text-slate-500 text-sm">${sub.amount}/{sub.cycle.toLowerCase()} • {sub.category}</p>
               </div>
               <button 
                 onClick={() => killSubscription(sub.id)}
@@ -712,13 +1113,217 @@ const MoneyView = ({
           ))}
           
           {subscriptions.length === 0 && (
-            <div className="text-center py-8 text-slate-500">
-              <p className="text-4xl mb-2">🎉</p>
-              <p>No subscriptions! You're subscription-free.</p>
-            </div>
+            <button 
+              onClick={() => setShowSubModal(true)}
+              className="w-full py-8 border-2 border-dashed border-slate-700 rounded-2xl text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+            >
+              <p className="text-4xl mb-2">📺</p>
+              <p className="font-bold">Add your first subscription</p>
+            </button>
+          )}
+          
+          {/* Subscription Add Modal */}
+          {showSubModal && (
+            <SubscriptionModal 
+              onSave={(sub) => {
+                onUpdateSubscriptions([...subscriptions, sub]);
+                setShowSubModal(false);
+              }}
+              onClose={() => setShowSubModal(false)}
+            />
           )}
         </div>
       )}
+      
+      {activeTab === 'transactions' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-slate-400 text-sm">{transactions.length} transactions</p>
+            <button 
+              onClick={() => setShowImportModal(true)}
+              className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-4 py-2 rounded-xl transition-colors text-sm"
+            >
+              + Add
+            </button>
+          </div>
+          
+          {transactions.length > 0 ? (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {transactions.slice().reverse().map(t => (
+                <div key={t.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex justify-between items-center">
+                  <div>
+                    <p className="text-white font-medium">{t.merchant}</p>
+                    <p className="text-slate-500 text-xs">{t.date} • {t.category}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-rose-400 font-bold">-${t.amount.toLocaleString()}</span>
+                    <button 
+                      onClick={() => onUpdateTransactions(transactions.filter(tx => tx.id !== t.id))}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <button 
+              onClick={() => setShowImportModal(true)}
+              className="w-full py-8 border-2 border-dashed border-slate-700 rounded-2xl text-slate-500 hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+            >
+              <p className="text-4xl mb-2">💳</p>
+              <p className="font-bold">Add your first transaction</p>
+            </button>
+          )}
+          
+          {/* Import Modal */}
+          {showImportModal && (
+            <ImportModal 
+              onAddTransaction={(t) => {
+                onUpdateTransactions([...transactions, t]);
+              }}
+              onClose={() => setShowImportModal(false)}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- GOAL MODAL ---
+const GoalModal = ({ 
+  goal, 
+  onSave, 
+  onClose 
+}: { 
+  goal: Goal | null, 
+  onSave: (g: Goal) => void, 
+  onClose: () => void 
+}) => {
+  const [name, setName] = useState(goal?.name || '');
+  const [targetAmount, setTargetAmount] = useState(goal?.targetAmount?.toString() || '');
+  const [currentAmount, setCurrentAmount] = useState(goal?.currentAmount?.toString() || '0');
+  const [deadline, setDeadline] = useState(goal?.deadline || '');
+  const [goalType, setGoalType] = useState<'rocket' | 'impulse'>(goal?.goalType || 'rocket');
+  const [emoji, setEmoji] = useState(goal?.emoji || '🚀');
+  
+  const handleSave = () => {
+    if (!name || !targetAmount) return;
+    onSave({
+      id: goal?.id || Math.random().toString(36).substr(2, 9),
+      name,
+      targetAmount: parseFloat(targetAmount) || 0,
+      currentAmount: parseFloat(currentAmount) || 0,
+      deadline: deadline || undefined,
+      category: goal?.category || 'other',
+      valueTag: goalType === 'impulse' ? 'Treat' : 'Adventure',
+      goalType,
+      createdAt: goal?.createdAt || new Date().toISOString(),
+      emoji
+    });
+  };
+  
+  const emojis = ['🚀', '🎯', '🌏', '🎮', '🏠', '🚗', '💎', '🎁', '🛡️', '✈️', '💻', '📱'];
+  
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+        <h3 className="text-xl font-bold text-white mb-4">{goal ? 'Edit Goal' : 'New Goal'}</h3>
+        
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setGoalType('rocket')}
+              className={`flex-1 py-3 rounded-xl font-bold transition-all ${goalType === 'rocket' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🎯 Target
+            </button>
+            <button 
+              onClick={() => setGoalType('impulse')}
+              className={`flex-1 py-3 rounded-xl font-bold transition-all ${goalType === 'impulse' ? 'bg-amber-500 text-slate-900' : 'bg-slate-800 text-slate-400'}`}
+            >
+              🅿️ Parked
+            </button>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Icon</label>
+            <div className="flex flex-wrap gap-2">
+              {emojis.map(e => (
+                <button 
+                  key={e}
+                  onClick={() => setEmoji(e)}
+                  className={`text-2xl p-2 rounded-lg transition-all ${emoji === e ? 'bg-cyan-500/30 ring-2 ring-cyan-500' : 'bg-slate-800 hover:bg-slate-700'}`}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Goal Name</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Japan Trip" 
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-400 mb-1">Target Amount ($)</label>
+            <input 
+              type="number" 
+              placeholder="0.00" 
+              value={targetAmount}
+              onChange={(e) => setTargetAmount(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          {goal && (
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1">Current Amount ($)</label>
+              <input 
+                type="number" 
+                placeholder="0.00" 
+                value={currentAmount}
+                onChange={(e) => setCurrentAmount(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+              />
+            </div>
+          )}
+
+          {goalType === 'rocket' && (
+            <div>
+              <label className="block text-xs font-bold text-slate-400 mb-1">Target Date (optional)</label>
+              <input 
+                type="date" 
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 py-3 text-slate-400 hover:text-white font-bold rounded-xl">
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave} 
+            disabled={!name || !targetAmount}
+            className="flex-1 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 font-bold py-3 rounded-xl transition-colors"
+          >
+            {goal ? 'Update Goal' : 'Create Goal'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
@@ -736,6 +1341,7 @@ const GoalsView = ({
   onUpdateGoals: (g: Goal[]) => void
 }) => {
   const [showNewGoal, setShowNewGoal] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [newGoalName, setNewGoalName] = useState('');
   const [newGoalAmount, setNewGoalAmount] = useState('');
   const [newGoalType, setNewGoalType] = useState<'rocket' | 'impulse'>('rocket');
@@ -895,9 +1501,23 @@ const GoalsView = ({
                     </h4>
                     <p className="text-slate-500 text-sm">{goal.valueTag}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs font-bold ${isReady ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
-                    {percent}%
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded text-xs font-bold ${isReady ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                      {percent}%
+                    </span>
+                    <button 
+                      onClick={() => setEditingGoal(goal)}
+                      className="text-slate-500 hover:text-white p-1"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      onClick={() => onUpdateGoals(goals.filter(g => g.id !== goal.id))}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="h-3 bg-slate-800 rounded-full overflow-hidden mb-3">
@@ -958,7 +1578,21 @@ const GoalsView = ({
                     </h4>
                     <p className="text-amber-400 text-sm">Parked Item</p>
                   </div>
-                  <span className="text-amber-400 font-bold">{percent}%</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-400 font-bold">{percent}%</span>
+                    <button 
+                      onClick={() => setEditingGoal(goal)}
+                      className="text-slate-500 hover:text-white p-1"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      onClick={() => onUpdateGoals(goals.filter(g => g.id !== goal.id))}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="h-2 bg-slate-800 rounded-full overflow-hidden mb-3">
@@ -1016,6 +1650,18 @@ const GoalsView = ({
           </button>
         </div>
       )}
+      
+      {/* Goal Edit Modal */}
+      {editingGoal && (
+        <GoalModal 
+          goal={editingGoal}
+          onSave={(g) => {
+            onUpdateGoals(goals.map(goal => goal.id === g.id ? g : goal));
+            setEditingGoal(null);
+          }}
+          onClose={() => setEditingGoal(null)}
+        />
+      )}
     </div>
   );
 };
@@ -1023,12 +1669,68 @@ const GoalsView = ({
 // --- HELP VIEW ---
 const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: AccountItem[] }) => {
   const [activeSection, setActiveSection] = useState<'chat' | 'crisis' | 'tools'>('chat');
+  const [activeTool, setActiveTool] = useState<'hecs' | 'tax' | 'abn' | null>(null);
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<Array<{role: 'user' | 'bot', text: string}>>([
     { role: 'bot', text: "Hey! I'm BillBot. What's on your mind? 💬" }
   ]);
   
+  // Tax lookup state
+  const [taxQuery, setTaxQuery] = useState('');
+  const [taxResults, setTaxResults] = useState<Array<{asset: string, lifeYears: number, rate: number}>>([]);
+  
+  // ABN state
+  const [abnInput, setAbnInput] = useState('');
+  const [abnResult, setAbnResult] = useState<{isValid: boolean, message: string} | null>(null);
+  
+  // HECS state
+  const [hecsBalance, setHecsBalance] = useState('35000');
+  const [hecsIncome, setHecsIncome] = useState('65000');
+  
   const isCrisis = health.monthlyExpenses > health.monthlyIncome;
+  
+  // Tax lookup function
+  const searchTax = (query: string) => {
+    setTaxQuery(query);
+    const COMMON_ASSETS = [
+      { asset: "Laptop (Computer)", lifeYears: 2, rate: 0.50 },
+      { asset: "Mobile Phone", lifeYears: 3, rate: 0.3333 },
+      { asset: "Tablet", lifeYears: 2, rate: 0.50 },
+      { asset: "Office Chair", lifeYears: 10, rate: 0.10 },
+      { asset: "Desk", lifeYears: 20, rate: 0.05 },
+      { asset: "Monitor", lifeYears: 4, rate: 0.25 },
+      { asset: "Keyboard/Mouse", lifeYears: 2, rate: 0.50 },
+      { asset: "Camera (Digital)", lifeYears: 3, rate: 0.3333 },
+      { asset: "Headphones (Noise Cancelling)", lifeYears: 2, rate: 0.50 },
+      { asset: "Standing Desk", lifeYears: 20, rate: 0.05 },
+    ];
+    if (!query) {
+      setTaxResults(COMMON_ASSETS);
+    } else {
+      const q = query.toLowerCase();
+      setTaxResults(COMMON_ASSETS.filter(item => item.asset.toLowerCase().includes(q)));
+    }
+  };
+  
+  // ABN validation function
+  const validateABN = (abn: string) => {
+    const cleanAbn = abn.replace(/[^0-9]/g, '');
+    if (cleanAbn.length !== 11) {
+      setAbnResult({ isValid: false, message: "ABN must be 11 digits." });
+      return;
+    }
+    const weights = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19];
+    const firstDigit = parseInt(cleanAbn[0]) - 1;
+    let sum = firstDigit * weights[0];
+    for (let i = 1; i < 11; i++) {
+      sum += parseInt(cleanAbn[i]) * weights[i];
+    }
+    const isValid = sum % 89 === 0;
+    setAbnResult({ 
+      isValid, 
+      message: isValid ? "✅ Valid ABN (Checksum Passed)" : "❌ Invalid ABN (Checksum Failed - Potential Fraud)" 
+    });
+  };
   
   const sendMessage = () => {
     if (!message.trim()) return;
@@ -1158,35 +1860,204 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
       
       {activeSection === 'tools' && (
         <div className="space-y-4">
-          <button className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 text-left transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="text-3xl">🎓</div>
-              <div>
-                <h3 className="text-white font-bold">HECS/HELP Strategy</h3>
-                <p className="text-slate-500 text-sm">Should you pay it off early?</p>
-              </div>
-            </div>
-          </button>
+          {/* Tool Buttons (when no tool active) */}
+          {!activeTool && (
+            <>
+              <button 
+                onClick={() => setActiveTool('hecs')}
+                className="w-full bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 text-left transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl">🎓</div>
+                  <div>
+                    <h3 className="text-white font-bold">HECS/HELP Strategy</h3>
+                    <p className="text-slate-500 text-sm">Should you pay it off early?</p>
+                  </div>
+                  <span className="ml-auto text-slate-500">→</span>
+                </div>
+              </button>
+              
+              <button 
+                onClick={() => { setActiveTool('tax'); searchTax(''); }}
+                className="w-full bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 text-left transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl">🔍</div>
+                  <div>
+                    <h3 className="text-white font-bold">Tax Deduction Lookup</h3>
+                    <p className="text-slate-500 text-sm">Check depreciation rates for work assets</p>
+                  </div>
+                  <span className="ml-auto text-slate-500">→</span>
+                </div>
+              </button>
+              
+              <button 
+                onClick={() => setActiveTool('abn')}
+                className="w-full bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 text-left transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="text-3xl">✅</div>
+                  <div>
+                    <h3 className="text-white font-bold">ABN Validator</h3>
+                    <p className="text-slate-500 text-sm">Check if a business ABN is legit</p>
+                  </div>
+                  <span className="ml-auto text-slate-500">→</span>
+                </div>
+              </button>
+            </>
+          )}
           
-          <button className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 text-left transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="text-3xl">🔍</div>
-              <div>
-                <h3 className="text-white font-bold">Tax Deduction Lookup</h3>
-                <p className="text-slate-500 text-sm">Check if something is deductible</p>
+          {/* HECS Tool */}
+          {activeTool === 'hecs' && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 animate-in slide-in-from-right">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white font-bold flex items-center gap-2">🎓 HECS/HELP Strategy</h3>
+                <button onClick={() => setActiveTool(null)} className="text-slate-500 hover:text-white">← Back</button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-indigo-900/30 border border-indigo-500/30 rounded-xl p-3">
+                  <p className="text-indigo-300 text-sm">⚡ 2025 Update: 20% debt waiver applied June 1st. New repayment threshold: $67,000</p>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Current HECS Balance ($)</label>
+                  <input 
+                    type="number" 
+                    value={hecsBalance}
+                    onChange={(e) => setHecsBalance(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Your Annual Income ($)</label>
+                  <input 
+                    type="number" 
+                    value={hecsIncome}
+                    onChange={(e) => setHecsIncome(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+                  />
+                </div>
+                
+                <div className="bg-slate-950 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">20% Waiver Savings</span>
+                    <span className="text-emerald-400 font-bold">-${(parseFloat(hecsBalance || '0') * 0.2).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">New Balance (Est)</span>
+                    <span className="text-white font-bold">${(parseFloat(hecsBalance || '0') * 0.8).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Required to Pay?</span>
+                    <span className={`font-bold ${parseFloat(hecsIncome || '0') < 67000 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {parseFloat(hecsIncome || '0') < 67000 ? 'NO' : 'YES'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-xl p-4">
+                  <p className="text-cyan-300 text-sm font-bold mb-2">💡 BillBot Says:</p>
+                  <p className="text-slate-300 text-sm">
+                    {parseFloat(hecsIncome || '0') < 67000 
+                      ? "You're below the threshold! No compulsory repayments needed. Keep that cash in savings instead."
+                      : parseFloat(hecsBalance || '0') > 50000
+                        ? "Big debt but don't rush to pay it off voluntarily. HECS indexation (4%) is cheaper than mortgage rates (6%+). Put extra cash in your offset instead."
+                        : "Moderate debt. Focus on high-interest debt first (credit cards, car loans). HECS can wait."}
+                  </p>
+                </div>
               </div>
             </div>
-          </button>
+          )}
           
-          <button className="w-full bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 text-left transition-colors">
-            <div className="flex items-center gap-4">
-              <div className="text-3xl">✅</div>
-              <div>
-                <h3 className="text-white font-bold">ABN Validator</h3>
-                <p className="text-slate-500 text-sm">Check if a business is legit</p>
+          {/* Tax Lookup Tool */}
+          {activeTool === 'tax' && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 animate-in slide-in-from-right">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white font-bold flex items-center gap-2">🔍 Tax Deduction Lookup</h3>
+                <button onClick={() => setActiveTool(null)} className="text-slate-500 hover:text-white">← Back</button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Search work-related assets</label>
+                  <input 
+                    type="text" 
+                    value={taxQuery}
+                    onChange={(e) => searchTax(e.target.value)}
+                    placeholder="e.g. laptop, phone, desk..."
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+                  />
+                </div>
+                
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {taxResults.map((item, i) => (
+                    <div key={i} className="bg-slate-950 rounded-xl p-3 flex justify-between items-center">
+                      <div>
+                        <p className="text-white font-medium">{item.asset}</p>
+                        <p className="text-slate-500 text-xs">Effective Life: {item.lifeYears} years</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-emerald-400 font-bold">{(item.rate * 100).toFixed(0)}%</p>
+                        <p className="text-slate-500 text-xs">per year</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-3">
+                  <p className="text-amber-300 text-xs">💡 If it costs under $300 and is work-related, you can claim the full amount immediately. Over $300? Depreciate over time using these rates.</p>
+                </div>
               </div>
             </div>
-          </button>
+          )}
+          
+          {/* ABN Validator Tool */}
+          {activeTool === 'abn' && (
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 animate-in slide-in-from-right">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white font-bold flex items-center gap-2">✅ ABN Validator</h3>
+                <button onClick={() => setActiveTool(null)} className="text-slate-500 hover:text-white">← Back</button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Enter ABN (11 digits)</label>
+                  <input 
+                    type="text" 
+                    value={abnInput}
+                    onChange={(e) => setAbnInput(e.target.value)}
+                    placeholder="e.g. 51 824 753 556"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white outline-none focus:border-cyan-500"
+                    maxLength={14}
+                  />
+                </div>
+                
+                <button 
+                  onClick={() => validateABN(abnInput)}
+                  className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-3 rounded-xl transition-colors"
+                >
+                  Validate ABN
+                </button>
+                
+                {abnResult && (
+                  <div className={`rounded-xl p-4 ${abnResult.isValid ? 'bg-emerald-900/30 border border-emerald-500/30' : 'bg-rose-900/30 border border-rose-500/30'}`}>
+                    <p className={`font-bold ${abnResult.isValid ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {abnResult.message}
+                    </p>
+                    {!abnResult.isValid && (
+                      <p className="text-slate-400 text-sm mt-2">⚠️ Be careful! This ABN doesn't pass the official checksum. The business may be fraudulent or the number was typed incorrectly.</p>
+                    )}
+                  </div>
+                )}
+                
+                <div className="bg-slate-950 rounded-xl p-3">
+                  <p className="text-slate-400 text-xs">ABN validation uses the official ATO algorithm to check if an ABN is mathematically valid. A valid checksum doesn't guarantee the business is legitimate - always verify on the ABN Lookup website for business details.</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1330,9 +2201,11 @@ const App = () => {
             health={health}
             accounts={accounts}
             subscriptions={subscriptions}
+            transactions={transactions}
             onUpdateHealth={setHealth}
             onUpdateAccounts={setAccounts}
             onUpdateSubscriptions={setSubscriptions}
+            onUpdateTransactions={setTransactions}
           />
         )}
         

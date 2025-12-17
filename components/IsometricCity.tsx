@@ -109,22 +109,37 @@ const Window = ({ position, size }: { position: [number, number, number]; size: 
   </mesh>
 );
 
-const Tree = ({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) => (
-  <group position={position}>
-    <mesh position={[0, 0.12 * scale, 0]} castShadow>
-      <cylinderGeometry args={[0.04 * scale, 0.06 * scale, 0.24 * scale, 8]} />
-      <meshStandardMaterial color={COLORS.trunk} />
-    </mesh>
-    <mesh position={[0, 0.32 * scale, 0]} castShadow>
-      <sphereGeometry args={[0.22 * scale, 10, 8]} />
-      <meshStandardMaterial color={COLORS.tree} />
-    </mesh>
-    <mesh position={[0, 0.48 * scale, 0]} castShadow>
-      <sphereGeometry args={[0.14 * scale, 10, 8]} />
-      <meshStandardMaterial color={COLORS.treeDark} />
-    </mesh>
-  </group>
-);
+const Tree = ({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) => {
+  const { showTooltip } = useContext(TooltipContext);
+  
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'tree',
+      title: 'Green Space',
+      description: 'Trees represent financial health. More trees appear when your city is thriving. A healthy financial life needs balance!',
+      icon: '🌳',
+      color: COLORS.tree
+    });
+  };
+  
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.12 * scale, 0]} castShadow>
+        <cylinderGeometry args={[0.04 * scale, 0.06 * scale, 0.24 * scale, 8]} />
+        <meshStandardMaterial color={COLORS.trunk} />
+      </mesh>
+      <mesh position={[0, 0.32 * scale, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
+        <sphereGeometry args={[0.22 * scale, 10, 8]} />
+        <meshStandardMaterial color={COLORS.tree} />
+      </mesh>
+      <mesh position={[0, 0.48 * scale, 0]} castShadow>
+        <sphereGeometry args={[0.14 * scale, 10, 8]} />
+        <meshStandardMaterial color={COLORS.treeDark} />
+      </mesh>
+    </group>
+  );
+};
 
 const StreetLamp = ({ position }: { position: [number, number, number] }) => (
   <group position={position}>
@@ -584,14 +599,14 @@ const ConstructionSite = ({ position, progress, name, price, saved }: { position
   };
   
   return (
-    <group position={position} onClick={handleClick}>
-      {/* Foundation */}
-      <mesh position={[0, 0.04, 0]} receiveShadow>
+    <group position={position}>
+      {/* Foundation - clickable */}
+      <mesh position={[0, 0.04, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[1.0, 0.08, 1.0]} />
         <meshStandardMaterial color="#9E9E9E" />
       </mesh>
-      {/* Building in progress */}
-      <mesh position={[0, 0.08 + builtH / 2, 0]} castShadow>
+      {/* Building in progress - clickable */}
+      <mesh position={[0, 0.08 + builtH / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[0.8, builtH, 0.8]} />
         <meshStandardMaterial color={COLORS.construction} transparent opacity={0.85} />
       </mesh>
@@ -652,14 +667,14 @@ const HarborDock = ({ position, savings }: { position: [number, number, number];
   };
 
   return (
-    <group position={position} onClick={handleClick}>
-      {/* Water basin */}
-      <mesh position={[0, -0.02, 0]} receiveShadow>
+    <group position={position}>
+      {/* Water basin - clickable */}
+      <mesh position={[0, -0.02, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[2.8, 0.12 * waterLevel, 2.0]} />
         <meshStandardMaterial color={COLORS.water} transparent opacity={0.85} />
       </mesh>
-      {/* Dock */}
-      <mesh position={[0.6, 0.06, 0]}>
+      {/* Dock - clickable */}
+      <mesh position={[0.6, 0.06, 0]} onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[0.35, 0.06, 1.8]} />
         <meshStandardMaterial color={COLORS.dock} />
       </mesh>
@@ -709,14 +724,14 @@ const TaxVault = ({ position, amount }: { position: [number, number, number]; am
   };
 
   return (
-    <group position={position} onClick={handleClick}>
-      {/* Base */}
-      <mesh position={[0, 0.12, 0]} castShadow>
+    <group position={position}>
+      {/* Base - clickable */}
+      <mesh position={[0, 0.12, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[0.7, 0.24, 0.7]} />
         <meshStandardMaterial color="#37474F" />
       </mesh>
-      {/* Vault body */}
-      <mesh position={[0, 0.45, 0]} castShadow>
+      {/* Vault body - clickable */}
+      <mesh position={[0, 0.45, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
         <boxGeometry args={[0.6, 0.42, 0.6]} />
         <meshStandardMaterial color={COLORS.taxVault} metalness={0.4} roughness={0.3} />
       </mesh>
@@ -1156,27 +1171,27 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
         </>
       )}
 
-      {/* Tooltip Panel */}
+      {/* Tooltip Panel - positioned in center of view */}
       {tooltip && (
         <div 
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-xl max-w-[280px] w-[90%] animate-in fade-in slide-in-from-bottom-4 duration-200"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-2xl max-w-[280px] w-[85%] animate-in fade-in zoom-in-95 duration-200 border border-slate-700/50"
           onClick={(e) => e.stopPropagation()}
         >
           <button 
             onClick={hideTooltip}
-            className="absolute top-2 right-2 text-slate-400 hover:text-white text-lg leading-none"
+            className="absolute -top-2 -right-2 bg-slate-700 hover:bg-slate-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm shadow-lg"
           >
             ×
           </button>
           <div className="flex items-start gap-3">
-            <div className="text-3xl">{tooltip.icon}</div>
+            <div className="text-3xl flex-shrink-0">{tooltip.icon}</div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-white text-sm truncate">{tooltip.title}</h3>
+              <h3 className="font-bold text-white text-sm truncate pr-4">{tooltip.title}</h3>
               {tooltip.subtitle && (
                 <p className="text-xs text-slate-400">{tooltip.subtitle}</p>
               )}
               {tooltip.value && (
-                <p className="text-lg font-bold mt-1" style={{ color: tooltip.color }}>{tooltip.value}</p>
+                <p className="text-xl font-bold mt-1" style={{ color: tooltip.color }}>{tooltip.value}</p>
               )}
               <p className="text-xs text-slate-300 mt-2 leading-relaxed">{tooltip.description}</p>
             </div>
