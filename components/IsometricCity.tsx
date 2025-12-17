@@ -921,7 +921,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
 
       <Canvas shadows dpr={[1, 2]}>
         {/* Increased zoom for better mobile visibility */}
-        <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={62} near={-50} far={200} />
+        <OrthographicCamera makeDefault position={[20, 20, 20]} zoom={38} near={-50} far={200} />
         <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 3} />
         <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
         <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
