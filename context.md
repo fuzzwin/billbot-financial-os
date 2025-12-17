@@ -542,6 +542,22 @@ Keys:
 
 ## 13. Changelog
 
+### v3.2 - Improved Top Overlay Layout (Dec 18, 2025)
+**Changes:**
+1. Moved city view controls (zoom, bird's eye, rotate) to vertical stack on left side
+2. Added dynamic AI "Insight Card" floating in the sky area
+3. Insight card shows contextual tips based on user's financial state
+4. Added z-index fixes for proper overlay stacking over Three.js canvas
+5. Cleaner header layout with score ring + title on left, surplus badge on right
+
+### v3.1 - City Controls & Camera (Dec 18, 2025)
+**Changes:**
+1. Added zoom in/out controls for city view
+2. Added bird's eye view toggle (🦅) for top-down perspective
+3. Added auto-rotate toggle (⟳) for cinematic view
+4. Camera positions adjust dynamically based on view mode
+5. OrbitControls enabled for manual rotation in bird's eye mode
+
 ### v3.0 - Major UI Overhaul: 4-Zone Navigation (Dec 18, 2025)
 **Philosophy Change:** From "Swiss Army Knife with Everything" to "Financial Fitness in 5 Minutes a Week"
 

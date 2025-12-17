@@ -1014,6 +1014,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
   const [autoRotate, setAutoRotate] = useState(true);
   const [zoom, setZoom] = useState(38);
   const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
+  const [tooltip, setTooltip] = useState<TooltipInfo | null>(null);
   
   const isLowScore = health.score < 40;
   const monthlySurplus = health.monthlyIncome - health.monthlyExpenses;
@@ -1022,6 +1023,9 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
   const handleZoomIn = () => setZoom(z => Math.min(z + 8, 70));
   const handleZoomOut = () => setZoom(z => Math.max(z - 8, 22));
   const toggleView = () => setViewMode(v => v === 'isometric' ? 'birdseye' : 'isometric');
+
+  const showTooltip = (info: TooltipInfo) => setTooltip(info);
+  const hideTooltip = () => setTooltip(null);
 
   const getSkyClass = () => {
     if (isFuture) return "bg-gradient-to-b from-indigo-900 to-purple-900";
@@ -1143,20 +1147,50 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
         </>
       )}
 
-      <Canvas shadows dpr={[1, 2]}>
-        <OrthographicCamera makeDefault position={cameraPosition} zoom={zoom} near={-50} far={200} />
-        <OrbitControls 
-          autoRotate={autoRotate} 
-          autoRotateSpeed={0.5} 
-          enableZoom={false} 
-          enablePan={false} 
-          minPolarAngle={polarAngle.min} 
-          maxPolarAngle={polarAngle.max}
-        />
-        <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
-        <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
-        {isFuture && <pointLight position={[-5, 5, -5]} intensity={1} color="#bc13fe" distance={20} />}
-        <CityScene accounts={accounts} health={health} goals={goals} weeklyBuilds={weeklyBuilds} autoRotate={false} subscriptions={subscriptions} />
+      {/* Tooltip Panel */}
+      {tooltip && (
+        <div 
+          className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-xl max-w-[280px] w-[90%] animate-in fade-in slide-in-from-bottom-4 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button 
+            onClick={hideTooltip}
+            className="absolute top-2 right-2 text-slate-400 hover:text-white text-lg leading-none"
+          >
+            ×
+          </button>
+          <div className="flex items-start gap-3">
+            <div className="text-3xl">{tooltip.icon}</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-white text-sm truncate">{tooltip.title}</h3>
+              {tooltip.subtitle && (
+                <p className="text-xs text-slate-400">{tooltip.subtitle}</p>
+              )}
+              {tooltip.value && (
+                <p className="text-lg font-bold mt-1" style={{ color: tooltip.color }}>{tooltip.value}</p>
+              )}
+              <p className="text-xs text-slate-300 mt-2 leading-relaxed">{tooltip.description}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Canvas shadows dpr={[1, 2]} onClick={() => tooltip && hideTooltip()}>
+        <TooltipContext.Provider value={{ showTooltip, hideTooltip }}>
+          <OrthographicCamera makeDefault position={cameraPosition} zoom={zoom} near={-50} far={200} />
+          <OrbitControls 
+            autoRotate={autoRotate} 
+            autoRotateSpeed={0.5} 
+            enableZoom={false} 
+            enablePan={false} 
+            minPolarAngle={polarAngle.min} 
+            maxPolarAngle={polarAngle.max}
+          />
+          <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
+          <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
+          {isFuture && <pointLight position={[-5, 5, -5]} intensity={1} color="#bc13fe" distance={20} />}
+          <CityScene accounts={accounts} health={health} goals={goals} weeklyBuilds={weeklyBuilds} autoRotate={false} subscriptions={subscriptions} />
+        </TooltipContext.Provider>
       </Canvas>
     </div>
   );

@@ -395,7 +395,7 @@ const HomeView = ({
         </div>
         
         {/* TOP OVERLAY: Header + Insight */}
-        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-transparent p-3 pb-16 pointer-events-none">
+        <div className="absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-transparent p-3 pb-16 pointer-events-none">
           {/* Header Row */}
           <div className="flex justify-between items-center pointer-events-auto mb-3">
             <div className="flex items-center gap-3">
@@ -442,7 +442,7 @@ const HomeView = ({
         </div>
         
         {/* BOTTOM OVERLAY: Stats + Actions */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pt-16 px-4 pb-4">
+        <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pt-16 px-4 pb-4">
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2 mb-3">
             <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2 text-center">
