@@ -1,0 +1,212 @@
+# BillBot Financial OS - Cursor Rules
+
+## Project Overview
+BillBot is a **local-first, AI-native financial operating system** for the Australian market. It features a gamified 3D city visualization where financial data maps to buildings, rockets, and traffic.
+
+**Always read `context.md` before making significant changes** - it contains the complete architecture documentation and changelog.
+
+---
+
+## Tech Stack (Do Not Change Versions)
+- React 18.3.1 + TypeScript 5.8
+- Three.js 0.167.1 + @react-three/fiber 8.17.6 + @react-three/drei 9.112.0
+- Tailwind CSS (via CDN)
+- Google Gemini AI (`@google/genai` 1.33.0, model: `gemini-2.5-flash`)
+- Vite for bundling
+- LocalStorage for persistence (NO external database)
+
+---
+
+## Code Patterns
+
+### State Management
+- Use React `useState` and `useEffect` hooks
+- Global state lives in `App.tsx` and props drill down
+- All data persists to `localStorage` via `storageService.ts`
+- Storage keys follow pattern: `BILLBOT_{ENTITY}_V1`
+
+### TypeScript
+- All types defined in `types.ts`
+- Use `AccountType`, `AppView` enums
+- Interfaces for: `FinancialHealth`, `AccountItem`, `Goal`, `Transaction`, `Subscription`, `ImpulseItem`
+
+### Three.js Components (IsometricCity.tsx)
+- Components return `<group>` elements
+- Use `useFrame` for animations
+- Use `useRef` for mesh/group references
+- Use `useMemo` for expensive calculations
+- **Ignore TypeScript JSX errors** for mesh/group/geometry - these are @react-three/fiber intrinsics
+
+### AI Service Calls (geminiService.ts)
+- All functions are async
+- Wrap in try/catch with fallback responses
+- Use `SYSTEM_INSTRUCTION` persona for all chat
+- Parse JSON responses with error handling
+
+---
+
+## Australian Context (CRITICAL)
+- All currency in AUD ($)
+- Tax rates: Use 32.5% marginal rate for estimates
+- HECS/HELP: Use 2025 thresholds ($67,000 repayment threshold)
+- Super: 11.5% employer contribution rate
+- GST: 10% on most goods/services
+- ABN validation: 11-digit checksum algorithm
+- Effective Life: Reference ATO TR 2024/3
+
+---
+
+## 3D City Traffic System
+
+### Car Directions
+```typescript
+type CarDirection = 'EAST' | 'WEST' | 'NORTH' | 'SOUTH';
+// EAST: travels +X on north lane (-Z)
+// WEST: travels -X on south lane (+Z)
+// SOUTH: travels +Z on east lane (+X)
+// NORTH: travels -Z on west lane (-X)
+```
+
+### Traffic Rules
+- Cars stop at `STOP_LINE = 1.8` units from center
+- Horizontal cars go when `horizontalGreen = true`
+- Vertical cars go when `horizontalGreen = false`
+- Light cycle: 8 seconds (3s green, 1s yellow, 4s other)
+- No cars through center intersection (flat road surface only)
+
+### Pedestrian Quadrants
+- `QUADRANT_NW`, `QUADRANT_NE`, `QUADRANT_SW`, `QUADRANT_SE`
+- Walk counter-clockwise or clockwise around sidewalks
+- Wait at inner corners when cross-traffic has green
+
+---
+
+## Common Pitfalls to Avoid
+
+### Three.js
+- ❌ Don't use `transparent` materials without setting `opacity`
+- ❌ Don't forget `castShadow` / `receiveShadow` on meshes
+- ❌ Don't create geometries inside render loops
+- ✅ Memoize waypoints and calculations with `useMemo`
+- ✅ Use refs for position updates in `useFrame`
+
+### State
+- ❌ Don't mutate state directly - always use setter functions
+- ❌ Don't store derived data - calculate from source
+- ✅ Save to localStorage after state changes
+
+### AI Calls
+- ❌ Don't expose API keys in code (use environment variables)
+- ❌ Don't skip error handling on Gemini calls
+- ✅ Always provide fallback responses
+- ✅ Validate JSON before parsing
+
+---
+
+## File Organization
+
+```
+/
+├── App.tsx              # Root component, global state, navigation
+├── types.ts             # All TypeScript interfaces/enums
+├── index.html           # Entry point + Tailwind CDN
+├── context.md           # Architecture documentation (UPDATE AFTER CHANGES)
+├── components/
+│   ├── IsometricCity.tsx    # 3D visualization (traffic, buildings, etc.)
+│   ├── Launchpad.tsx        # Goal rockets
+│   ├── WalletManager.tsx    # Account management
+│   ├── PurchaseAdvisor.tsx  # Asset scanner
+│   ├── HECSCalculator.tsx   # HECS strategy
+│   ├── CrisisCommand.tsx    # Hardship tools
+│   ├── BatteryROI.tsx       # Solar calculator
+│   ├── ImpulseHangar.tsx    # Delayed purchases
+│   ├── GigPort.tsx          # Gig income + tax
+│   ├── SideQuests.tsx       # Challenges
+│   ├── DataIngestion.tsx    # Import tools
+│   ├── SubscriptionManager.tsx
+│   ├── Advisor.tsx          # AI chat
+│   ├── Profile.tsx          # Onboarding
+│   └── ...
+├── services/
+│   ├── geminiService.ts     # AI functions
+│   ├── storageService.ts    # LocalStorage CRUD
+│   └── complianceService.ts # ATO data, ABN validation
+└── hooks/
+    └── useGoalCalculator.ts # Goal status calculations
+```
+
+---
+
+## Documentation Requirements
+
+### After Every Significant Change:
+1. Update `context.md` changelog section
+2. Document new components in Section 4
+3. Update data models in Section 3 if changed
+4. Note any new logic flows in Section 5
+
+### Changelog Format:
+```markdown
+### vX.X - Brief Title (Date)
+**Changes:**
+1. What was added/changed
+2. Why it was changed
+3. Any breaking changes
+```
+
+---
+
+## Testing Checklist
+
+Before completing a feature:
+- [ ] No console errors in browser
+- [ ] Traffic simulation runs smoothly (no stuck cars)
+- [ ] Mobile responsive (test at 390px width)
+- [ ] Data persists after page refresh
+- [ ] AI calls have error handling
+- [ ] Australian calculations use correct rates
+
+---
+
+## UI/UX Guidelines
+
+### Colors (Tailwind)
+- Primary: `slate-800`, `slate-900` (dark backgrounds)
+- Accent: `blue-500`, `emerald-500`, `amber-500`
+- Danger: `rose-500`, `red-500`
+- Success: `green-500`, `emerald-500`
+
+### City Visualization
+- Score 0-30: Low activity (2 cars, 4 people)
+- Score 31-70: Medium activity (4 cars, 8 people)
+- Score 71-100: High activity (6 cars, 12 people)
+- Future mode: Purple/indigo sky gradient
+
+### Animations
+- Entry: `animate-in fade-in zoom-in-95`
+- Pulse: `animate-pulse` for alerts
+- Bounce: `animate-bounce` for celebrations
+
+---
+
+## Quick Commands
+
+```bash
+# Start dev server
+npm run dev
+
+# The app runs on http://localhost:3001
+
+# No build step needed for development
+# Tailwind loaded via CDN
+```
+
+---
+
+## Remember
+1. **Local-first** - No external APIs except Gemini
+2. **Australian context** - Use AUD, ATO rules, Super, HECS
+3. **Gamification** - Money = Water/Materials, Debt = Pollution
+4. **Update context.md** - Keep documentation current
+5. **Test traffic** - Verify cars/pedestrians behave correctly
+

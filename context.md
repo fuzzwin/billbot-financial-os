@@ -1,0 +1,601 @@
+
+# BillBot Application Architecture
+
+> **📋 See `.cursorrules`** for AI coding guidelines, common pitfalls, and quick reference.
+
+## 1. System Overview
+BillBot is a **local-first, AI-native financial operating system** tailored for the Australian market. It uses a **React 18** frontend, **Three.js (@react-three/fiber)** for data visualization (gamified city), and **Google Gemini Flash 2.5** for intelligence (OCR, categorization, advisory).
+
+**Design Philosophy:**
+1.  **Local-First:** All data persists to `localStorage`. No external database.
+2.  **Gamification:** Financial data is mapped to 3D objects (Accounts = Buildings, Debt = Pollution/Warning Beacons, Goals = Rockets).
+3.  **Australian Context:** Hardcoded logic for HECS/HELP loans, ATO tax rules, Superannuation, and GST.
+
+---
+
+## 2. Tech Stack & Dependencies
+
+*   **Runtime:** Browser (ES Modules via Vite)
+*   **Framework:** React 18.3.1 (TypeScript 5.8)
+*   **Styling:** Tailwind CSS (Slate/Neon color palette with custom colors: `neon-blue`, `neon-purple`, `neon-green`)
+*   **3D Engine:** Three.js 0.167.1 + @react-three/fiber 8.17.6 + @react-three/drei 9.112.0 + @react-three/postprocessing 2.16.2
+*   **AI SDK:** `@google/genai` 1.33.0 (Model: `gemini-2.5-flash`)
+*   **Charts:** Recharts 2.13.0
+*   **State:** React `useState` / `useEffect` + Custom LocalStorage Hooks.
+*   **Math:** `maath` 0.10.7 (for 3D helpers), native JS Math functions.
+*   **Utils:** `uuid` 10.0.0 for ID generation
+
+---
+
+## 3. Data Models (`types.ts`)
+
+The application revolves around the `FinancialHealth` derived state and specific entities.
+
+### Core User State
+```typescript
+export interface FinancialHealth {
+  // Income
+  annualSalary: number;     // Gross Income
+  monthlyIncome: number;    // Net Income (Post-Tax)
+  salarySacrifice: number;  // Pre-tax super contributions
+  isStudent: boolean;       // Triggers Poverty/Youth Allowance logic
+  
+  // Derived from Accounts
+  savings: number;          // Sum of CASH, SAVINGS, INVESTMENT, SUPER accounts
+  hecsDebt: number;         // Sum of HECS accounts
+  mortgageBalance: number;  // Mortgage tracking
+  otherDebts: number;       // Sum of LOAN, CREDIT_CARD accounts
+  
+  // Cashflow
+  monthlyExpenses: number;  // Static user input or derived
+  survivalNumber: number;   // Minimum viable expenses (bare survival budget)
+  
+  // Metrics
+  score: number;            // 0-100 Health Score (drives City activity level)
+  willpowerPoints: number;  // Gamification currency earned by financial discipline
+  taxVault: number;         // Gig Economy withholding (quarantined tax money)
+}
+```
+
+### Account Entities (The Buildings)
+```typescript
+export type AccountType = 'CASH' | 'SAVINGS' | 'INVESTMENT' | 'SUPER' | 'LOAN' | 'CREDIT_CARD' | 'HECS';
+
+export interface AccountItem {
+  id: string;
+  name: string;             // e.g. "CommBank Everyday"
+  type: AccountType;
+  balance: number;
+  interestRate?: number;    // For debts (APR)
+  limit?: number;           // For credit cards
+  isValueBuilding?: boolean; // User flag for "Divine Value" (e.g. Travel Fund)
+}
+```
+
+### Goal Entities (The Rockets)
+```typescript
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;    // Logic: Fueling this depletes 'savings'
+  deadline: string;         // ISO string
+  category: 'travel' | 'gadget' | 'car' | 'gift' | 'house_deposit';
+  valueTag: 'Adventure' | 'Comfort' | 'Status' | 'Security';
+}
+```
+
+### Impulse Entities (The Hangar)
+```typescript
+export interface ImpulseItem {
+  id: string;
+  name: string;
+  price: number;
+  dateAdded: string;        // ISO string
+  savedAmount: number;      // For the "Maybuy" construction mechanic
+  targetWeeklySave: number; // Weekly contribution target
+}
+
+// Used in City visualization
+export interface WeeklyBuild {
+  id: string;
+  name: string;
+  target: number;
+  saved: number;
+}
+```
+
+### Transaction & Subscription Entities
+```typescript
+export interface Transaction {
+  id: string;
+  date: string;
+  merchant: string;
+  amount: number;
+  category: string;
+  isDeductible: boolean;    // ATO tax deduction flag
+  gstIncluded: boolean;     // Australian GST tracking
+}
+
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  cycle: 'MONTHLY' | 'YEARLY' | 'WEEKLY';
+  nextDueDate: string;
+  category: string;
+  isOptimizable: boolean;   // AI flag for "You might want to cancel this"
+}
+```
+
+### Additional Types
+```typescript
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+  timestamp: Date;
+}
+
+export interface BillScanResult {
+  biller: string;
+  amount: number;
+  dueDate: string;
+  isTaxDeductible: boolean;
+  summary: string;
+}
+
+export interface EffectiveLifeItem {
+  asset: string;
+  lifeYears: number;
+  rate: number;             // Prime Cost depreciation rate
+}
+
+export type HardshipType = 'MORATORIUM' | 'REDUCED_PAYMENT';
+
+export interface HardshipRequest {
+  userName: string;
+  creditorName: string;
+  accountNumber: string;
+  reason: string;
+  type: HardshipType;
+  offerAmount?: number;
+  durationMonths: number;
+}
+
+export interface HECSSimulationResult {
+  strategy: 'PAY_HECS' | 'OFFSET_MORTGAGE';
+  savingsDiff: number;
+  description: string;
+}
+```
+
+### Navigation
+```typescript
+export enum AppView {
+  DASHBOARD = 'DASHBOARD',
+  CITY = 'CITY',
+  SUBSCRIPTIONS = 'SUBSCRIPTIONS',
+  HECS_CALCULATOR = 'HECS_CALCULATOR',
+  BATTERY_CALC = 'BATTERY_CALC',
+  DATA_IMPORT = 'DATA_IMPORT',
+  ADVISOR = 'ADVISOR',
+  WALLET = 'WALLET',
+  HANGAR = 'HANGAR',
+  GIG_PORT = 'GIG_PORT',
+  CRISIS = 'CRISIS',
+  SIDE_QUESTS = 'SIDE_QUESTS',
+  LAUNCHPAD = 'LAUNCHPAD'
+}
+```
+
+---
+
+## 4. Component Architecture
+
+### A. Root & State (`App.tsx`)
+*   **Responsibility:** Loads data from `storageService.ts` on mount, manages global state.
+*   **State Propagation:** Props drill down to views.
+*   **Navigation:** State variable `view: AppView` determines the rendered component.
+*   **Calculation Engine:** Contains `projectedData` memoized hook that runs time-series simulations (Year 2025 -> 2030) based on `Drift` (Standard) vs `Turbo` (Optimized) modes.
+*   **Error Boundary:** Wraps entire app with ErrorBoundary class component for graceful failure handling.
+*   **Tutorial System:** First-time users see `TutorialOverlay` with 4-step onboarding.
+*   **Dummy Data:** Fallback data for accounts, transactions, subscriptions, impulse items, and goals if localStorage is empty.
+
+### B. 3D Visualization (`IsometricCity.tsx`)
+Maps `AccountItem[]` and `FinancialHealth` to a Three.js Canvas.
+
+*   **Visual Elements:**
+    *   Buildings with different styles based on account type
+    *   4-way intersection with flat road surface (no fountain)
+    *   Crosswalks at intersection corners
+    *   Roads with lane markings and sidewalks
+    *   Trees, street lamps
+    *   Marina with bobbing boats
+    *   Construction sites for Impulse items
+    *   Drifting clouds in the sky
+
+*   **Traffic System (Updated v2):**
+    *   **Cars:** Drive straight through intersection in 4 directions
+        *   `EAST`: North lane (-Z), travels +X
+        *   `WEST`: South lane (+Z), travels -X  
+        *   `SOUTH`: East lane (+X), travels +Z
+        *   `NORTH`: West lane (-X), travels -Z
+    *   **Traffic Lights:** 8-second cycle (3s green, 1s yellow, 4s other direction)
+        *   Horizontal (E/W) green → Vertical (N/S) stops
+        *   Vertical (N/S) green → Horizontal (E/W) stops
+    *   **Stop Line:** Cars stop 1.8 units from center when light is red
+    *   **Speed:** Consistent 0.025-0.035 units/frame
+    *   **Pedestrians:** Walk around 4 quadrant sidewalks (NW, NE, SW, SE)
+        *   Crosswalk awareness - wait at inner corners when traffic flowing
+        *   Animated walking legs
+
+*   **Mapping Logic:**
+    *   `SAVINGS` -> Building with Golden Dome
+    *   `INVESTMENT` -> Building with Antenna + Red beacon
+    *   `SUPER` -> Purple Building with Dome
+    *   `LOAN`/`CREDIT_CARD`/`HECS` -> Building with Red Warning Beacon
+    *   `Goal` -> Rocket on launchpad atop a building
+    *   `ImpulseItem` -> Construction site with crane
+
+*   **Visual Feedback:**
+    *   `health.score` determines # of cars (2-6) and people (4-12)
+    *   `health.score` determines animation speed multiplier (0.3-0.8x)
+    *   `isFuture` prop changes lighting/skybox (Day -> Neon purple night)
+
+*   **Features:**
+    *   Auto-rotate toggle
+    *   OrthographicCamera with OrbitControls
+    *   Shadow casting enabled
+
+### C. AI Services (`geminiService.ts`)
+All AI functions use `gemini-2.5-flash` model with custom `SYSTEM_INSTRUCTION` persona.
+
+*   **`adviseOnPurchase`:** Financial health + item details -> "VERDICT: [Green/Yellow/Red Light]" with City metaphor explanation
+*   **`categorizeTransactions`:** CSV string -> JSON array of Transaction objects with tax deductibility detection
+*   **`detectSubscriptions`:** Transaction list -> Identified recurring payments as Subscription objects
+*   **`scanBillImage`:** Multimodal image/PDF (base64) -> JSON extraction (Biller, Amount, Due Date)
+*   **`parseEmailContent`:** Email text -> BillScanResult extraction
+*   **`chatWithAdvisor`:** RAG-lite chat - Injects `FinancialHealth` JSON into system prompt for context-aware conversation
+*   **`analyzeHECSvsMortgage`:** HECS balance + mortgage rate + available cash -> Strategic recommendation
+
+**BillBot Persona Rules:**
+1. Never use jargon
+2. Be direct (if bad idea, say it)
+3. Use "City" metaphor (Money = Water/Materials, Debt = Pollution/Fire/Smog)
+4. Australian context (AUD, GST, Super, HECS, "Lazy Tax")
+
+### D. Compliance & Calc Engines
+
+#### `complianceService.ts`
+*   **`COMMON_ASSETS`:** ATO 2025 Effective Life Determinations database (Laptop, Phone, Monitor, etc.)
+*   **`searchEffectiveLife`:** Query asset name -> depreciation rates
+*   **`validateABN`:** 11-digit ABN checksum validation (fraud prevention)
+*   **`generateHardshipLetter`:** HardshipRequest -> Legal letter template citing National Credit Code
+
+#### `HECSCalculator.tsx`
+*   **2025 Legislation Constants:**
+    *   `HECS_INDEXATION_FORECAST`: 4.0%
+    *   `DEBT_WAIVER_PERCENT`: 20% (Government "Debt Destruction" event)
+    *   `NEW_REPAYMENT_THRESHOLD`: $67,000
+    *   `FREEZE_DATE`: June 1st, 2025
+*   **Features:**
+    *   Countdown banner to debt waiver date
+    *   Compares Mortgage Offset Rate vs HECS Indexation
+    *   Deterministic advice + AI analysis
+
+#### `CrisisCommand.tsx`
+*   **Three Modes:**
+    1. **TRIAGE:** Priority hierarchy (Roof > Critical Assets > Unsecured Debt)
+    2. **LETTER:** Hardship letter generator with Moratorium/Reduced Payment options
+    3. **OMBUDSMAN:** EDR escalation links (AFCA, EWON/EWOV, TIO)
+
+#### `BatteryROI.tsx`
+*   **2025 Federal Battery Rebate Logic:**
+    *   Base rebate: $3,500
+    *   Taper threshold: 14kWh
+    *   Reduction: $500 per kWh over threshold
+*   Calculates real cost after rebate and payback period
+
+### E. Gamification Components
+
+#### `Launchpad.tsx`
+*   Goal management with rocket visualization
+*   "Reality Check Banner" - compares weekly surplus to weekly goal requirements
+*   Fuel mechanism: Add money to goals incrementally
+*   Launch animation with 2-second delay, deducts from savings, awards Willpower Points
+
+#### `RocketSilo.tsx`
+*   Individual rocket visualization component
+*   Uses `useGoalCalculator` hook for status calculation
+*   Color-coded status lights (green/amber/red)
+*   Fuel level visual (liquid rising)
+*   Lock icon during Crisis Mode (Status goals paused)
+
+#### `ImpulseHangar.tsx`
+*   "Park items. Build savings. Decide later."
+*   Construction visualization with crane and fill level
+*   Weekly contribution button
+*   Decision modal on goal completion: Buy Item vs Keep Cash (+50 WP)
+
+#### `SideQuests.tsx`
+*   **Weather Challenge:** Save amount = current temperature in $
+*   **Reverse 52-Week Challenge:** Save big early, easy later (Week 1 = $52, Week 52 = $1)
+
+### F. Dashboard Components
+
+#### `CashflowMonitor` (inline in App.tsx)
+*   Visual bar showing expenses vs surplus
+*   Color-coded (rose for expenses, emerald for surplus)
+
+#### `SafeZoneShield.tsx`
+*   Shield icon with status indicator
+*   **SAFE:** Cashflow > 0 AND Savings > 1 month expenses
+*   **CAUTION:** Cashflow > 0 BUT Savings < 1 month expenses
+*   **DANGER:** Cashflow < 0 (bleeding mode with pulse animation)
+
+#### `TimeTravelUI.tsx`
+*   Year slider (2025-2030)
+*   Mode toggle: Drift (current path) vs Turbo (optimized)
+*   Net worth delta display
+*   **Tangible Goal Conversion:** Maps net worth amounts to real-world equivalents ($150k+ = House Deposit, $60k = Luxury Car, etc.)
+
+#### `WeeklyBriefing.tsx`
+*   Step-through balance update wizard
+*   Iterates through all accounts
+*   Shows net worth change summary at end
+
+### G. Management Components
+
+#### `WalletManager.tsx`
+*   **Sections:** Assets vs Liabilities columns
+*   **Net Worth Hero:** Total calculation display
+*   **Debt Crusher Calculator:**
+    *   BY_DATE mode: Target payoff date -> Required monthly payment
+    *   BY_BUDGET mode: Monthly payment -> Time to freedom
+    *   Uses PMT/NPER financial formulas
+*   Income settings editor
+
+#### `SubscriptionManager.tsx`
+*   Auto-detect subscriptions from transactions via AI
+*   Filter: All Active vs Optimization Opportunities
+*   Monthly/Yearly burn calculation
+*   Due date status indicators (Overdue, Due soon)
+*   "Crush" animation on removal
+
+#### `PurchaseAdvisor.tsx` (Dashboard Hero)
+*   "Asset Scanner" modal
+*   Work-related toggle for tax deduction calculation
+*   Estimated refund at 32.5% marginal rate
+*   AI verdict integration
+
+### H. Data Input Components
+
+#### `DataIngestion.tsx` ("The Shoebox")
+*   File upload: CSV, Images, PDF
+*   Text dump zone for pasting emails/receipts
+*   Bill confirmation dialog with extracted data
+*   Converts to Transaction on confirmation
+
+#### `GigPort.tsx`
+*   Gig economy income processor
+*   30% automatic tax quarantine
+*   Visual "truck" animation during processing
+*   Only net amount hits savings
+
+### I. AI Chat Interface
+
+#### `Advisor.tsx`
+*   Full-height chat interface
+*   Message history with typing indicators
+*   **Tools Sidebar:**
+    *   Effective Life Lookup: Search ATO depreciation database
+    *   ABN Checker: Validate business numbers
+
+### J. Onboarding
+
+#### `Profile.tsx`
+*   3-step onboarding wizard
+*   Collects: Annual salary, Monthly income, HECS debt, Other debts, Savings, Survival number
+*   Help tips explaining Australian-specific concepts
+
+---
+
+## 5. Key Logic Flows
+
+### 1. The "Launchpad" Mechanic (Spending Guilt-Free)
+*   **Concept:** Money saved for goals is meant to be burned.
+*   **Flow:**
+    1.  User creates `Goal` (Rocket) with name, target, deadline, value tag
+    2.  User "Fuels" Rocket (Increment `currentAmount` via $100 clicks)
+    3.  User "Launches" Rocket when fuel = 100%
+    4.  **Result:** `Goal` is deleted after 2-second animation, `FinancialHealth.savings` is **reduced** by the target amount, and `willpowerPoints` increase by 100.
+
+### 2. Time Travel Simulation (`App.tsx` -> `projectedData`)
+*   **Inputs:** Current Accounts, Income, Expenses
+*   **Mode `DRIFT`:**
+    *   Surplus adds to Savings at 0.3% monthly yield
+    *   Deficit adds to Debt at 1.5% monthly interest (18% APR)
+*   **Mode `TURBO`:**
+    *   Expenses reduced by 10%
+    *   Income increased by 5%
+    *   Investment yield increased to 0.5% monthly
+*   **Crisis Debt:** If deficit and no debt accounts exist, creates "Unpaid Bills" credit card
+*   **Output:** `projectedAccounts`, `projectedHealth`, `netWorthDelta`
+
+### 3. Asset Scanning (`PurchaseAdvisor.tsx`)
+*   **Logic:**
+    1.  Input Price + Item Name
+    2.  Toggle "Work Related?"
+    3.  If Work Related: Calculate `EstimatedRefund = Price * 0.325` (Marginal Tax Rate)
+    4.  Send data to Gemini for "Verdict" based on `freeCash = Income - Expenses`
+
+### 4. Health Score Calculation (`App.tsx`)
+*   Base score: 50
+*   +10 if Net Worth > $10,000
+*   +10 if Net Worth > $50,000
+*   +20 if Other Debts = $0
+*   -10 if Other Debts > $5,000
+*   Clamped to 0-100
+
+### 5. Gig Port Tax Quarantine
+*   Gross income input
+*   30% moved to `taxVault`
+*   70% (net) added to `savings`
+*   Prevents accidental spending of tax obligations
+
+### 6. Impulse Hangar Flow
+*   Add item with name, price, weekly save target
+*   Click "Add Weekly Contribution" to simulate week passing
+*   On goal reached: Decision modal
+    *   Buy Item: Remove from hangar
+    *   Keep Cash: Add price to savings, +50 WP, remove from hangar
+
+---
+
+## 6. Hooks
+
+### `useGoalCalculator.ts`
+Calculates goal status metrics:
+```typescript
+interface GoalStatus {
+  weeklyContributionNeeded: number;  // (Target - Current) / Weeks Remaining
+  daysRemaining: number;
+  percentageComplete: number;
+  isOnTrack: boolean;
+  statusColor: 'green' | 'amber' | 'red';
+}
+```
+**Status Color Logic:**
+*   Red: <30 days remaining AND <80% complete, OR deadline passed
+*   Amber: <90 days remaining AND <50% complete
+*   Green: On track
+
+---
+
+## 7. Prompt Engineering Context
+The AI is instructed via `SYSTEM_INSTRUCTION` in `geminiService.ts`.
+*   **Persona:** "BillBot", a savvy friend, not a bank manager
+*   **Metaphor:** Use "City" metaphors (Pollution, Reservoirs, Materials)
+*   **Constraint:** Australian jurisdiction (AUD, GST, Super, HECS, "Lazy Tax" for overpriced bills)
+
+---
+
+## 8. Storage Schema (LocalStorage)
+Keys:
+*   `BILLBOT_HEALTH_V1`: `FinancialHealth` object
+*   `BILLBOT_ACCOUNTS_V1`: Array of `AccountItem`
+*   `BILLBOT_TRANSACTIONS_V1`: Array of `Transaction`
+*   `BILLBOT_SUBSCRIPTIONS_V1`: Array of `Subscription`
+*   `BILLBOT_IMPULSE_V1`: Array of `ImpulseItem`
+*   `BILLBOT_GOALS_V1`: Array of `Goal`
+*   `BILLBOT_HAS_SEEN_TUTORIAL`: Boolean flag (existence check)
+
+---
+
+## 9. Tutorial System
+4-step overlay shown on first visit:
+1. **Welcome:** Introduction to BillBot
+2. **Wealth City:** 3D visualization explanation (navigates to Dashboard)
+3. **Launchpad:** Rocket/goal system (navigates to Launchpad)
+4. **Crisis Protocol:** Emergency features (navigates to Crisis)
+
+---
+
+## 10. Styling & Animations
+
+### Custom Colors (Tailwind)
+*   `neon-blue`: #00f3ff (cyan accent)
+*   `neon-purple`: Purple accent
+*   `neon-green`: Green accent
+
+### CSS Animations
+*   `animate-in`, `fade-in`, `zoom-in-95`, `slide-in-from-bottom-4`: Entry animations
+*   `animate-pulse`: Pulsing elements
+*   `animate-bounce`: Bouncing elements
+*   Subscription "crush" animation: scale-0, opacity-0, rotate-12
+*   Rocket launch: `fly-off` animation (custom)
+*   Gig Port: `smoke` animation for tax truck
+
+---
+
+## 11. Error Handling
+
+### ErrorBoundary (Class Component)
+*   Catches render errors across entire app
+*   Displays "SYSTEM FAILURE" screen with error details
+*   "REBOOT SYSTEM" button triggers page reload
+
+### Service Error Handling
+*   All Gemini service functions use try/catch
+*   Fallback messages on API failure
+*   Console error logging
+
+---
+
+## 12. Mobile Support
+*   Responsive sidebar (hidden on mobile, drawer navigation)
+*   Mobile menu button in header
+*   Touch-friendly city visualization (touch-none class)
+*   Responsive grids throughout (1 col mobile, 2-3 cols desktop)
+
+---
+
+## 13. Changelog
+
+### v2.2 - Meaningful City Elements (Dec 17, 2025)
+**Changes:**
+1. **Themed Quadrants** - Each quadrant now has a purpose:
+   - NW: Asset buildings (Savings, Investment, Super, Cash)
+   - NE: Debt buildings with smoke effects
+   - SW: Goals/Rockets + Construction sites
+   - SE: Harbor District (liquidity visualization)
+2. **Cashflow Fountain** - Central fountain shows surplus/deficit
+   - Water level rises with positive cashflow
+   - Turns red and shows warning when negative
+   - Ring indicator shows health status
+3. **Subscription Drains** - Pipes around perimeter showing recurring expenses
+   - Flow animation indicates cost level
+   - Visual representation of "money leaking"
+4. **Tax Vault Building** - Shows quarantined gig economy tax
+   - Fill level indicates amount saved
+   - Pulsing beacon when substantial balance
+5. **Willpower Tower** - Grows with willpower points
+   - Glowing rings for each 100 WP
+   - Rotating beacon at top
+6. **Divine Value Buildings** - Golden glow for `isValueBuilding` accounts
+7. **Weather System** - Clouds respond to health score
+   - Storm clouds (gray) when score < 40
+   - More clouds appear during financial stress
+8. **Harbor District** - Water level shows liquid savings
+   - Boats bob in the water
+   - Visual gauge shows savings vs max
+9. **Debt Smoke Effect** - Debt buildings now emit animated smoke
+10. **Dynamic Sky** - Background changes with health score
+    - Sunny (score > 70)
+    - Partly cloudy (score 40-70)
+    - Overcast (score < 40)
+11. **Enhanced UI** - Added cashflow indicator and legend overlay
+
+**New Props:**
+- `subscriptions: Subscription[]` - Now passed to IsometricCity for drain visualization
+
+### v2.1 - Traffic System Overhaul (Dec 17, 2025)
+**Changes:**
+1. **Removed central fountain** - Intersection is now a flat 4-way crossroad
+2. **Simplified car system** - Cars drive straight through in 4 directions (EAST, WEST, NORTH, SOUTH)
+3. **Fixed car issues:**
+   - No more cars driving through center/fountain
+   - No more backwards-facing cars
+   - No more random fast cars on borders
+   - Cars stop properly at traffic lights (not in middle of street)
+4. **Traffic light coordination:**
+   - Horizontal cars (E/W) go when `horizontalGreen = true`
+   - Vertical cars (N/S) go when `horizontalGreen = false`
+   - Stop line at 1.8 units from intersection center
+5. **Pedestrian system maintained** - Still walk on quadrant sidewalks with crosswalk awareness
+
+### v2.0 - Initial Codebase Documentation (Dec 17, 2025)
+*   Complete documentation of all components, data models, and logic flows
+*   Tech stack and dependencies documented with versions
+*   All 13 AppView navigation states documented
+*   Storage schema and tutorial system documented
