@@ -369,13 +369,15 @@ const AssetBuilding = ({ position, height, type, balance, name }: {
 };
 
 // ============ DEBT BUILDING (NE QUADRANT) ============
-const DebtBuilding = ({ position, height, type, balance }: { 
+const DebtBuilding = ({ position, height, type, balance, name }: { 
   position: [number, number, number]; 
   height: number; 
   type: string;
   balance: number;
+  name?: string;
 }) => {
   const smokeRef = useRef<THREE.Group>(null);
+  const { showTooltip } = useContext(TooltipContext);
   
   useFrame(({ clock }) => {
     if (smokeRef.current) {
@@ -385,12 +387,41 @@ const DebtBuilding = ({ position, height, type, balance }: {
       });
     }
   });
+
+  const getIcon = () => {
+    switch(type) {
+      case 'HECS': return '🎓';
+      case 'CREDIT_CARD': return '💳';
+      default: return '🏦';
+    }
+  };
+
+  const getDescription = () => {
+    switch(type) {
+      case 'HECS': return 'HECS-HELP student loan. Indexed annually and repaid through tax when earning above threshold.';
+      case 'CREDIT_CARD': return 'Credit card debt with high interest. The smoke represents money burning away.';
+      default: return 'Loan balance accruing interest. Pay this down to clear the smoke from your city.';
+    }
+  };
   
   const floors = Math.min(Math.floor(height / 0.35), 8);
   const width = 0.9;
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'debt',
+      title: name || type.replace('_', ' '),
+      subtitle: 'Liability',
+      value: `-$${balance.toLocaleString()}`,
+      description: getDescription(),
+      icon: getIcon(),
+      color: COLORS.debt
+    });
+  };
   
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       {/* Main building */}
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[width, height, width]} />
@@ -427,16 +458,44 @@ const DebtBuilding = ({ position, height, type, balance }: {
 const LaunchPad = ({ position, goal }: { position: [number, number, number]; goal: Goal }) => {
   const progress = Math.min(goal.currentAmount / goal.targetAmount, 1);
   const flameRef = useRef<THREE.Mesh>(null);
+  const { showTooltip } = useContext(TooltipContext);
   const rocketHeight = 0.4 + progress * 0.7;
+  const daysRemaining = Math.max(0, Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
   
   useFrame(({ clock }) => {
     if (flameRef.current && progress >= 1) {
       flameRef.current.scale.y = 0.8 + Math.sin(clock.elapsedTime * 15) * 0.3;
     }
   });
+
+  const getCategoryIcon = () => {
+    switch(goal.category) {
+      case 'travel': return '✈️';
+      case 'gadget': return '📱';
+      case 'car': return '🚗';
+      case 'gift': return '🎁';
+      case 'house_deposit': return '🏠';
+      default: return '🎯';
+    }
+  };
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation();
+    showTooltip({
+      type: 'goal',
+      title: goal.name,
+      subtitle: `${goal.valueTag} Goal`,
+      value: `$${goal.currentAmount.toLocaleString()} / $${goal.targetAmount.toLocaleString()}`,
+      description: progress >= 1 
+        ? '🚀 Ready for launch! This goal is fully funded. Go spend it guilt-free!'
+        : `${Math.round(progress * 100)}% funded • ${daysRemaining} days left • Need $${(goal.targetAmount - goal.currentAmount).toLocaleString()} more`,
+      icon: getCategoryIcon(),
+      color: progress >= 1 ? '#4CAF50' : '#2196F3'
+    });
+  };
   
   return (
-    <group position={position}>
+    <group position={position} onClick={handleClick}>
       {/* Launch platform - larger for mobile visibility */}
       <mesh position={[0, 0.08, 0]} receiveShadow>
         <cylinderGeometry args={[0.6, 0.65, 0.16, 16]} />

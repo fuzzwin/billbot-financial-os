@@ -309,7 +309,7 @@ const QuickStats = ({ health, goals }: { health: FinancialHealth, goals: Goal[] 
   );
 };
 
-// --- HOME VIEW ---
+// --- HOME VIEW (Full-Screen Immersive City) ---
 const HomeView = ({ 
   health, 
   accounts, 
@@ -331,102 +331,116 @@ const HomeView = ({
   const netWorth = health.savings - (health.hecsDebt + health.otherDebts);
   const activeGoals = goals.filter(g => g.currentAmount < g.targetAmount).length;
   
+  // Get next action for overlay
+  const getNextAction = () => {
+    if (surplus < 0) return { icon: "🚨", text: "Spending exceeds income", urgent: true };
+    const killable = subscriptions.filter(s => s.isOptimizable);
+    if (killable.length > 0) return { icon: "✂️", text: `Kill ${killable.length} subs`, urgent: false };
+    const ready = goals.filter(g => g.currentAmount >= g.targetAmount);
+    if (ready.length > 0) return { icon: "🎉", text: `${ready[0].name} ready!`, urgent: false };
+    return { icon: "✨", text: "On track", urgent: false };
+  };
+  const action = getNextAction();
+  
   return (
-    <div className="space-y-3 pb-24 animate-in fade-in duration-500">
-      {/* Compact Header */}
-      <div className="flex justify-between items-center px-1">
-        <div>
-          <h1 className="text-xl font-black text-white">The Grid</h1>
-          <p className="text-slate-500 text-xs">{accounts.length} accounts • {goals.length} targets</p>
+    <div className="animate-in fade-in duration-500 -mx-4 -mt-6" style={{ height: 'calc(100vh - 80px)' }}>
+      {/* Full-Screen City Container */}
+      <div className="relative w-full h-full">
+        {/* The City - Takes Full Space */}
+        <div className="absolute inset-0">
+          <IsometricCity 
+            accounts={accounts}
+            health={health}
+            goals={goals}
+            hasWeeds={subscriptions.some(s => s.isOptimizable)}
+            isFuture={false}
+            onNavigate={onNavigate}
+            minimal={true}
+            weeklyBuilds={impulseItems.map(i => ({
+              id: i.id,
+              name: i.name,
+              target: i.price,
+              saved: i.savedAmount
+            }))}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${surplus >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-            {surplus >= 0 ? '↑' : '↓'} ${Math.abs(surplus).toLocaleString()}/mo
-          </div>
-          <div className="relative">
-            <svg className="w-12 h-12 transform -rotate-90">
-              <circle cx="24" cy="24" r="20" stroke="#1e293b" strokeWidth="3" fill="none" />
-              <circle 
-                cx="24" cy="24" r="20" 
-                stroke={health.score >= 70 ? '#10b981' : health.score >= 40 ? '#f59e0b' : '#ef4444'}
-                strokeWidth="3" 
-                fill="none"
-                strokeLinecap="round"
-                strokeDasharray={2 * Math.PI * 20}
-                strokeDashoffset={(2 * Math.PI * 20) * (1 - health.score / 100)}
-                className="transition-all duration-1000"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-black text-white">{health.score}</span>
+        
+        {/* TOP OVERLAY: Header Info */}
+        <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-slate-950/90 via-slate-950/60 to-transparent p-4 pb-12 pointer-events-none">
+          <div className="flex justify-between items-start pointer-events-auto">
+            <div>
+              <h1 className="text-lg font-black text-white drop-shadow-lg">The Grid</h1>
+              <p className="text-slate-400 text-xs">{accounts.length} accounts • {goals.length} targets</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={`px-2 py-1 rounded-full text-xs font-bold backdrop-blur-sm ${surplus >= 0 ? 'bg-emerald-500/30 text-emerald-300' : 'bg-rose-500/30 text-rose-300'}`}>
+                {surplus >= 0 ? '↑' : '↓'} ${Math.abs(surplus).toLocaleString()}/mo
+              </div>
+              <div className="relative bg-slate-900/50 backdrop-blur-sm rounded-full p-1">
+                <svg className="w-10 h-10 transform -rotate-90">
+                  <circle cx="20" cy="20" r="16" stroke="#334155" strokeWidth="3" fill="none" />
+                  <circle 
+                    cx="20" cy="20" r="16" 
+                    stroke={health.score >= 70 ? '#10b981' : health.score >= 40 ? '#f59e0b' : '#ef4444'}
+                    strokeWidth="3" 
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 16}
+                    strokeDashoffset={(2 * Math.PI * 16) * (1 - health.score / 100)}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-xs font-black text-white">{health.score}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      {/* HERO: City Visualization with Embedded Stats */}
-      <div className="rounded-2xl overflow-hidden relative bg-gradient-to-b from-sky-400 to-sky-300" style={{ height: 'calc(55vh - 40px)', minHeight: '320px', maxHeight: '480px' }}>
-        <IsometricCity 
-          accounts={accounts}
-          health={health}
-          goals={goals}
-          hasWeeds={subscriptions.some(s => s.isOptimizable)}
-          isFuture={false}
-          onNavigate={onNavigate}
-          minimal={true}
-          weeklyBuilds={impulseItems.map(i => ({
-            id: i.id,
-            name: i.name,
-            target: i.price,
-            saved: i.savedAmount
-          }))}
-        />
         
-        {/* Stats Overlay at Bottom */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent pt-8 pb-3 px-3">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
-              <p className={`text-base font-black ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+        {/* BOTTOM OVERLAY: Stats + Actions */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pt-16 px-4 pb-4">
+          {/* Stats Row */}
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2 text-center">
+              <p className={`text-sm font-black ${netWorth >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 ${Math.abs(netWorth).toLocaleString()}
               </p>
-              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Net Worth</p>
+              <p className="text-[8px] text-slate-500 uppercase tracking-wider">Net Worth</p>
             </div>
-            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
-              <p className="text-base font-black text-cyan-400">{activeGoals}</p>
-              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Targets</p>
+            <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2 text-center">
+              <p className="text-sm font-black text-cyan-400">{activeGoals}</p>
+              <p className="text-[8px] text-slate-500 uppercase tracking-wider">Targets</p>
             </div>
-            <div className="bg-slate-900/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2.5 text-center">
-              <p className="text-base font-black text-amber-400">{health.willpowerPoints || 0}</p>
-              <p className="text-[9px] text-slate-400 uppercase tracking-wide">Juice</p>
+            <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-2 text-center">
+              <p className="text-sm font-black text-amber-400">{health.willpowerPoints || 0}</p>
+              <p className="text-[8px] text-slate-500 uppercase tracking-wider">Juice</p>
             </div>
+          </div>
+          
+          {/* Action Buttons Row */}
+          <div className="flex gap-2">
+            {/* Next Action */}
+            <button 
+              onClick={() => onNavigate(surplus < 0 ? AppView.MONEY : AppView.GOALS)}
+              className={`flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl backdrop-blur-sm transition-all ${action.urgent ? 'bg-rose-500/30 border border-rose-500/50' : 'bg-slate-800/80 border border-slate-700/50'}`}
+            >
+              <span className="text-lg">{action.icon}</span>
+              <span className={`text-xs font-bold ${action.urgent ? 'text-rose-300' : 'text-slate-300'}`}>{action.text}</span>
+            </button>
+            
+            {/* Quick Sync */}
+            <button 
+              onClick={onShowCheckIn}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-xl"
+            >
+              <span className="text-lg">⚡</span>
+              <span className="text-xs font-bold text-white">Sync</span>
+              <span className="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-bold text-white">{health.checkInStreak || 0}🔥</span>
+            </button>
           </div>
         </div>
       </div>
-      
-      {/* Next Action */}
-      <NextActionCard 
-        health={health} 
-        subscriptions={subscriptions} 
-        goals={goals}
-        onAction={onNavigate}
-      />
-      
-      {/* Weekly Check-in */}
-      <button 
-        onClick={onShowCheckIn}
-        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white rounded-xl p-3.5 flex items-center justify-between group transition-all"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-xl">⚡</span>
-          <div className="text-left">
-            <h3 className="font-bold text-sm">Quick Sync</h3>
-            <p className="text-violet-200 text-xs opacity-80">2 min • Keep the grid running</p>
-          </div>
-        </div>
-        <div className="bg-white/20 px-3 py-1.5 rounded-lg font-bold text-sm">
-          {health.checkInStreak || 0} 🔥
-        </div>
-      </button>
     </div>
   );
 };
