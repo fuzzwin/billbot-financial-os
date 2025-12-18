@@ -74,14 +74,24 @@ export interface AccountItem {
 
 ### Goal Entities (The Rockets)
 ```typescript
+// Unified Goal type - merges old Launchpad rockets + Impulse Hangar items
+export type GoalType = 'rocket' | 'impulse'; // rocket = serious goal, impulse = maybe-buy
+export type GoalCategory = 'travel' | 'gadget' | 'car' | 'gift' | 'house_deposit' | 'emergency' | 'experience' | 'other';
+export type GoalTag = 'Adventure' | 'Treat' | 'Security' | 'Gift' | 'Freedom';
+
 export interface Goal {
   id: string;
   name: string;
   targetAmount: number;
   currentAmount: number;    // Logic: Fueling this depletes 'savings'
-  deadline: string;         // ISO string
-  category: 'travel' | 'gadget' | 'car' | 'gift' | 'house_deposit';
-  valueTag: 'Adventure' | 'Comfort' | 'Status' | 'Security';
+  deadline?: string;        // ISO string - optional for impulse items
+  category: GoalCategory;
+  valueTag: GoalTag;
+  goalType: GoalType;       // 'rocket' for serious goals, 'impulse' for maybe-buys
+  weeklyTarget?: number;     // For impulse items - weekly save target
+  createdAt: string;         // Track when goal was created
+  completedAt?: string;      // Track when goal was achieved
+  emoji?: string;            // Custom emoji for the goal
 }
 ```
 
@@ -125,6 +135,21 @@ export interface Subscription {
   nextDueDate: string;
   category: string;
   isOptimizable: boolean;   // AI flag for "You might want to cancel this"
+}
+
+// Recurring bills/expenses - rent, utilities, insurance, etc.
+export type BillCategory = 'RENT' | 'MORTGAGE' | 'UTILITIES' | 'INSURANCE' | 'PHONE_INTERNET' | 'TRANSPORT' | 'OTHER';
+
+export interface Bill {
+  id: string;
+  name: string;             // e.g. "AGL Electricity", "Landlord - Rent"
+  amount: number;
+  cycle: 'WEEKLY' | 'FORTNIGHTLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
+  nextDueDate: string;
+  category: BillCategory;
+  isAutoPay: boolean;       // Auto-debit from account?
+  isPaid?: boolean;         // Mark as paid for current period
+  notes?: string;           // e.g. "Account #12345"
 }
 ```
 
@@ -171,7 +196,16 @@ export interface HECSSimulationResult {
 
 ### Navigation
 ```typescript
+// Simplified navigation - 4 main zones (v3.0+)
 export enum AppView {
+  HOME = 'HOME',           // Dashboard with city, health score, next action
+  MONEY = 'MONEY',         // Cash flow: income, expenses, subscriptions, bills
+  GOALS = 'GOALS',         // Unified goals: rockets + impulse items + challenges
+  HELP = 'HELP',           // AI advisor + crisis command + tools
+}
+
+// Legacy views kept for backward compatibility during transition
+export enum LegacyAppView {
   DASHBOARD = 'DASHBOARD',
   CITY = 'CITY',
   SUBSCRIPTIONS = 'SUBSCRIPTIONS',
@@ -195,11 +229,12 @@ export enum AppView {
 ### A. Root & State (`App.tsx`)
 *   **Responsibility:** Loads data from `storageService.ts` on mount, manages global state.
 *   **State Propagation:** Props drill down to views.
-*   **Navigation:** State variable `view: AppView` determines the rendered component.
+*   **Navigation:** State variable `view: AppView` determines the rendered component (4 main zones: HOME, MONEY, GOALS, HELP).
 *   **Calculation Engine:** Contains `projectedData` memoized hook that runs time-series simulations (Year 2025 -> 2030) based on `Drift` (Standard) vs `Turbo` (Optimized) modes.
 *   **Error Boundary:** Wraps entire app with ErrorBoundary class component for graceful failure handling.
-*   **Tutorial System:** First-time users see `TutorialOverlay` with 4-step onboarding.
-*   **Dummy Data:** Fallback data for accounts, transactions, subscriptions, impulse items, and goals if localStorage is empty.
+*   **Tutorial System:** First-time users see `WelcomeOverlay` with 4-step onboarding.
+*   **Dummy Data:** Fallback data for accounts, transactions, subscriptions, bills, impulse items, and goals if localStorage is empty.
+*   **Modal Components:** AccountModal, SubscriptionModal, BillModal, GoalModal, ImportModal for CRUD operations.
 
 ### B. 3D Visualization (`IsometricCity.tsx`)
 Maps `AccountItem[]` and `FinancialHealth` to a Three.js Canvas.
@@ -346,6 +381,30 @@ All AI functions use `gemini-2.5-flash` model with custom `SYSTEM_INSTRUCTION` p
 
 ### G. Management Components
 
+#### `MoneyView` (inline in App.tsx)
+*   **Tabbed Interface:** Overview, Accounts, Bills, Subscriptions, Transactions
+*   **Overview Tab:**
+    *   Income section (salary, gig income, tax vault)
+    *   Expense breakdown (Bills, Subscriptions, Other Spending)
+    *   Monthly surplus calculation with health indicator
+*   **Accounts Tab:**
+    *   Assets section (CASH, SAVINGS, INVESTMENT, SUPER) with Add/Edit/Delete
+    *   Liabilities section (LOAN, CREDIT_CARD, HECS) with Add/Edit/Delete
+    *   AccountModal for creating/editing accounts
+*   **Bills Tab:**
+    *   Bills grouped by category (RENT, MORTGAGE, UTILITIES, INSURANCE, etc.)
+    *   Overdue/due soon indicators
+    *   Auto-pay badges
+    *   BillModal for creating/editing bills
+*   **Subscriptions Tab:**
+    *   List of all subscriptions with "Axe" delete buttons
+    *   Optimization flags (isOptimizable)
+    *   SubscriptionModal for adding new subscriptions
+*   **Transactions Tab:**
+    *   Transaction list with merchant, amount, date, category
+    *   ImportModal for adding transactions manually
+    *   Delete functionality
+
 #### `WalletManager.tsx`
 *   **Sections:** Assets vs Liabilities columns
 *   **Net Worth Hero:** Total calculation display
@@ -382,7 +441,22 @@ All AI functions use `gemini-2.5-flash` model with custom `SYSTEM_INSTRUCTION` p
 *   Visual "truck" animation during processing
 *   Only net amount hits savings
 
-### I. AI Chat Interface
+### I. AI Chat Interface & Help Tools
+
+#### `HelpView` (inline in App.tsx)
+*   **Tabbed Interface:** Chat, SOS, Tools
+*   **Chat Tab:** Embedded chat interface (placeholder for Gemini integration)
+*   **SOS Tab:** Crisis priority guide and hardship letter generator
+*   **Tools Tab:**
+    *   **HECS Strategy Calculator** - Interactive tool with 2025 legislation awareness
+        *   Input: HECS balance, annual income, mortgage rate
+        *   Output: 20% waiver calculation, repayment threshold check, strategic advice
+    *   **Tax Deduction Lookup** - Search ATO Effective Life database
+        *   Search work-related assets (laptop, phone, desk, etc.)
+        *   Returns depreciation rates and effective life years
+    *   **ABN Validator** - Validate Australian Business Numbers
+        *   Uses official ATO checksum algorithm
+        *   Returns validation result with fraud warning if invalid
 
 #### `Advisor.tsx`
 *   Full-height chat interface
@@ -405,10 +479,13 @@ All AI functions use `gemini-2.5-flash` model with custom `SYSTEM_INSTRUCTION` p
 ### 1. The "Launchpad" Mechanic (Spending Guilt-Free)
 *   **Concept:** Money saved for goals is meant to be burned.
 *   **Flow:**
-    1.  User creates `Goal` (Rocket) with name, target, deadline, value tag
-    2.  User "Fuels" Rocket (Increment `currentAmount` via $100 clicks)
-    3.  User "Launches" Rocket when fuel = 100%
-    4.  **Result:** `Goal` is deleted after 2-second animation, `FinancialHealth.savings` is **reduced** by the target amount, and `willpowerPoints` increase by 100.
+    1.  User creates `Goal` (Rocket or Impulse) with name, target, deadline (optional), value tag, emoji
+    2.  User "Fuels" Goal (Increment `currentAmount` via +$50/+$100/+$500 buttons)
+    3.  User "Launches" Goal when fuel = 100%
+    4.  **Result:** 
+        *   For Rockets: `Goal` is deleted after 2-second animation, `FinancialHealth.savings` is **reduced** by the target amount, and `willpowerPoints` increase by 100
+        *   For Impulses: User chooses "Buy It" (same as rocket) or "Keep Cash" (adds to savings, +50 WP, removes goal)
+    5.  **Edit/Delete:** Users can edit goal details (name, amount, deadline, emoji) or delete goals without launching
 
 ### 2. Time Travel Simulation (`App.tsx` -> `projectedData`)
 *   **Inputs:** Current Accounts, Income, Expenses
@@ -486,6 +563,7 @@ Keys:
 *   `BILLBOT_ACCOUNTS_V1`: Array of `AccountItem`
 *   `BILLBOT_TRANSACTIONS_V1`: Array of `Transaction`
 *   `BILLBOT_SUBSCRIPTIONS_V1`: Array of `Subscription`
+*   `BILLBOT_BILLS_V1`: Array of `Bill` (recurring expenses)
 *   `BILLBOT_IMPULSE_V1`: Array of `ImpulseItem`
 *   `BILLBOT_GOALS_V1`: Array of `Goal`
 *   `BILLBOT_HAS_SEEN_TUTORIAL`: Boolean flag (existence check)
@@ -532,15 +610,58 @@ Keys:
 
 ---
 
-## 12. Mobile Support
+## 12. Mobile Support & Development
 *   Responsive sidebar (hidden on mobile, drawer navigation)
 *   Mobile menu button in header
 *   Touch-friendly city visualization (touch-none class)
 *   Responsive grids throughout (1 col mobile, 2-3 cols desktop)
+*   **Mobile Preview:** QR code page (`qr-preview.html`) for easy phone testing
+    *   Vite dev server configured with `host: '0.0.0.0'` for network access
+    *   Scan QR code to access app on phone via local network
+    *   Requires phone and computer on same Wi-Fi network
 
 ---
 
 ## 13. Changelog
+
+### v3.4 - Complete CRUD & Bills Management (Dec 18, 2025)
+**Changes:**
+1. **Full CRUD for Accounts** - Add, edit, and delete assets/liabilities in Money view
+   - AccountModal component with type selection, balance, interest rate fields
+   - Edit and delete buttons on each account card
+2. **Full CRUD for Subscriptions** - Add new subscriptions with cycle and category
+   - SubscriptionModal component
+   - Edit and delete functionality
+3. **Full CRUD for Goals** - Edit goal details and delete without launching
+   - GoalModal component with emoji picker, goal type toggle, deadline
+   - Edit and delete buttons on all goals
+4. **Transaction Management** - New Transactions tab in Money view
+   - Add transactions manually with merchant, amount, date, category
+   - Delete transactions
+5. **Working Help Tools** - All tools now functional
+   - HECS Strategy Calculator with 2025 legislation (20% waiver, $67k threshold)
+   - Tax Deduction Lookup with ATO depreciation database search
+   - ABN Validator with official checksum algorithm
+6. **Mobile Preview** - QR code page for easy phone access
+   - qr-preview.html with QR code generator
+   - Vite config updated for network access (host: '0.0.0.0')
+
+### v3.3 - Bills Section for Recurring Expenses (Dec 18, 2025)
+**Changes:**
+1. **New Bill Type** - Added `Bill` interface for recurring expenses
+   - Categories: RENT, MORTGAGE, UTILITIES, INSURANCE, PHONE_INTERNET, TRANSPORT, OTHER
+   - Cycles: WEEKLY, FORTNIGHTLY, MONTHLY, QUARTERLY, YEARLY
+   - Auto-pay indicator and notes field
+2. **Bills Tab in Money View** - New dedicated section
+   - Bills grouped by category with visual icons
+   - Overdue/due soon indicators (red/amber badges)
+   - Full CRUD - Add, edit, delete bills
+   - BillModal component with all fields
+3. **Overview Integration** - Bills included in expense breakdown
+   - Money Out section shows: Bills, Subscriptions, Other Spending
+   - Monthly bills total calculated from all cycles
+4. **Storage** - Added `BILLBOT_BILLS_V1` to localStorage schema
+5. **Dummy Data** - Pre-populated with sample bills (rent, utilities, insurance)
 
 ### v3.2 - Improved Top Overlay Layout (Dec 18, 2025)
 **Changes:**
@@ -584,18 +705,27 @@ Keys:
 - Impulse = "maybe buys" with skip option (+50 WP)
 - Visual fuel progress with +$50/+$100/+$500 buttons
 - Launch celebration when goal is reached
+- **Full CRUD** - Edit goal details (name, amount, deadline, emoji) and delete goals
 
 **Money Flow Features:**
-- Tabbed interface: Overview, Accounts, Subscriptions
+- Tabbed interface: Overview, Accounts, Bills, Subscriptions, Transactions
+- Full CRUD for accounts (Assets & Liabilities) - Add, Edit, Delete
+- Bills section for recurring expenses (Rent, Mortgage, Utilities, Insurance, etc.)
+- Bills grouped by category with overdue/due soon indicators
+- Full CRUD for subscriptions - Add, Edit, Delete
+- Transaction management - Add and delete transactions
 - Inline subscription "Kill" buttons
 - Income editor with gig income + tax vault display
-- Monthly surplus calculation with health indicator
+- Monthly surplus calculation includes bills, subscriptions, and other spending
 
 **Help Center Features:**
 - Embedded chat interface (placeholder for Gemini)
 - Crisis priority guide (Roof > Assets > Debt)
 - Quick action buttons for hardship letters, financial counsellors
-- Tools section for HECS strategy, tax deductions, ABN validation
+- **Working Tools Section:**
+  - **HECS Strategy Calculator** - Enter balance and income, get 2025 legislation-aware advice
+  - **Tax Deduction Lookup** - Search ATO depreciation database for work assets
+  - **ABN Validator** - Validate Australian Business Numbers with checksum algorithm
 
 **Progress Tracking (New Fields):**
 - `checkInStreak` - Weekly check-in streak counter
