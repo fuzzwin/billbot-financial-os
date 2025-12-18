@@ -1,6 +1,10 @@
 
 import React, { useState } from 'react';
 import { FinancialHealth } from '../types';
+import { TactileButton } from './ui/TactileButton';
+import { RecessedInput } from './ui/RecessedInput';
+import { ChassisWell } from './ui/ChassisWell';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 interface GigPortProps {
     health: FinancialHealth;
@@ -30,60 +34,69 @@ export const GigPort: React.FC<GigPortProps> = ({ health, onUpdateHealth }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto pb-20">
-            <div className="text-center mb-10">
-                <h2 className="text-3xl font-black text-white italic">GIG ECONOMY PORT</h2>
-                <p className="text-slate-400 mt-2">Received a payout? Dock here to separate your tax.</p>
+        <div className="max-w-2xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4">
+            <div className="text-center mb-10 px-2">
+                <h2 className="text-4xl font-black text-industrial-text uppercase tracking-tighter">GIG ECONOMY PORT</h2>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <LEDIndicator active={true} color="yellow" />
+                  <p className="tactile-label text-industrial-subtext/60">Cargo Offload // Tax Quarantine Protocol</p>
+                </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 relative overflow-hidden">
+            <ChassisWell label="Operational Docking Bay">
                 
                 {/* Vault Visual */}
-                <div className="absolute top-4 right-4 flex flex-col items-end">
-                    <span className="text-xs font-bold text-slate-500 uppercase">Tax Vault</span>
-                    <span className="text-2xl font-mono text-emerald-400 font-bold">🔒 ${health.taxVault?.toFixed(2) || '0.00'}</span>
+                <div className="bg-industrial-well-bg p-4 rounded-xl shadow-well border border-black/5 flex justify-between items-center mb-10">
+                    <div className="flex items-center gap-2">
+                        <LEDIndicator active={true} color="orange" />
+                        <span className="text-[10px] font-black text-industrial-subtext/60 uppercase tracking-widest">TAX VAULT [🔒]</span>
+                    </div>
+                    <span className="text-2xl font-black text-industrial-text tracking-tighter">${health.taxVault?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}</span>
                 </div>
 
-                <div className="mt-8 space-y-6">
-                    <div>
-                        <label className="text-xs font-bold text-slate-400">GROSS PAYOUT (Uber/DoorDash/Freelance)</label>
-                        <div className="relative mt-2">
-                            <span className="absolute left-4 top-4 text-slate-500 text-xl">$</span>
-                            <input 
-                                type="number" 
-                                value={income}
-                                onChange={(e) => setIncome(e.target.value)}
-                                className="w-full bg-slate-950 border-b-2 border-slate-700 p-4 pl-10 text-3xl text-white outline-none focus:border-neon-blue"
-                                placeholder="0.00"
-                            />
-                        </div>
-                    </div>
+                <div className="space-y-8">
+                    <RecessedInput 
+                        label="Gross Payout Identifier (AUD)"
+                        type="number" 
+                        value={income}
+                        onChange={(e) => setIncome(e.target.value)}
+                        placeholder="0.00"
+                    />
 
-                    <div className="h-32 relative bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-center overflow-hidden">
+                    <div className="h-40 relative bg-industrial-well-bg rounded-2xl shadow-well border border-black/5 flex flex-col items-center justify-center overflow-hidden">
                         {animating ? (
-                            <div className="absolute w-12 h-8 bg-yellow-500 rounded animate-[smoke_2s_linear_forwards] flex items-center justify-center text-xs font-bold text-black shadow-[0_0_20px_rgba(234,179,8,0.5)]">
-                                TAX
+                            <div className="flex flex-col items-center gap-2 animate-bounce">
+                                <div className="w-10 h-10 bg-industrial-orange rounded-lg shadow-lg flex items-center justify-center text-white text-[10px] font-black">TAX</div>
+                                <div className="text-[8px] font-black text-industrial-orange uppercase tracking-widest">QUARANTINING...</div>
                             </div>
                         ) : (
-                            <p className="text-slate-600 text-sm">Truck waiting for cargo...</p>
+                            <div className="flex flex-col items-center opacity-20">
+                                <div className="text-4xl mb-2">🚚</div>
+                                <p className="text-[9px] font-black text-industrial-subtext uppercase tracking-[0.2em]">Dock empty // Awaiting Payload</p>
+                            </div>
                         )}
-                        {/* Road */}
-                        <div className="absolute bottom-0 w-full h-1 bg-slate-700"></div>
+                        {/* Ground/Road */}
+                        <div className="absolute bottom-0 w-full h-1 bg-industrial-border-dark/10 shadow-well"></div>
                     </div>
 
-                    <button 
+                    <TactileButton 
                         onClick={quarantineTax}
                         disabled={animating || !income}
-                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl text-lg transition-colors shadow-lg"
+                        color="blue"
+                        fullWidth
+                        size="lg"
                     >
-                        {animating ? 'QUARANTINING...' : 'PROCESS PAYOUT (30% TAX)'}
-                    </button>
+                        {animating ? 'PROCESSING PAYLOAD...' : 'PROCESS PAYOUT (30% QUARANTINE)'}
+                    </TactileButton>
                     
-                    <p className="text-center text-xs text-slate-500">
-                        We automatically hide 30% of this income so you don't accidentally spend it.
-                    </p>
+                    <div className="bg-industrial-well-bg/50 p-4 rounded-xl border border-black/5">
+                        <p className="text-center text-[10px] text-industrial-subtext/60 font-medium leading-relaxed uppercase tracking-tight">
+                            Protocol: Automated 30% retention in Tax Vault. <br/>
+                            Residual <span className="text-emerald-500 font-bold">70%</span> cleared for city liquidity.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            </ChassisWell>
         </div>
     );
 };

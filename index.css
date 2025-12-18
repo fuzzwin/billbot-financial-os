@@ -1,0 +1,85 @@
+/* index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --industrial-base: #E6E6E6;
+  --industrial-text: #1a1a1a;
+  --industrial-subtext: #666666;
+  --industrial-highlight: #ffffff;
+  --industrial-shadow: #bebebe;
+  --industrial-well-shadow: #cacaca;
+  --industrial-well-bg: #D8D8D8;
+  
+  /* Derived Shadows */
+  --shadow-raised: 4px 4px 10px var(--industrial-shadow), -4px -4px 10px var(--industrial-highlight);
+  --shadow-pressed: inset 4px 4px 10px var(--industrial-shadow), inset -4px -4px 10px var(--industrial-highlight);
+  --shadow-sm: 2px 2px 5px var(--industrial-shadow), -2px -2px 5px var(--industrial-highlight);
+  --shadow-well: inset 6px 6px 12px var(--industrial-well-shadow), inset -6px -6px 12px var(--industrial-highlight);
+}
+
+[data-theme='mid'] {
+  --industrial-base: #B8B8B8;
+  --industrial-text: #2A2A2A;
+  --industrial-subtext: #4A4A4A;
+  --industrial-highlight: #D0D0D0;
+  --industrial-shadow: #909090;
+  --industrial-well-shadow: #A0A0A0;
+  --industrial-well-bg: #A8A8A8;
+}
+
+[data-theme='dark'] {
+  --industrial-base: #1A1A1A;
+  --industrial-text: #EBEBEB;
+  --industrial-subtext: #A0A0A0;
+  --industrial-highlight: #2A2A2A;
+  --industrial-shadow: #000000;
+  --industrial-well-shadow: #0A0A0A;
+  --industrial-well-bg: #252525;
+}
+
+body {
+  background-color: var(--industrial-base);
+  color: var(--industrial-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Atomic Style Overrides */
+.tactile-raised {
+  box-shadow: var(--shadow-raised);
+}
+
+.tactile-pressed {
+  box-shadow: var(--shadow-pressed);
+}
+
+.tactile-well {
+  box-shadow: var(--shadow-well);
+}
+
+.tactile-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Button & Input Refinements */
+button, input {
+  transition: all 0.1s ease-in-out;
+}
+
+.industrial-input {
+  background-color: var(--industrial-base);
+  box-shadow: var(--shadow-well);
+  border: none;
+  outline: none;
+}
+
+.industrial-input:focus {
+  box-shadow: var(--shadow-well), 0 0 0 1px #0055FF;
+}
+
+

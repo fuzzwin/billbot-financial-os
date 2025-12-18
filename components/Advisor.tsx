@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { FinancialHealth, ChatMessage, EffectiveLifeItem } from '../types';
 import { chatWithAdvisor } from '../services/geminiService';
 import { searchEffectiveLife, validateABN } from '../services/complianceService';
+import { TactileButton } from './ui/TactileButton';
+import { RecessedInput } from './ui/RecessedInput';
+import { ChassisWell } from './ui/ChassisWell';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 interface AdvisorProps {
   health: FinancialHealth;
@@ -54,28 +58,26 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
   const EffectiveLifeTool = () => {
     const results = searchEffectiveLife(assetSearch);
     return (
-        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 h-full flex flex-col">
-            <h3 className="text-neon-blue font-bold mb-2">ATO Effective Life Lookup</h3>
-            <p className="text-xs text-slate-400 mb-4">Official 2025 Determinations for Depreciation.</p>
-            <input 
-                type="text"
-                placeholder="Search asset (e.g. Laptop)"
-                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white mb-4 focus:border-neon-blue outline-none"
+        <ChassisWell label="ATO Life Assets" className="h-full">
+            <p className="tactile-label opacity-50 mb-6">Ref: TR 2024/3 // 2025 DETERMINATIONS</p>
+            <RecessedInput 
+                placeholder="Search identifier (e.g. Laptop)"
+                className="mb-6"
                 value={assetSearch}
                 onChange={(e) => setAssetSearch(e.target.value)}
             />
-            <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                 {results.map((item, idx) => (
-                    <div key={idx} className="bg-slate-900/50 p-2 rounded border border-slate-700/50 text-sm">
-                        <div className="flex justify-between font-bold text-slate-200">
-                            <span>{item.asset}</span>
-                            <span className="text-emerald-400">{item.lifeYears} Years</span>
+                    <div key={idx} className="bg-industrial-base p-3 rounded-xl shadow-tactile-sm border border-white/10">
+                        <div className="flex justify-between items-center mb-1">
+                            <span className="text-[11px] font-black text-industrial-text uppercase tracking-tighter">{item.asset}</span>
+                            <span className="text-industrial-blue font-black text-xs">{item.lifeYears}Y</span>
                         </div>
-                        <div className="text-xs text-slate-500">Prime Cost Rate: {(item.rate * 100).toFixed(2)}%</div>
+                        <div className="tactile-label opacity-50">Rate: {(item.rate * 100).toFixed(1)}% PC</div>
                     </div>
                 ))}
             </div>
-        </div>
+        </ChassisWell>
     )
   };
 
@@ -84,111 +86,122 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
           setAbnResult(validateABN(abnInput));
       }
       return (
-        <div className="bg-slate-800 p-4 rounded-lg border border-slate-700 h-fit">
-            <h3 className="text-neon-blue font-bold mb-2">Fraud Prevention (ABN)</h3>
-            <p className="text-xs text-slate-400 mb-4">Validate Australian Business Numbers checksum.</p>
-            <input 
-                type="text"
-                placeholder="Enter ABN (11 digits)"
-                className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white mb-2 focus:border-neon-blue outline-none"
+        <ChassisWell label="ABN VALIDATOR">
+            <p className="tactile-label opacity-50 mb-6">Integrity Check // Mod 11 Algorithm</p>
+            <RecessedInput 
+                placeholder="ABN (11 DIGITS)"
+                className="mb-4"
                 value={abnInput}
                 onChange={(e) => setAbnInput(e.target.value)}
             />
-            <button 
+            <TactileButton 
                 onClick={checkAbn}
-                className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded transition-colors mb-4"
+                color="blue"
+                fullWidth
+                className="mb-6"
             >
-                Validate
-            </button>
+                Verify Entity
+            </TactileButton>
             {abnResult && (
-                <div className={`p-3 rounded border ${abnResult.isValid ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-400' : 'bg-red-900/20 border-red-500/50 text-red-400'}`}>
-                    <p className="text-sm font-bold">{abnResult.isValid ? '✓ Valid Entity' : '⚠ Invalid ABN'}</p>
-                    <p className="text-xs opacity-80">{abnResult.message}</p>
+                <div className={`p-4 rounded-2xl shadow-well border ${abnResult.isValid ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-industrial-orange/10 border-industrial-orange/20 text-industrial-orange'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                        <LEDIndicator active={true} color={abnResult.isValid ? 'green' : 'red'} />
+                        <p className="text-[10px] font-black uppercase tracking-tighter">{abnResult.isValid ? 'Valid Checksum' : 'Invalid Checksum'}</p>
+                    </div>
+                    <p className="text-[11px] font-medium opacity-80 leading-tight">{abnResult.message}</p>
                 </div>
             )}
-        </div>
+        </ChassisWell>
       );
   }
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex gap-4 animate-in fade-in zoom-in-95 duration-500">
+    <div className="h-[calc(100vh-8rem)] flex gap-6 animate-in fade-in zoom-in-95 duration-500 pb-20">
       
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-slate-900/50 backdrop-blur-sm rounded-xl border border-slate-800 overflow-hidden">
-        <div className="p-4 border-b border-slate-800 bg-slate-900">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <span className="w-2 h-2 bg-neon-green rounded-full animate-pulse"></span>
-                Advisor Neural Core
-            </h2>
+      <div className="flex-1 flex flex-col bg-industrial-base rounded-[2rem] shadow-chassis border-t border-l border-white/10 overflow-hidden">
+        <div className="p-6 border-b border-black/5 flex justify-between items-center bg-industrial-base">
+            <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-0.5">
+                    <LEDIndicator active={true} color="green" />
+                    <h2 className="text-sm font-black text-industrial-text uppercase tracking-widest">Neural Advisor</h2>
+                </div>
+                <p className="tactile-label opacity-50 ml-4">System Operational // Link: Active</p>
+            </div>
+            <div className="bg-industrial-base px-3 py-1 rounded-lg shadow-well text-[9px] font-black text-industrial-subtext/60 uppercase border-t border-l border-white/5">AUD // COMPLIANT</div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
             {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed shadow-lg ${
+                    <div className={`max-w-[85%] p-5 rounded-2xl shadow-tactile-sm text-sm font-medium leading-relaxed border-t border-l ${
                         msg.role === 'user' 
-                        ? 'bg-indigo-600 text-white rounded-br-none' 
-                        : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'
+                        ? 'bg-industrial-blue text-white border-white/20 rounded-tr-none' 
+                        : 'bg-industrial-base text-industrial-text border-white/10 rounded-tl-none'
                     }`}>
-                        {msg.text.split('\n').map((line, idx) => <p key={idx} className="mb-1">{line}</p>)}
+                        {msg.text.split('\n').map((line, idx) => <p key={idx} className="mb-2 last:mb-0">{line}</p>)}
+                        <div className={`text-[8px] font-black uppercase tracking-widest mt-2 ${msg.role === 'user' ? 'text-white/40' : 'text-industrial-subtext/40'}`}>
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                     </div>
                 </div>
             ))}
             {loading && (
                 <div className="flex justify-start">
-                    <div className="bg-slate-800 text-slate-400 p-4 rounded-2xl rounded-bl-none border border-slate-700 flex items-center gap-2">
-                         <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"></div>
-                         <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                         <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="bg-industrial-base text-industrial-subtext/40 p-5 rounded-2xl rounded-tl-none shadow-tactile-sm border-t border-l border-white/10 flex items-center gap-3">
+                         <div className="w-2 h-2 bg-industrial-subtext/20 rounded-full animate-bounce"></div>
+                         <div className="w-2 h-2 bg-industrial-subtext/20 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                         <div className="w-2 h-2 bg-industrial-subtext/20 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                     </div>
                 </div>
             )}
             <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-4 bg-slate-900 border-t border-slate-800">
-            <div className="flex gap-2">
+        <div className="p-6 bg-industrial-base border-t border-black/5">
+            <div className="flex gap-4 bg-industrial-base p-2 rounded-2xl shadow-well border-t border-l border-black/5">
                 <input 
                     type="text" 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Ask about taxes, HECS, or savings strategies..."
-                    className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white focus:border-neon-blue focus:ring-1 focus:ring-neon-blue outline-none transition-all"
+                    placeholder="Input command (e.g. Optimize tax flow)"
+                    className="flex-1 bg-transparent px-4 py-3 text-sm font-bold text-industrial-text placeholder-industrial-subtext/40 outline-none"
                 />
-                <button 
+                <TactileButton 
                     onClick={handleSend}
                     disabled={loading || !input.trim()}
-                    className="bg-neon-blue text-slate-950 font-bold px-6 py-3 rounded-lg hover:bg-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    color="orange"
+                    size="md"
                 >
-                    SEND
-                </button>
+                    Exec
+                </TactileButton>
             </div>
         </div>
       </div>
 
       {/* Tools Sidebar */}
-      <div className="w-80 hidden lg:flex flex-col gap-4">
-            <div className="bg-slate-900/50 p-2 rounded-xl border border-slate-800 flex gap-2">
+      <div className="w-80 hidden lg:flex flex-col gap-6">
+            <div className="bg-industrial-base p-2 rounded-2xl shadow-well border-t border-l border-black/5 flex gap-2">
                 <button 
                     onClick={() => setActiveTool('EFFECTIVE_LIFE')}
-                    className={`flex-1 py-2 text-xs font-bold rounded transition-colors ${activeTool === 'EFFECTIVE_LIFE' ? 'bg-slate-700 text-neon-blue' : 'text-slate-400 hover:bg-slate-800'}`}
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${activeTool === 'EFFECTIVE_LIFE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext hover:text-industrial-text'}`}
                 >
-                    EFFECTIVE LIFE
+                    Asset Life
                 </button>
                 <button 
                     onClick={() => setActiveTool('ABN_CHECKER')}
-                    className={`flex-1 py-2 text-xs font-bold rounded transition-colors ${activeTool === 'ABN_CHECKER' ? 'bg-slate-700 text-neon-blue' : 'text-slate-400 hover:bg-slate-800'}`}
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${activeTool === 'ABN_CHECKER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext hover:text-industrial-text'}`}
                 >
-                    ABN CHECKER
+                    Entity Auth
                 </button>
             </div>
 
             <div className="flex-1">
                 {activeTool === 'NONE' && (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500 border border-dashed border-slate-800 rounded-lg">
-                        <svg className="w-12 h-12 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        <p className="text-sm">Select a compliance tool to assist your financial planning.</p>
+                    <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-industrial-base border-2 border-dashed border-black/5 rounded-[2rem]">
+                        <div className="w-16 h-16 bg-industrial-base rounded-2xl flex items-center justify-center text-4xl shadow-well border-t border-l border-black/5 mb-6 opacity-40">🛠️</div>
+                        <p className="tactile-label opacity-40 leading-relaxed">Select a compliance module to assist with operational diagnostics.</p>
                     </div>
                 )}
                 {activeTool === 'EFFECTIVE_LIFE' && <EffectiveLifeTool />}

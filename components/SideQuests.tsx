@@ -1,65 +1,76 @@
 
 import React, { useState } from 'react';
+import { ChassisWell } from './ui/ChassisWell';
+import { TactileButton } from './ui/TactileButton';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 export const SideQuests: React.FC = () => {
     // MOCK WEATHER for demo purposes (In real app, fetch from BOM API)
     const [weather] = useState({ temp: 28, condition: 'Sunny' });
     
     // 52 Week Challenge Logic (Current week simulation)
-    // TypeScript doesn't have getWeek on Date by default, mocking logic:
     const mockWeek = Math.ceil((new Date().getDate() + new Date().getMonth() * 30) / 7);
     const amountToSave = 52 - mockWeek + 1; // Reverse 52 week challenge
 
     return (
-        <div className="max-w-4xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4">
-             <div className="text-center mb-10">
-                <h2 className="text-3xl font-black text-white italic tracking-tighter">SIDE QUESTS</h2>
-                <p className="text-slate-400 mt-2">Gamified challenges to level up your wealth.</p>
+        <div className="max-w-4xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4">
+             <div className="mb-10 px-2 text-center">
+                <h2 className="text-4xl font-black text-industrial-text uppercase tracking-tighter">SIDE QUESTS</h2>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <LEDIndicator active={true} color="blue" />
+                  <p className="tactile-label text-industrial-subtext/60">Gamified Accumulation // V2.0</p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 
                 {/* QUEST 1: WEATHER CHALLENGE */}
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden group hover:border-neon-blue transition-colors">
-                    <div className="h-32 bg-sky-500/20 relative flex items-center justify-center overflow-hidden">
-                        <div className="absolute inset-0 bg-sky-500/10 animate-pulse"></div>
-                        <div className="text-6xl z-10">☀️</div>
-                        <div className="absolute bottom-2 right-4 text-sky-300 font-bold text-xl">{weather.temp}°C</div>
-                    </div>
-                    <div className="p-6">
-                        <h3 className="text-xl font-bold text-white mb-2">Weather Station</h3>
-                        <p className="text-slate-400 text-sm mb-4">
-                            It's a hot one! The "Weather Challenge" suggests matching the temperature in savings.
-                        </p>
-                        <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-                            <span className="text-slate-300 font-bold">Today's Target</span>
-                            <span className="text-neon-blue font-mono font-bold text-2xl">${weather.temp}.00</span>
+                <ChassisWell label="Dynamic Weather Station">
+                    <div className="h-40 bg-industrial-well-bg rounded-2xl shadow-well border border-black/5 relative flex items-center justify-center overflow-hidden mb-6">
+                        <div className="absolute inset-0 bg-industrial-blue/5 animate-pulse"></div>
+                        <div className="text-7xl z-10 filter drop-shadow-md">☀️</div>
+                        <div className="absolute bottom-3 right-4">
+                            <span className="text-industrial-text font-black text-2xl tracking-tighter">{weather.temp}°C</span>
+                            <div className="text-[8px] font-black text-industrial-subtext/40 uppercase tracking-widest text-right">EXTERNAL</div>
                         </div>
-                        <button className="w-full mt-4 bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-xl transition-colors">
-                            Complete Transfer
-                        </button>
                     </div>
-                </div>
+                    <div>
+                        <h3 className="text-sm font-black text-industrial-text uppercase tracking-tight mb-2">THERMOSTAT SYNC</h3>
+                        <p className="text-industrial-subtext text-xs font-medium leading-relaxed mb-6">
+                            High temp detected. Match the local environment in capital accumulation. 
+                            Automatic transfer optimized for current conditions.
+                        </p>
+                        <div className="flex justify-between items-center bg-industrial-base p-4 rounded-xl shadow-tactile-sm border border-white/10 mb-6">
+                            <span className="text-[10px] font-black text-industrial-subtext uppercase">Target Transfer</span>
+                            <span className="text-industrial-blue font-black font-mono text-2xl tracking-tighter">${weather.temp}.00</span>
+                        </div>
+                        <TactileButton color="blue" fullWidth>
+                            EXECUTE SYNC
+                        </TactileButton>
+                    </div>
+                </ChassisWell>
 
                 {/* QUEST 2: 52-WEEK REVERSE */}
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden group hover:border-emerald-500 transition-colors">
-                    <div className="h-32 bg-emerald-500/20 relative flex items-center justify-center overflow-hidden">
-                         <div className="text-6xl z-10">📅</div>
+                <ChassisWell label="Reverse Duration Challenge">
+                    <div className="h-40 bg-industrial-well-bg rounded-2xl shadow-well border border-black/5 relative flex items-center justify-center overflow-hidden mb-6">
+                         <div className="text-7xl z-10 filter drop-shadow-md">📅</div>
+                         <div className="absolute top-4 left-4 bg-industrial-orange text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-lg">HARD MODE</div>
                     </div>
-                    <div className="p-6">
-                        <h3 className="text-xl font-bold text-white mb-2">The Reverse 52-Week</h3>
-                        <p className="text-slate-400 text-sm mb-4">
-                            Save big early, easy later. We are in Week {mockWeek}.
+                    <div>
+                        <h3 className="text-sm font-black text-industrial-text uppercase tracking-tight mb-2">DEGRESSIVE ACCUMULATION</h3>
+                        <p className="text-industrial-subtext text-xs font-medium leading-relaxed mb-6">
+                            Front-load the effort. Save maximum early, ease off as the year matures. 
+                            Currently operating in <span className="text-industrial-text font-bold uppercase tracking-tight">Cycle {mockWeek}</span>.
                         </p>
-                        <div className="flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700">
-                            <span className="text-slate-300 font-bold">Week {mockWeek} Goal</span>
-                            <span className="text-emerald-400 font-mono font-bold text-2xl">${amountToSave}.00</span>
+                        <div className="flex justify-between items-center bg-industrial-base p-4 rounded-xl shadow-tactile-sm border border-white/10 mb-6">
+                            <span className="text-[10px] font-black text-industrial-subtext uppercase">Week {mockWeek} Load</span>
+                            <span className="text-emerald-500 font-black font-mono text-2xl tracking-tighter">${amountToSave}.00</span>
                         </div>
-                        <button className="w-full mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-colors">
-                            Stash ${amountToSave}
-                        </button>
+                        <TactileButton color="white" fullWidth className="border border-industrial-border-dark/10">
+                            STASH PROTOCOL
+                        </TactileButton>
                     </div>
-                </div>
+                </ChassisWell>
 
             </div>
         </div>

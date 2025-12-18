@@ -1,5 +1,10 @@
+
 import React, { useState } from 'react';
 import { FinancialHealth } from '../types';
+import { TactileButton } from './ui/TactileButton';
+import { RecessedInput } from './ui/RecessedInput';
+import { ChassisWell } from './ui/ChassisWell';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 interface ProfileProps {
   health: FinancialHealth;
@@ -32,62 +37,61 @@ export const Profile: React.FC<ProfileProps> = ({ health, onUpdate }) => {
         ...formData,
         score: Math.floor(newScore)
     });
-    // Scroll to top
     window.scrollTo(0, 0);
   };
 
   const HelpTip = ({ title, text }: { title: string, text: string }) => (
-      <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 mt-2 text-xs">
-          <span className="font-bold text-neon-blue block mb-1">💡 {title}</span>
-          <span className="text-slate-400">{text}</span>
+      <div className="bg-industrial-well-bg p-4 rounded-xl border border-black/5 mt-4">
+          <span className="text-[10px] font-black text-industrial-blue uppercase tracking-widest block mb-1">💡 {title}</span>
+          <span className="text-industrial-subtext text-[11px] font-medium leading-relaxed">{text}</span>
       </div>
   );
 
   return (
-    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+    <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-24">
         
         {/* Progress Header */}
-        <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Let's Build Your Blueprint</h2>
-            <p className="text-slate-400">Step {step} of {TOTAL_STEPS}</p>
-            <div className="w-full bg-slate-800 h-2 rounded-full mt-4 overflow-hidden">
+        <div className="text-center mb-10 px-2">
+            <h2 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">System Configuration</h2>
+            <div className="flex items-center justify-center gap-2 mt-1">
+                <LEDIndicator active={true} color="blue" />
+                <p className="tactile-label text-industrial-subtext/60">Module Blueprint // Step {step} of {TOTAL_STEPS}</p>
+            </div>
+            
+            <div className="w-full bg-industrial-well-bg h-1.5 rounded-full mt-6 overflow-hidden shadow-well border border-black/5">
                 <div 
-                    className="bg-gradient-to-r from-neon-blue to-neon-purple h-full transition-all duration-500 ease-out"
+                    className="bg-industrial-blue h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(0,85,255,0.4)]"
                     style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                 ></div>
             </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-10 shadow-2xl relative">
+        <ChassisWell label={`System Parameter Initialization // PART ${step}`} className="relative">
             
             {/* Step 1: Income */}
             {step === 1 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                    <h3 className="text-xl font-bold text-white">First, tell us about money coming in.</h3>
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-8">
+                    <h3 className="text-sm font-black text-industrial-text uppercase tracking-tight">Revenue Stream Mapping</h3>
                     
-                    <div>
-                        <label className="block text-sm font-bold text-slate-200 mb-2">What is your annual salary? (Before Tax)</label>
-                        <input 
+                    <div className="space-y-6">
+                        <RecessedInput 
+                            label="Annual Gross Salary (Before Tax AUD)"
                             type="number" 
                             value={formData.annualSalary}
                             onChange={(e) => handleChange('annualSalary', e.target.value)}
-                            className="w-full bg-slate-800 border-b-2 border-slate-600 focus:border-neon-blue text-white text-2xl py-2 outline-none transition-colors"
                             placeholder="0"
                         />
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-bold text-slate-200 mb-2">How much hits your bank account each month?</label>
-                        <input 
+                        <RecessedInput 
+                            label="Monthly Net Liquid Inflow (Post-Tax)"
                             type="number" 
                             value={formData.monthlyIncome}
                             onChange={(e) => handleChange('monthlyIncome', e.target.value)}
-                            className="w-full bg-slate-800 border-b-2 border-slate-600 focus:border-neon-blue text-white text-2xl py-2 outline-none transition-colors"
                             placeholder="0"
                         />
                          <HelpTip 
-                            title="Why ask both?" 
-                            text="We use annual salary to estimate taxes and HECS repayments, and monthly income to help you budget day-to-day." 
+                            title="Differential Analysis" 
+                            text="Annual salary calibrates tax and HECS/HELP strategy (v2025). Monthly inflow determines operational city liquidity." 
                         />
                     </div>
                 </div>
@@ -95,97 +99,89 @@ export const Profile: React.FC<ProfileProps> = ({ health, onUpdate }) => {
 
             {/* Step 2: Debts */}
             {step === 2 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                    <h3 className="text-xl font-bold text-white">Now, let's look at what you owe.</h3>
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-8">
+                    <h3 className="text-sm font-black text-industrial-text uppercase tracking-tight">Liability Registry</h3>
                     
-                    <div>
-                        <label className="block text-sm font-bold text-slate-200 mb-2">Do you have a HECS / HELP Loan?</label>
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500 text-lg">$</span>
-                            <input 
-                                type="number" 
-                                value={formData.hecsDebt}
-                                onChange={(e) => handleChange('hecsDebt', e.target.value)}
-                                className="flex-1 bg-slate-800 border-b-2 border-slate-600 focus:border-rose-500 text-white text-2xl py-2 outline-none transition-colors"
-                            />
-                        </div>
-                        <HelpTip 
-                            title="HECS isn't like other loans" 
-                            text="It doesn't have interest, but it grows with inflation (Indexation). Knowing this helps us decide if you should pay it off early." 
+                    <div className="space-y-6">
+                        <RecessedInput 
+                            label="HECS / HELP Registry Balance"
+                            type="number" 
+                            value={formData.hecsDebt}
+                            onChange={(e) => handleChange('hecsDebt', e.target.value)}
+                            placeholder="0"
                         />
-                    </div>
+                        <HelpTip 
+                            title="Indexation Protocol" 
+                            text="HECS grows with inflation (CPI). v2025 legislation includes a 20% 'Debt Destruction' event and higher repayment thresholds." 
+                        />
 
-                    <div>
-                        <label className="block text-sm font-bold text-slate-200 mb-2">Any Credit Card or Personal Loans?</label>
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500 text-lg">$</span>
-                            <input 
-                                type="number" 
-                                value={formData.otherDebts}
-                                onChange={(e) => handleChange('otherDebts', e.target.value)}
-                                className="flex-1 bg-slate-800 border-b-2 border-slate-600 focus:border-rose-500 text-white text-2xl py-2 outline-none transition-colors"
-                            />
-                        </div>
+                        <RecessedInput 
+                            label="Other External Liabilities (Cards/Loans)"
+                            type="number" 
+                            value={formData.otherDebts}
+                            onChange={(e) => handleChange('otherDebts', e.target.value)}
+                            placeholder="0"
+                        />
                     </div>
                 </div>
             )}
 
             {/* Step 3: Lifestyle */}
             {step === 3 && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-right-8">
-                    <h3 className="text-xl font-bold text-white">Finally, your lifestyle.</h3>
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-8">
+                    <h3 className="text-sm font-black text-industrial-text uppercase tracking-tight">Stability Parameters</h3>
                     
-                    <div>
-                        <label className="block text-sm font-bold text-slate-200 mb-2">How much cash do you have saved?</label>
-                        <input 
+                    <div className="space-y-6">
+                        <RecessedInput 
+                            label="Liquid Reserves (Savings/Cash)"
                             type="number" 
                             value={formData.savings}
                             onChange={(e) => handleChange('savings', e.target.value)}
-                            className="w-full bg-slate-800 border-b-2 border-slate-600 focus:border-emerald-500 text-white text-2xl py-2 outline-none transition-colors"
+                            placeholder="0"
                         />
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-bold text-slate-200 mb-2">What are your "Must-Have" monthly costs?</label>
-                        <input 
+                        <RecessedInput 
+                            label="Minimum Survival Burn (Monthly Essentials)"
                             type="number" 
                             value={formData.survivalNumber}
                             onChange={(e) => handleChange('survivalNumber', e.target.value)}
-                            className="w-full bg-slate-800 border-b-2 border-slate-600 focus:border-orange-400 text-white text-2xl py-2 outline-none transition-colors"
+                            placeholder="0"
                         />
-                        <p className="text-slate-500 text-sm mt-1">Rent, groceries, power, internet. The bare minimum to survive.</p>
+                        <p className="text-[10px] text-industrial-subtext/60 font-medium px-1">Must include: Rent/Mortgage, utilities, basic nutrients, connectivity.</p>
                     </div>
                 </div>
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-10">
+            <div className="flex justify-between mt-12 pt-6 border-t border-industrial-border-dark/10">
                 {step > 1 ? (
                     <button 
                         onClick={prevStep}
-                        className="text-slate-400 hover:text-white font-bold px-4 py-2"
+                        className="text-industrial-subtext/60 hover:text-industrial-text font-black text-[10px] uppercase tracking-widest px-4"
                     >
-                        ← Back
+                        ← Previous
                     </button>
                 ) : <div></div>}
 
                 {step < TOTAL_STEPS ? (
-                    <button 
+                    <TactileButton 
                         onClick={nextStep}
-                        className="bg-neon-blue text-slate-900 font-bold px-8 py-3 rounded-full hover:bg-cyan-400 transition-transform transform hover:scale-105"
+                        color="blue"
+                        size="md"
                     >
-                        Next Step →
-                    </button>
+                        Next Module →
+                    </TactileButton>
                 ) : (
-                    <button 
+                    <TactileButton 
                         onClick={handleSave}
-                        className="bg-emerald-500 text-white font-bold px-8 py-3 rounded-full hover:bg-emerald-400 transition-transform transform hover:scale-105 shadow-lg shadow-emerald-500/20"
+                        color="orange"
+                        size="md"
                     >
-                        Finish & Build City ✓
-                    </button>
+                        Initialize Grid ✓
+                    </TactileButton>
                 )}
             </div>
-        </div>
+        </ChassisWell>
     </div>
   );
 };

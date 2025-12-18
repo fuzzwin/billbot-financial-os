@@ -1,9 +1,11 @@
 
 import React, { useMemo, useRef, useState, createContext, useContext } from 'react';
-import { Canvas, useFrame, useThree, ThreeEvent } from '@react-three/fiber';
+import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
 import { OrthographicCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { AccountItem, FinancialHealth, Goal, WeeklyBuild, AppView, Subscription } from '../types';
+import { AccountItem, FinancialHealth, Goal, WeeklyBuild, Subscription } from '../types';
+import { LEDIndicator } from './ui/LEDIndicator';
+import { ChassisWell } from './ui/ChassisWell';
 
 // ============ TOOLTIP CONTEXT ============
 interface TooltipInfo {
@@ -23,52 +25,49 @@ const TooltipContext = createContext<{
 
 // ============ COLORS ============
 const COLORS = {
-  // Buildings by type
-  savings: '#FFD54F',      // Gold for savings
-  investment: '#66BB6A',   // Green for growth
-  super: '#AB47BC',        // Purple for super
-  cash: '#42A5F5',         // Blue for cash
-  debt: '#EF5350',         // Red for debt
+  // Buildings by type (Industrial Palette)
+  savings: '#F3CF44',      // Muted Yellow
+  investment: '#0055FF',   // Cobalt Blue
+  super: '#9C27B0',        // Purple (keeping for distinction)
+  cash: '#E0E0E0',         // Gray
+  debt: '#FF4F00',         // International Orange
   
   // Environment
-  grass: '#7CB342',
-  road: '#37474F',
+  grass: '#D1D1D1',        // Concrete gray-green
+  road: '#1A1A1A',         // Deep black
   roadMarking: '#FFFFFF',
-  sidewalk: '#BDBDBD',
+  sidewalk: '#E0E0E0',
   
   // Features
-  water: '#29B6F6',
-  waterNegative: '#EF5350',
-  dock: '#8D6E63',
-  concrete: '#78909C',
+  water: '#0055FF',        // Cobalt Blue
+  waterNegative: '#FF4F00', // International Orange
+  dock: '#5D4037',
+  concrete: '#BDBDBD',
   
   // Rockets & Construction
-  rocket: '#ECEFF1',
-  rocketAccent: '#E53935',
-  crane: '#FFC107',
-  scaffolding: '#8D6E63',
-  construction: '#FFB74D',
+  rocket: '#EBEBEB',
+  rocketAccent: '#FF4F00',
+  crane: '#F3CF44',
+  scaffolding: '#424242',
+  construction: '#FF4F00',
   
-  // Nature
-  tree: '#4CAF50',
-  treeDark: '#2E7D32',
-  trunk: '#6D4C41',
+  // Nature (Industrial/Muted)
+  tree: '#689F38',
+  treeDark: '#33691E',
+  trunk: '#4E342E',
   cloud: '#FFFFFF',
-  stormCloud: '#78909C',
+  stormCloud: '#9E9E9E',
   
   // Traffic
-  trafficRed: '#EF5350',
-  trafficGreen: '#66BB6A',
-  trafficYellow: '#FFC107',
+  trafficRed: '#FF4F00',
+  trafficGreen: '#4CAF50',
+  trafficYellow: '#F3CF44',
   
   // Special
-  taxVault: '#7E57C2',
-  window: '#81D4FA',
-  smoke: '#455A64',
+  taxVault: '#1A1A1A',
+  window: '#E3F2FD',
+  smoke: '#1A1A1A',
 };
-
-const CAR_COLORS = [0xe53935, 0xfdd835, 0x1e88e5, 0x43a047, 0xab47bc];
-const PEOPLE_COLORS = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047, 0xab47bc];
 
 // Traffic timing
 const LIGHT_CYCLE_DURATION = 8;
@@ -100,949 +99,523 @@ const useTrafficLight = () => {
   return { horizontalGreen, isYellow };
 };
 
-// ============ BASIC COMPONENTS ============
-
-const Window = ({ position, size }: { position: [number, number, number]; size: [number, number, number] }) => (
-  <mesh position={position}>
-    <boxGeometry args={size} />
-    <meshStandardMaterial color={COLORS.window} emissive="#4FC3F7" emissiveIntensity={0.2} />
-  </mesh>
-);
-
-const Tree = ({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) => {
-  const { showTooltip } = useContext(TooltipContext);
-  
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'tree',
-      title: 'Green Space',
-      description: 'Trees represent financial health. More trees appear when your city is thriving. A healthy financial life needs balance!',
-      icon: '🌳',
-      color: COLORS.tree
-    });
-  };
-  
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.12 * scale, 0]} castShadow>
-        <cylinderGeometry args={[0.04 * scale, 0.06 * scale, 0.24 * scale, 8]} />
-        <meshStandardMaterial color={COLORS.trunk} />
-      </mesh>
-      <mesh position={[0, 0.32 * scale, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
-        <sphereGeometry args={[0.22 * scale, 10, 8]} />
-        <meshStandardMaterial color={COLORS.tree} />
-      </mesh>
-      <mesh position={[0, 0.48 * scale, 0]} castShadow>
-        <sphereGeometry args={[0.14 * scale, 10, 8]} />
-        <meshStandardMaterial color={COLORS.treeDark} />
-      </mesh>
-    </group>
-  );
-};
-
-const StreetLamp = ({ position }: { position: [number, number, number] }) => (
-  <group position={position}>
-    <mesh position={[0, 0.45, 0]} castShadow>
-      <cylinderGeometry args={[0.02, 0.025, 0.9, 6]} />
-      <meshStandardMaterial color="#607D8B" />
-    </mesh>
-    <mesh position={[0.1, 0.88, 0]}>
-      <boxGeometry args={[0.2, 0.02, 0.02]} />
-      <meshStandardMaterial color="#607D8B" />
-    </mesh>
-    <mesh position={[0.2, 0.84, 0]}>
-      <sphereGeometry args={[0.05, 8, 8]} />
-      <meshStandardMaterial color="#FFF9C4" emissive="#FFF59D" emissiveIntensity={0.4} />
-    </mesh>
-  </group>
-);
-
-const TrafficLight = ({ position, rotation, isGreen, isYellow }: { 
-  position: [number, number, number]; 
-  rotation?: number;
-  isGreen: boolean;
-  isYellow: boolean;
-}) => (
-  <group position={position} rotation={[0, rotation || 0, 0]}>
-    <mesh position={[0, 0.4, 0]}>
-      <cylinderGeometry args={[0.03, 0.04, 0.8, 8]} />
-      <meshStandardMaterial color="#424242" />
-    </mesh>
-    <mesh position={[0, 0.85, 0]}>
-      <boxGeometry args={[0.12, 0.3, 0.08]} />
-      <meshStandardMaterial color="#212121" />
-    </mesh>
-    <mesh position={[0, 0.93, 0.045]}>
-      <sphereGeometry args={[0.035, 8, 8]} />
-      <meshStandardMaterial color={COLORS.trafficRed} emissive={COLORS.trafficRed} emissiveIntensity={!isGreen && !isYellow ? 2 : 0.1} />
-    </mesh>
-    <mesh position={[0, 0.85, 0.045]}>
-      <sphereGeometry args={[0.035, 8, 8]} />
-      <meshStandardMaterial color={COLORS.trafficYellow} emissive={COLORS.trafficYellow} emissiveIntensity={isYellow ? 2 : 0.1} />
-    </mesh>
-    <mesh position={[0, 0.77, 0.045]}>
-      <sphereGeometry args={[0.035, 8, 8]} />
-      <meshStandardMaterial color={COLORS.trafficGreen} emissive={COLORS.trafficGreen} emissiveIntensity={isGreen && !isYellow ? 2 : 0.1} />
-    </mesh>
-  </group>
-);
-
-const Crosswalk = ({ position, rotation }: { position: [number, number, number]; rotation?: number }) => (
-  <group position={position} rotation={[0, rotation || 0, 0]}>
-    {[0, 1, 2, 3, 4].map(i => (
-      <mesh key={i} position={[0, 0.05, -0.4 + i * 0.2]}>
-        <boxGeometry args={[0.8, 0.01, 0.12]} />
-        <meshStandardMaterial color={COLORS.roadMarking} />
-      </mesh>
-    ))}
-  </group>
-);
-
-// ============ CLOUDS ============
-const Cloud = ({ position, scale = 1, isStorm = false }: { position: [number, number, number]; scale?: number; isStorm?: boolean }) => {
-  const color = isStorm ? COLORS.stormCloud : COLORS.cloud;
-  return (
-    <group position={position}>
-      <mesh><sphereGeometry args={[0.8 * scale, 12, 10]} /><meshStandardMaterial color={color} transparent opacity={0.85} depthWrite={false} /></mesh>
-      <mesh position={[0.6 * scale, -0.1, 0.2 * scale]}><sphereGeometry args={[0.6 * scale, 10, 8]} /><meshStandardMaterial color={color} transparent opacity={0.8} depthWrite={false} /></mesh>
-      <mesh position={[-0.5 * scale, 0.1, 0.1 * scale]}><sphereGeometry args={[0.55 * scale, 10, 8]} /><meshStandardMaterial color={color} transparent opacity={0.8} depthWrite={false} /></mesh>
-    </group>
-  );
-};
-
-const DriftingCloud = ({ initialPosition, speed, scale, isStorm = false }: { initialPosition: [number, number, number]; speed: number; scale: number; isStorm?: boolean }) => {
-  const ref = useRef<THREE.Group>(null);
-  useFrame((_, delta) => {
-    if (ref.current) {
-      ref.current.position.x += speed * delta;
-      if (ref.current.position.x > 12) ref.current.position.x = -12;
-    }
-  });
-  return <group ref={ref} position={initialPosition}><Cloud position={[0, 0, 0]} scale={scale} isStorm={isStorm} /></group>;
-};
-
-// ============ CASHFLOW FOUNTAIN (CENTER) ============
-const CashflowFountain = ({ surplus, maxSurplus }: { surplus: number; maxSurplus: number }) => {
-  const sprayRef = useRef<THREE.Mesh>(null);
-  const { showTooltip } = useContext(TooltipContext);
-  const waterLevel = Math.max(0.2, Math.min(1, (surplus + maxSurplus) / (maxSurplus * 2)));
-  const isNegative = surplus < 0;
-  
-  useFrame(({ clock }) => {
-    if (sprayRef.current && !isNegative) {
-      sprayRef.current.scale.y = 0.5 + waterLevel * (0.8 + Math.sin(clock.elapsedTime * 4) * 0.2);
-    }
-  });
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'fountain',
-      title: 'Cashflow Fountain',
-      value: `${isNegative ? '-' : '+'}$${Math.abs(surplus).toLocaleString()}/mo`,
-      description: isNegative 
-        ? 'Your expenses exceed income. The fountain runs dry when money flows out faster than it comes in.'
-        : 'Healthy cashflow! The fountain overflows when you have surplus each month.',
-      icon: isNegative ? '🔴' : '⛲',
-      color: isNegative ? '#EF5350' : '#4CAF50'
-    });
-  };
-
-  return (
-    <group position={[0, 0, 0]}>
-      {/* Clickable base - largest hit area */}
-      <mesh position={[0, 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}>
-        <cylinderGeometry args={[1.1, 1.2, 0.08, 24]} />
-        <meshStandardMaterial color="#E0E0E0" />
-      </mesh>
-      {/* Pool rim */}
-      <mesh position={[0, 0.12, 0]} onClick={handleClick} onPointerDown={handleClick}>
-        <cylinderGeometry args={[0.85, 0.95, 0.12, 20]} />
-        <meshStandardMaterial color="#78909C" />
-      </mesh>
-      {/* Water */}
-      <mesh position={[0, 0.08 + waterLevel * 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}>
-        <cylinderGeometry args={[0.8, 0.8, waterLevel * 0.08, 20]} />
-        <meshStandardMaterial color={isNegative ? COLORS.waterNegative : COLORS.water} transparent opacity={0.8} />
-      </mesh>
-      {/* Pillar */}
-      <mesh position={[0, 0.25, 0]} onClick={handleClick} onPointerDown={handleClick}>
-        <cylinderGeometry args={[0.06, 0.08, 0.25, 8]} />
-        <meshStandardMaterial color="#607D8B" />
-      </mesh>
-      {/* Spray */}
-      {!isNegative && (
-        <mesh ref={sprayRef} position={[0, 0.42, 0]}>
-          <coneGeometry args={[0.06 + waterLevel * 0.04, 0.35 * waterLevel, 8]} />
-          <meshStandardMaterial color="#B3E5FC" transparent opacity={0.6} />
-        </mesh>
-      )}
-      {/* Negative warning */}
-      {isNegative && (
-        <mesh position={[0, 0.35, 0]}>
-          <sphereGeometry args={[0.12, 12, 12]} />
-          <meshStandardMaterial color={COLORS.waterNegative} emissive={COLORS.waterNegative} emissiveIntensity={0.8} transparent opacity={0.7} />
-        </mesh>
-      )}
-      {/* Status ring */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={handleClick} onPointerDown={handleClick}>
-        <ringGeometry args={[1.15, 1.25, 24]} />
-        <meshStandardMaterial color={isNegative ? COLORS.waterNegative : '#4CAF50'} emissive={isNegative ? COLORS.waterNegative : '#4CAF50'} emissiveIntensity={0.4} />
-      </mesh>
-    </group>
-  );
-};
-
-// ============ ASSET BUILDING (NW QUADRANT) ============
-const AssetBuilding = ({ position, height, type, balance, name }: { 
-  position: [number, number, number]; 
-  height: number; 
-  type: string;
-  balance: number;
-  name?: string;
-}) => {
-  const { showTooltip } = useContext(TooltipContext);
-  
-  const getColor = () => {
-    switch(type) {
-      case 'SAVINGS': return COLORS.savings;
-      case 'INVESTMENT': return COLORS.investment;
-      case 'SUPER': return COLORS.super;
-      default: return COLORS.cash;
-    }
-  };
-
-  const getIcon = () => {
-    switch(type) {
-      case 'SAVINGS': return '🏦';
-      case 'INVESTMENT': return '📈';
-      case 'SUPER': return '💎';
-      default: return '💵';
-    }
-  };
-
-  const getDescription = () => {
-    switch(type) {
-      case 'SAVINGS': return 'Your savings account - money set aside for future use. The gold dome represents security.';
-      case 'INVESTMENT': return 'Investment portfolio growing over time. The antenna tracks market signals.';
-      case 'SUPER': return 'Superannuation fund for retirement. Building wealth for your future self.';
-      default: return 'Everyday cash account for daily transactions and spending.';
-    }
-  };
-  
-  const floors = Math.min(Math.floor(height / 0.35), 10);
-  const width = 0.95;
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'asset',
-      title: name || type,
-      subtitle: type,
-      value: `$${balance.toLocaleString()}`,
-      description: getDescription(),
-      icon: getIcon(),
-      color: getColor()
-    });
-  };
-  
-  return (
-    <group position={position}>
-      {/* Main building - clickable */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[width, height, width]} />
-        <meshStandardMaterial color={getColor()} roughness={0.4} />
-      </mesh>
-      {/* Windows on all sides */}
-      {Array.from({ length: floors }).map((_, f) => (
-        <group key={f}>
-          <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
-          <Window position={[-width/2 - 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
-          <Window position={[0, 0.22 + f * 0.35, width/2 + 0.01]} size={[width * 0.6, 0.14, 0.02]} />
-          <Window position={[0, 0.22 + f * 0.35, -width/2 - 0.01]} size={[width * 0.6, 0.14, 0.02]} />
-        </group>
-      ))}
-      {/* Roof feature by type */}
-      {type === 'SAVINGS' && (
-        <mesh position={[0, height + 0.01, 0]}>
-          <sphereGeometry args={[0.18, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#FFC107" metalness={0.7} roughness={0.2} />
-        </mesh>
-      )}
-      {type === 'INVESTMENT' && (
-        <group position={[0, height, 0]}>
-          <mesh position={[0, 0.18, 0]}><cylinderGeometry args={[0.025, 0.035, 0.35, 6]} /><meshStandardMaterial color="#607D8B" /></mesh>
-          <mesh position={[0, 0.38, 0]}><sphereGeometry args={[0.05, 8, 8]} /><meshStandardMaterial color="#4CAF50" emissive="#4CAF50" emissiveIntensity={0.6} /></mesh>
-        </group>
-      )}
-      {type === 'SUPER' && (
-        <mesh position={[0, height + 0.1, 0]}>
-          <sphereGeometry args={[0.15, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshStandardMaterial color="#9C27B0" metalness={0.5} />
-        </mesh>
-      )}
-      {type === 'CASH' && (
-        <mesh position={[0, height + 0.08, 0]}>
-          <boxGeometry args={[0.3, 0.08, 0.3]} />
-          <meshStandardMaterial color="#1565C0" />
-        </mesh>
-      )}
-    </group>
-  );
-};
-
-// ============ DEBT BUILDING (NE QUADRANT) ============
-const DebtBuilding = ({ position, height, type, balance, name }: { 
-  position: [number, number, number]; 
-  height: number; 
-  type: string;
-  balance: number;
-  name?: string;
-}) => {
-  const smokeRef = useRef<THREE.Group>(null);
-  const { showTooltip } = useContext(TooltipContext);
-  
-  useFrame(({ clock }) => {
-    if (smokeRef.current) {
-      smokeRef.current.children.forEach((child, i) => {
-        child.position.y = 0.12 + Math.sin(clock.elapsedTime * 2 + i) * 0.1 + i * 0.12;
-        (child as THREE.Mesh).scale.setScalar(0.8 + Math.sin(clock.elapsedTime * 3 + i) * 0.25);
-      });
-    }
-  });
-
-  const getIcon = () => {
-    switch(type) {
-      case 'HECS': return '🎓';
-      case 'CREDIT_CARD': return '💳';
-      default: return '🏦';
-    }
-  };
-
-  const getDescription = () => {
-    switch(type) {
-      case 'HECS': return 'HECS-HELP student loan. Indexed annually and repaid through tax when earning above threshold.';
-      case 'CREDIT_CARD': return 'Credit card debt with high interest. The smoke represents money burning away.';
-      default: return 'Loan balance accruing interest. Pay this down to clear the smoke from your city.';
-    }
-  };
-  
-  const floors = Math.min(Math.floor(height / 0.35), 8);
-  const width = 0.9;
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'debt',
-      title: name || type.replace('_', ' '),
-      subtitle: 'Liability',
-      value: `-$${balance.toLocaleString()}`,
-      description: getDescription(),
-      icon: getIcon(),
-      color: COLORS.debt
-    });
-  };
-  
-  return (
-    <group position={position}>
-      {/* Main building - clickable */}
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[width, height, width]} />
-        <meshStandardMaterial color={COLORS.debt} roughness={0.5} />
-      </mesh>
-      {/* Windows */}
-      {Array.from({ length: floors }).map((_, f) => (
-        <group key={f}>
-          <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.12, width * 0.55]} />
-          <Window position={[-width/2 - 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.12, width * 0.55]} />
-          <Window position={[0, 0.22 + f * 0.35, width/2 + 0.01]} size={[width * 0.55, 0.12, 0.02]} />
-          <Window position={[0, 0.22 + f * 0.35, -width/2 - 0.01]} size={[width * 0.55, 0.12, 0.02]} />
-        </group>
-      ))}
-      {/* Warning beacon - larger and more visible */}
-      <mesh position={[0, height + 0.15, 0]}>
-        <sphereGeometry args={[0.1, 10, 10]} />
-        <meshStandardMaterial color="#FF1744" emissive="#FF1744" emissiveIntensity={1} />
-      </mesh>
-      {/* Smoke - larger puffs */}
-      <group ref={smokeRef} position={[0, height + 0.25, 0]}>
-        {[0, 1, 2, 3].map(i => (
-          <mesh key={i} position={[0, i * 0.12, 0]}>
-            <sphereGeometry args={[0.06 + i * 0.02, 8, 8]} />
-            <meshStandardMaterial color={COLORS.smoke} transparent opacity={0.4 - i * 0.08} />
-          </mesh>
-        ))}
-      </group>
-    </group>
-  );
-};
-
-// ============ LAUNCHPAD WITH ROCKET (SW QUADRANT) ============
-const LaunchPad = ({ position, goal }: { position: [number, number, number]; goal: Goal }) => {
-  const progress = Math.min(goal.currentAmount / goal.targetAmount, 1);
-  const flameRef = useRef<THREE.Mesh>(null);
-  const { showTooltip } = useContext(TooltipContext);
-  const rocketHeight = 0.4 + progress * 0.7;
-  const daysRemaining = Math.max(0, Math.ceil((new Date(goal.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-  
-  useFrame(({ clock }) => {
-    if (flameRef.current && progress >= 1) {
-      flameRef.current.scale.y = 0.8 + Math.sin(clock.elapsedTime * 15) * 0.3;
-    }
-  });
-
-  const getCategoryIcon = () => {
-    switch(goal.category) {
-      case 'travel': return '✈️';
-      case 'gadget': return '📱';
-      case 'car': return '🚗';
-      case 'gift': return '🎁';
-      case 'house_deposit': return '🏠';
-      default: return '🎯';
-    }
-  };
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'goal',
-      title: goal.name,
-      subtitle: `${goal.valueTag} Goal`,
-      value: `$${goal.currentAmount.toLocaleString()} / $${goal.targetAmount.toLocaleString()}`,
-      description: progress >= 1 
-        ? '🚀 Ready for launch! This goal is fully funded. Go spend it guilt-free!'
-        : `${Math.round(progress * 100)}% funded • ${daysRemaining} days left • Need $${(goal.targetAmount - goal.currentAmount).toLocaleString()} more`,
-      icon: getCategoryIcon(),
-      color: progress >= 1 ? '#4CAF50' : '#2196F3'
-    });
-  };
-  
-  return (
-    <group position={position}>
-      {/* Launch platform - clickable */}
-      <mesh position={[0, 0.08, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
-        <cylinderGeometry args={[0.6, 0.65, 0.16, 16]} />
-        <meshStandardMaterial color={COLORS.concrete} />
-      </mesh>
-      {/* Platform inner ring */}
-      <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.4, 0.5, 16]} />
-        <meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#FFC107'} />
-      </mesh>
-      {/* Support tower - taller */}
-      <mesh position={[0.45, 0.65, 0]}>
-        <boxGeometry args={[0.1, 1.3, 0.1]} />
-        <meshStandardMaterial color="#607D8B" />
-      </mesh>
-      {/* Tower arm */}
-      <mesh position={[0.25, 1.2, 0]}>
-        <boxGeometry args={[0.4, 0.06, 0.06]} />
-        <meshStandardMaterial color="#607D8B" />
-      </mesh>
-      {/* Rocket */}
-      {progress > 0.05 && (
-        <group position={[0, 0.2, 0]}>
-          {/* Body - clickable */}
-          <mesh position={[0, rocketHeight / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
-            <cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} />
-            <meshStandardMaterial color={COLORS.rocket} metalness={0.3} />
-          </mesh>
-          {/* Nose cone - clickable */}
-          <mesh position={[0, rocketHeight + 0.12, 0]} onClick={handleClick} onPointerDown={handleClick}>
-            <coneGeometry args={[0.1, 0.25, 12]} />
-            <meshStandardMaterial color={COLORS.rocketAccent} />
-          </mesh>
-          {/* Fins - larger */}
-          {[0, 1, 2].map(i => (
-            <mesh key={i} position={[Math.cos(i * Math.PI * 2 / 3) * 0.12, 0.15, Math.sin(i * Math.PI * 2 / 3) * 0.12]} rotation={[0, i * Math.PI * 2 / 3, 0]}>
-              <boxGeometry args={[0.025, 0.15, 0.1]} />
-              <meshStandardMaterial color={COLORS.rocketAccent} />
-            </mesh>
-          ))}
-          {/* Flame when ready - bigger */}
-          {progress >= 1 && (
-            <mesh ref={flameRef} position={[0, -0.02, 0]} rotation={[Math.PI, 0, 0]}>
-              <coneGeometry args={[0.08, 0.35, 8]} />
-              <meshStandardMaterial color="#FF9800" emissive="#FF5722" emissiveIntensity={1.5} transparent opacity={0.9} />
-            </mesh>
-          )}
-        </group>
-      )}
-      {/* Progress ring - outer glow */}
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.6, 0.68, 32, 1, 0, progress * Math.PI * 2]} />
-        <meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#2196F3'} emissive={progress >= 1 ? '#4CAF50' : '#2196F3'} emissiveIntensity={0.4} />
-      </mesh>
-    </group>
-  );
-};
-
-// ============ CONSTRUCTION SITE (IMPULSE ITEMS) ============
-const ConstructionSite = ({ position, progress, name, price, saved }: { position: [number, number, number]; progress: number; name?: string; price?: number; saved?: number }) => {
-  const builtH = 0.2 + progress * 1.2;
-  const { showTooltip } = useContext(TooltipContext);
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'construction',
-      title: name || 'Impulse Item',
-      subtitle: 'Building Savings',
-      value: price && saved ? `$${saved.toLocaleString()} / $${price.toLocaleString()}` : `${Math.round(progress * 100)}%`,
-      description: progress >= 1 
-        ? '✅ Fully saved! You can now decide: buy it or keep the cash (+50 Willpower).'
-        : `Parking this purchase. Save weekly to build it up. ${Math.round(progress * 100)}% complete.`,
-      icon: '🏗️',
-      color: COLORS.construction
-    });
-  };
-  
-  return (
-    <group position={position}>
-      {/* Foundation - clickable */}
-      <mesh position={[0, 0.04, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[1.0, 0.08, 1.0]} />
-        <meshStandardMaterial color="#9E9E9E" />
-      </mesh>
-      {/* Building in progress - clickable */}
-      <mesh position={[0, 0.08 + builtH / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[0.8, builtH, 0.8]} />
-        <meshStandardMaterial color={COLORS.construction} transparent opacity={0.85} />
-      </mesh>
-      {/* Scaffolding */}
-      {[[-0.45, -0.45], [-0.45, 0.45], [0.45, -0.45], [0.45, 0.45]].map(([sx, sz], i) => (
-        <mesh key={i} position={[sx, 0.08 + (builtH + 0.2) / 2, sz]} castShadow>
-          <cylinderGeometry args={[0.02, 0.02, builtH + 0.2, 6]} />
-          <meshStandardMaterial color={COLORS.scaffolding} />
-        </mesh>
-      ))}
-      {/* Crane (if not complete) */}
-      {progress < 0.9 && (
-        <>
-          <mesh position={[0.3, 0.8, 0.3]} castShadow>
-            <cylinderGeometry args={[0.03, 0.04, 1.4, 8]} />
-            <meshStandardMaterial color={COLORS.crane} />
-          </mesh>
-          <mesh position={[-0.15, 1.5, 0.3]}>
-            <boxGeometry args={[0.9, 0.04, 0.04]} />
-            <meshStandardMaterial color={COLORS.crane} />
-          </mesh>
-        </>
-      )}
-    </group>
-  );
-};
-
-// ============ HARBOR DOCK (SE QUADRANT) ============
-const HarborDock = ({ position, savings }: { position: [number, number, number]; savings: number }) => {
-  const waterLevel = Math.max(0.3, Math.min(1, savings / 50000));
-  const boat1Ref = useRef<THREE.Group>(null);
-  const boat2Ref = useRef<THREE.Group>(null);
-  const { showTooltip } = useContext(TooltipContext);
-
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    if (boat1Ref.current) {
-      boat1Ref.current.rotation.z = Math.sin(t * 1.5) * 0.03;
-      boat1Ref.current.position.y = 0.06 + Math.sin(t * 1.2) * 0.02;
-    }
-    if (boat2Ref.current) {
-      boat2Ref.current.rotation.z = Math.sin(t * 1.3 + 1) * 0.04;
-      boat2Ref.current.position.y = 0.06 + Math.sin(t * 1.4 + 0.5) * 0.02;
-    }
-  });
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'harbor',
-      title: 'Liquidity Harbor',
-      subtitle: 'Available Cash',
-      value: `$${savings.toLocaleString()}`,
-      description: `Water level shows your liquid savings. ${waterLevel >= 0.8 ? 'Harbor is full - great reserves!' : waterLevel >= 0.5 ? 'Healthy water level.' : 'Low tide - build up your reserves.'}`,
-      icon: '⚓',
-      color: COLORS.water
-    });
-  };
-
-  return (
-    <group position={position}>
-      {/* Water basin - clickable */}
-      <mesh position={[0, -0.02, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[2.8, 0.12 * waterLevel, 2.0]} />
-        <meshStandardMaterial color={COLORS.water} transparent opacity={0.85} />
-      </mesh>
-      {/* Dock - clickable */}
-      <mesh position={[0.6, 0.06, 0]} onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[0.35, 0.06, 1.8]} />
-        <meshStandardMaterial color={COLORS.dock} />
-      </mesh>
-      {/* Dock posts */}
-      {[-0.7, 0, 0.7].map((z, i) => (
-        <mesh key={i} position={[0.78, -0.04, z]}>
-          <cylinderGeometry args={[0.04, 0.05, 0.28, 8]} />
-          <meshStandardMaterial color="#5D4037" />
-        </mesh>
-      ))}
-      {/* Boats */}
-      <group ref={boat1Ref} position={[-0.25, 0.06, -0.4]}>
-        <mesh><boxGeometry args={[0.5, 0.1, 0.22]} /><meshStandardMaterial color="#ECEFF1" /></mesh>
-        <mesh position={[0, 0.1, 0]}><boxGeometry args={[0.06, 0.25, 0.02]} /><meshStandardMaterial color="#795548" /></mesh>
-        <mesh position={[0.06, 0.18, 0]}><boxGeometry args={[0.16, 0.14, 0.01]} /><meshStandardMaterial color="#1E88E5" /></mesh>
-      </group>
-      <group ref={boat2Ref} position={[-0.4, 0.06, 0.5]}>
-        <mesh><boxGeometry args={[0.38, 0.08, 0.18]} /><meshStandardMaterial color="#FFF9C4" /></mesh>
-      </group>
-    </group>
-  );
-};
-
-// ============ TAX VAULT (SE QUADRANT) ============
-const TaxVault = ({ position, amount }: { position: [number, number, number]; amount: number }) => {
-  const fillLevel = Math.min(1, amount / 3000);
-  const pulseRef = useRef<THREE.Mesh>(null);
-  const { showTooltip } = useContext(TooltipContext);
-  
-  useFrame(({ clock }) => {
-    if (pulseRef.current && fillLevel > 0.3) {
-      pulseRef.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 2) * 0.08);
-    }
-  });
-
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    showTooltip({
-      type: 'taxvault',
-      title: 'Tax Vault',
-      subtitle: 'Gig Economy Tax',
-      value: `$${amount.toLocaleString()}`,
-      description: 'Quarantined tax from gig income (30%). This money is set aside for your tax bill - don\'t spend it!',
-      icon: '🏛️',
-      color: COLORS.taxVault
-    });
-  };
-
-  return (
-    <group position={position}>
-      {/* Base - clickable */}
-      <mesh position={[0, 0.12, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[0.7, 0.24, 0.7]} />
-        <meshStandardMaterial color="#37474F" />
-      </mesh>
-      {/* Vault body - clickable */}
-      <mesh position={[0, 0.45, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
-        <boxGeometry args={[0.6, 0.42, 0.6]} />
-        <meshStandardMaterial color={COLORS.taxVault} metalness={0.4} roughness={0.3} />
-      </mesh>
-      {/* Vault door */}
-      <mesh position={[0.31, 0.45, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.15, 0.15, 0.04, 16]} />
-        <meshStandardMaterial color="#424242" metalness={0.6} />
-      </mesh>
-      {/* Fill indicator */}
-      {fillLevel > 0 && (
-        <mesh position={[0, 0.28 + fillLevel * 0.15, 0]}>
-          <boxGeometry args={[0.4, fillLevel * 0.3, 0.4]} />
-          <meshStandardMaterial color="#FFD54F" transparent opacity={0.7} />
-        </mesh>
-      )}
-      {/* Beacon */}
-      <mesh ref={pulseRef} position={[0, 0.72, 0]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color={COLORS.taxVault} emissive={COLORS.taxVault} emissiveIntensity={fillLevel > 0.3 ? 1 : 0.3} />
-      </mesh>
-    </group>
-  );
-};
-
-// ============ CAR ============
-type CarDirection = 'EAST' | 'WEST' | 'NORTH' | 'SOUTH';
-
-const Car = ({ direction, laneOffset, startPos, speed, color, horizontalGreen }: { 
-  direction: CarDirection; laneOffset: number; startPos: number; speed: number; color: number; horizontalGreen: boolean;
-}) => {
-  const ref = useRef<THREE.Group>(null);
-  const posRef = useRef(startPos);
-  
-  const config = useMemo(() => {
-    switch (direction) {
-      case 'EAST': return { axis: 'x' as const, dir: 1, lanePos: -laneOffset, rotation: Math.PI / 2 };
-      case 'WEST': return { axis: 'x' as const, dir: -1, lanePos: laneOffset, rotation: -Math.PI / 2 };
-      case 'SOUTH': return { axis: 'z' as const, dir: 1, lanePos: laneOffset, rotation: Math.PI };
-      case 'NORTH': return { axis: 'z' as const, dir: -1, lanePos: -laneOffset, rotation: 0 };
-    }
-  }, [direction, laneOffset]);
-  
-  const canGo = config.axis === 'x' ? horizontalGreen : !horizontalGreen;
-  
-  useFrame(() => {
-    if (!ref.current) return;
-    const pos = posRef.current;
-    const approachingStop = config.dir > 0 ? (pos > -2.5 && pos < -1.8) : (pos < 2.5 && pos > 1.8);
-    if (!(!canGo && approachingStop)) {
-      posRef.current += speed * config.dir;
-      if (config.dir > 0 && posRef.current > 7) posRef.current = -7;
-      else if (config.dir < 0 && posRef.current < -7) posRef.current = 7;
-    }
-    if (config.axis === 'x') { ref.current.position.x = posRef.current; ref.current.position.z = config.lanePos; }
-    else { ref.current.position.z = posRef.current; ref.current.position.x = config.lanePos; }
-  });
-
-  return (
-    <group ref={ref} position={[config.axis === 'x' ? startPos : config.lanePos, 0.06, config.axis === 'z' ? startPos : config.lanePos]} rotation={[0, config.rotation, 0]}>
-      <mesh position={[0, 0.08, 0]} castShadow><boxGeometry args={[0.22, 0.12, 0.4]} /><meshStandardMaterial color={color} /></mesh>
-      <mesh position={[0, 0.17, 0.02]}><boxGeometry args={[0.18, 0.08, 0.18]} /><meshStandardMaterial color={0x90caf9} /></mesh>
-    </group>
-  );
-};
-
-// ============ PEDESTRIAN ============
-type PedestrianPath = 'QUADRANT_NW' | 'QUADRANT_NE' | 'QUADRANT_SW' | 'QUADRANT_SE';
-
-const getPedestrianWaypoints = (path: PedestrianPath): [number, number][] => {
-  const O = 5.5, I = 1.6;
-  switch (path) {
-    case 'QUADRANT_NW': return [[-O, -I], [-O, -O], [-I, -O], [-I, -I]];
-    case 'QUADRANT_NE': return [[I, -O], [O, -O], [O, -I], [I, -I]];
-    case 'QUADRANT_SW': return [[-I, O], [-O, O], [-O, I], [-I, I]];
-    case 'QUADRANT_SE': return [[O, I], [O, O], [I, O], [I, I]];
-  }
-};
-
-const Person = ({ pedestrianPath, startProgress, speed, color, horizontalGreen }: { 
-  pedestrianPath: PedestrianPath; startProgress: number; speed: number; color: number; horizontalGreen: boolean;
-}) => {
-  const ref = useRef<THREE.Group>(null);
-  const progressRef = useRef(startProgress);
-  const waypoints = useMemo(() => getPedestrianWaypoints(pedestrianPath), [pedestrianPath]);
-
-  useFrame(() => {
-    if (!ref.current) return;
-    const n = waypoints.length;
-    const t = progressRef.current * n;
-    const seg = Math.floor(t) % n;
-    const p = t - Math.floor(t);
-    const nearCross = seg >= 2;
-    const shouldWait = nearCross && p > 0.7 && ((pedestrianPath.includes('NW') || pedestrianPath.includes('NE')) ? horizontalGreen : !horizontalGreen);
-    if (!shouldWait) { progressRef.current += speed * 0.0008; if (progressRef.current >= 1) progressRef.current -= 1; }
-    const s = waypoints[seg], e = waypoints[(seg + 1) % n];
-    ref.current.position.x = s[0] + (e[0] - s[0]) * p;
-    ref.current.position.z = s[1] + (e[1] - s[1]) * p;
-  });
-
-  return (
-    <group ref={ref} position={[waypoints[0][0], 0.08, waypoints[0][1]]}>
-      <mesh position={[0, 0.14, 0]} castShadow><boxGeometry args={[0.08, 0.14, 0.06]} /><meshStandardMaterial color={color} /></mesh>
-      <mesh position={[0, 0.26, 0]}><sphereGeometry args={[0.045, 8, 8]} /><meshStandardMaterial color={0xffccbc} /></mesh>
-    </group>
-  );
-};
-
-// ============ CITY SCENE ============
-const CityScene = ({ accounts, health, goals, weeklyBuilds, autoRotate, subscriptions = [] }: { 
-  accounts: AccountItem[]; health: FinancialHealth; goals: Goal[]; weeklyBuilds: WeeklyBuild[]; autoRotate: boolean; subscriptions?: Subscription[];
-}) => {
-  const cityRef = useRef<THREE.Group>(null);
-  const { horizontalGreen, isYellow } = useTrafficLight();
-  const activityLevel = health.score / 100;
-  const numCars = Math.floor(2 + activityLevel * 4);
-  const numPeople = Math.floor(4 + activityLevel * 8);
-  const isLowScore = health.score < 40;
-
-  useFrame((_, delta) => { if (cityRef.current && autoRotate) cityRef.current.rotation.y += delta * 0.04; });
-
-  const monthlySurplus = health.monthlyIncome - health.monthlyExpenses;
-  const maxSurplus = Math.max(health.monthlyIncome, 5000);
-
-  // Organize data
-  const assets = useMemo(() => accounts.filter(a => ['CASH', 'SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type)), [accounts]);
-  const debts = useMemo(() => accounts.filter(a => ['LOAN', 'CREDIT_CARD', 'HECS'].includes(a.type)), [accounts]);
-  const maxBalance = useMemo(() => Math.max(...accounts.map(a => a.balance), 1), [accounts]);
-
-  // COMPACT positions - tighter groupings for better mobile visibility
-  // NW: Assets - 2x2 grid
-  const assetPositions: [number, number, number][] = [
-    [-4.0, 0.1, -4.0], [-2.8, 0.1, -4.0], 
-    [-4.0, 0.1, -2.8], [-2.8, 0.1, -2.8]
-  ];
-  // NE: Debts - tight cluster
-  const debtPositions: [number, number, number][] = [
-    [4.0, 0.1, -4.0], [2.8, 0.1, -4.0], 
-    [4.0, 0.1, -2.8]
-  ];
-  // SW: Launchpads - row formation
-  const launchPositions: [number, number, number][] = [
-    [-4.2, 0.1, 3.5], [-3.0, 0.1, 3.5], [-4.2, 0.1, 4.8]
-  ];
-  // Construction next to launchpads
-  const constructionPositions: [number, number, number][] = [[-2.8, 0.1, 4.8]];
-
-  // Traffic
-  const directions: CarDirection[] = ['EAST', 'WEST', 'NORTH', 'SOUTH'];
-  const pedPaths: PedestrianPath[] = ['QUADRANT_NW', 'QUADRANT_NE', 'QUADRANT_SW', 'QUADRANT_SE'];
-
-  // Tree positions - denser for better visual fill
-  const treePositions: [number, number, number][] = [
-    // Corners
-    [-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5],
-    // Edges
-    [-5.5, 0.08, -2.0], [-5.5, 0.08, 2.0], [5.5, 0.08, -2.0], [5.5, 0.08, 2.0],
-    [-2.0, 0.08, -5.5], [2.0, 0.08, -5.5], [-2.0, 0.08, 5.5], [2.0, 0.08, 5.5],
-    // Fill corners inside quadrants
-    [-5.0, 0.08, -1.8], [5.0, 0.08, -1.8], [-5.0, 0.08, 1.8], [5.0, 0.08, 1.8],
-    [-1.8, 0.08, -5.0], [1.8, 0.08, -5.0], [-1.8, 0.08, 5.0], [1.8, 0.08, 5.0],
-  ];
-
-  const lampPositions: [number, number, number][] = [
-    [-1.6, 0.08, 2.2], [1.6, 0.08, 2.2], [-1.6, 0.08, -2.2], [1.6, 0.08, -2.2],
-    [2.2, 0.08, -1.6], [2.2, 0.08, 1.6], [-2.2, 0.08, -1.6], [-2.2, 0.08, 1.6],
-  ];
-
-  return (
-    <group ref={cityRef}>
-      {/* BASE */}
-      <mesh position={[0, -0.15, 0]} receiveShadow><boxGeometry args={[14, 0.3, 14]} /><meshStandardMaterial color="#37474F" /></mesh>
-
-      {/* QUADRANT GRASS - Each with distinct shade */}
-      {/* NW - Assets (rich green) */}
-      <mesh position={[-3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color="#7CB342" /></mesh>
-      {/* NE - Debts (darker) */}
-      <mesh position={[3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isLowScore ? '#8D6E63' : '#689F38'} /></mesh>
-      {/* SW - Launchpad (vibrant) */}
-      <mesh position={[-3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color="#8BC34A" /></mesh>
-      {/* SE - Harbor (lighter) */}
-      <mesh position={[3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color="#81C784" /></mesh>
-
-      {/* ROADS */}
-      <mesh position={[-4.5, 0.02, 0]} receiveShadow><boxGeometry args={[5, 0.04, 2.2]} /><meshStandardMaterial color={COLORS.road} /></mesh>
-      <mesh position={[4.5, 0.02, 0]} receiveShadow><boxGeometry args={[5, 0.04, 2.2]} /><meshStandardMaterial color={COLORS.road} /></mesh>
-      <mesh position={[0, 0.02, -4.5]} receiveShadow><boxGeometry args={[2.2, 0.04, 5]} /><meshStandardMaterial color={COLORS.road} /></mesh>
-      <mesh position={[0, 0.02, 4.5]} receiveShadow><boxGeometry args={[2.2, 0.04, 5]} /><meshStandardMaterial color={COLORS.road} /></mesh>
-      <mesh position={[0, 0.02, 0]} receiveShadow><boxGeometry args={[2.2, 0.04, 2.2]} /><meshStandardMaterial color={COLORS.road} /></mesh>
-
-      {/* Road markings */}
-      {[-5.5, -4.2, -2.9, 2.9, 4.2, 5.5].map((pos, i) => (
-        <mesh key={`hm-${i}`} position={[pos, 0.05, 0]}><boxGeometry args={[0.5, 0.01, 0.06]} /><meshStandardMaterial color={COLORS.roadMarking} /></mesh>
-      ))}
-      {[-5.5, -4.2, -2.9, 2.9, 4.2, 5.5].map((pos, i) => (
-        <mesh key={`vm-${i}`} position={[0, 0.05, pos]}><boxGeometry args={[0.06, 0.01, 0.5]} /><meshStandardMaterial color={COLORS.roadMarking} /></mesh>
-      ))}
-
-      {/* Crosswalks */}
-      <Crosswalk position={[-1.9, 0, 0]} rotation={0} />
-      <Crosswalk position={[1.9, 0, 0]} rotation={0} />
-      <Crosswalk position={[0, 0, -1.9]} rotation={Math.PI / 2} />
-      <Crosswalk position={[0, 0, 1.9]} rotation={Math.PI / 2} />
-
-      {/* Sidewalks */}
-      {[[-3.8, -3.8], [-3.8, 3.8], [3.8, -3.8], [3.8, 3.8]].map(([bx, bz], i) => (
-        <group key={i}>
-          <mesh position={[bx, 0.11, bz > 0 ? bz - 2.4 : bz + 2.4]} receiveShadow><boxGeometry args={[5.1, 0.08, 0.4]} /><meshStandardMaterial color={COLORS.sidewalk} /></mesh>
-          <mesh position={[bx > 0 ? bx - 2.4 : bx + 2.4, 0.11, bz]} receiveShadow><boxGeometry args={[0.4, 0.08, 5.1]} /><meshStandardMaterial color={COLORS.sidewalk} /></mesh>
-        </group>
-      ))}
-
-      {/* Traffic Lights */}
-      <TrafficLight position={[-1.5, 0, -1.5]} rotation={Math.PI / 4} isGreen={horizontalGreen} isYellow={isYellow} />
-      <TrafficLight position={[1.5, 0, -1.5]} rotation={-Math.PI / 4} isGreen={!horizontalGreen} isYellow={isYellow} />
-      <TrafficLight position={[-1.5, 0, 1.5]} rotation={Math.PI * 3 / 4} isGreen={!horizontalGreen} isYellow={isYellow} />
-      <TrafficLight position={[1.5, 0, 1.5]} rotation={-Math.PI * 3 / 4} isGreen={horizontalGreen} isYellow={isYellow} />
-
-      {/* === CASHFLOW FOUNTAIN (CENTER) === */}
-      <CashflowFountain surplus={monthlySurplus} maxSurplus={maxSurplus} />
-
-      {/* === NW QUADRANT: ASSET BUILDINGS === */}
-      {assets.slice(0, assetPositions.length).map((acc, i) => (
-        <AssetBuilding
-          key={acc.id}
-          position={assetPositions[i]}
-          height={Math.max(1.2, (acc.balance / maxBalance) * 4.0)}
-          type={acc.type}
-          balance={acc.balance}
-          name={acc.name}
-        />
-      ))}
-
-      {/* === NE QUADRANT: DEBT BUILDINGS === */}
-      {debts.slice(0, debtPositions.length).map((acc, i) => (
-        <DebtBuilding
-          key={acc.id}
-          position={debtPositions[i]}
-          height={Math.max(1.0, (acc.balance / maxBalance) * 3.0)}
-          type={acc.type}
-          balance={acc.balance}
-          name={acc.name}
-        />
-      ))}
-
-      {/* === SW QUADRANT: LAUNCHPADS (GOALS) === */}
-      {goals.slice(0, launchPositions.length).map((goal, i) => (
-        <LaunchPad key={goal.id} position={launchPositions[i]} goal={goal} />
-      ))}
-
-      {/* === SW QUADRANT: CONSTRUCTION (IMPULSE ITEMS) === */}
-      {weeklyBuilds.slice(0, constructionPositions.length).map((build, i) => (
-        <ConstructionSite key={build.id} position={constructionPositions[i]} progress={build.saved / build.target} name={build.name} price={build.target} saved={build.saved} />
-      ))}
-
-      {/* === SE QUADRANT: HARBOR === */}
-      <HarborDock position={[3.5, 0.08, 3.8]} savings={health.savings} />
-
-      {/* === SE QUADRANT: TAX VAULT === */}
-      {health.taxVault > 0 && <TaxVault position={[4.8, 0.1, 2.8]} amount={health.taxVault} />}
-
-      {/* Trees */}
-      {treePositions.map((pos, i) => <Tree key={i} position={pos} scale={0.75 + (i % 3) * 0.15} />)}
-
-      {/* Street Lamps */}
-      {lampPositions.map((pos, i) => <StreetLamp key={i} position={pos} />)}
-
-      {/* Cars */}
-      {Array.from({ length: numCars }).map((_, i) => (
-        <Car key={i} direction={directions[i % 4]} laneOffset={0.45} startPos={-6 + (i * 3) % 12} speed={0.025 + (i % 3) * 0.005} color={CAR_COLORS[i % CAR_COLORS.length]} horizontalGreen={horizontalGreen} />
-      ))}
-
-      {/* Pedestrians */}
-      {Array.from({ length: numPeople }).map((_, i) => (
-        <Person key={i} pedestrianPath={pedPaths[i % 4]} startProgress={(i * 0.22) % 1} speed={0.8 + (i % 3) * 0.2} color={PEOPLE_COLORS[i % PEOPLE_COLORS.length]} horizontalGreen={horizontalGreen} />
-      ))}
-
-      {/* Clouds */}
-      <DriftingCloud initialPosition={[-8, 8, -6]} speed={0.15} scale={1.2} isStorm={isLowScore} />
-      <DriftingCloud initialPosition={[5, 9, -3]} speed={0.12} scale={0.9} isStorm={isLowScore} />
-      <DriftingCloud initialPosition={[-3, 7.5, 4]} speed={0.18} scale={1.0} isStorm={isLowScore} />
-      <DriftingCloud initialPosition={[8, 8.5, 2]} speed={0.1} scale={1.3} isStorm={isLowScore} />
-      {isLowScore && <>
-        <DriftingCloud initialPosition={[0, 7, -8]} speed={0.2} scale={1.4} isStorm={true} />
-        <DriftingCloud initialPosition={[-5, 8, 0]} speed={0.16} scale={1.2} isStorm={true} />
-      </>}
-    </group>
-  );
-};
-
-// ============ MAIN COMPONENT ============
 interface IsometricCityProps {
-  onNavigate: (view: AppView) => void;
   accounts: AccountItem[];
   health: FinancialHealth;
   goals: Goal[];
-  hasWeeds: boolean;
-  isFuture: boolean;
-  weeklyBuilds: WeeklyBuild[];
+  theme?: 'light' | 'mid' | 'dark';
+  hasWeeds?: boolean;
+  isFuture?: boolean;
+  onNavigate?: (view: any) => void;
+  minimal?: boolean;
+  weeklyBuilds?: WeeklyBuild[];
   subscriptions?: Subscription[];
-  minimal?: boolean; // When true, hides all overlays for cleaner embedding
 }
 
-export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accounts, health, goals, hasWeeds, isFuture, weeklyBuilds, subscriptions = [], minimal = false }) => {
-  const [autoRotate, setAutoRotate] = useState(true);
-  const [zoom, setZoom] = useState(38);
-  const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
+export const IsometricCity: React.FC<IsometricCityProps> = ({
+  accounts,
+  health,
+  goals,
+  theme = 'light',
+  hasWeeds = false,
+  isFuture = false,
+  onNavigate,
+  minimal = false,
+  weeklyBuilds = [],
+  subscriptions = []
+}) => {
   const [tooltip, setTooltip] = useState<TooltipInfo | null>(null);
+  const [zoom, setZoom] = useState(minimal ? 45 : 35);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
   
+  const isDark = theme === 'dark';
+  const isMid = theme === 'mid';
   const isLowScore = health.score < 40;
+  
   const monthlySurplus = health.monthlyIncome - health.monthlyExpenses;
-  const totalSubCost = subscriptions.reduce((sum, s) => sum + (s.cycle === 'YEARLY' ? s.amount / 12 : s.cycle === 'WEEKLY' ? s.amount * 4 : s.amount), 0);
+  const totalSubCost = subscriptions.reduce((sum, s) => {
+    if (s.cycle === 'WEEKLY') return sum + (s.amount * 4.33);
+    if (s.cycle === 'YEARLY') return sum + (s.amount / 12);
+    return sum + s.amount;
+  }, 0);
+
+  // Theme colors: light = bright, mid = softer grey, dark = full dark
+  const themeColors = useMemo(() => ({
+    ...COLORS,
+    grass: isDark ? '#1A1A1A' : isMid ? '#A0A0A0' : '#D1D1D1',
+    sidewalk: isDark ? '#2A2A2A' : isMid ? '#B8B8B8' : '#E0E0E0',
+    road: isDark ? '#0A0A0A' : isMid ? '#2A2A2A' : '#1A1A1A',
+    concrete: isDark ? '#2A2A2A' : isMid ? '#9E9E9E' : '#BDBDBD',
+    window: isDark ? '#1A1A1A' : isMid ? '#B8D4E8' : '#E3F2FD',
+    cloud: isDark ? '#424242' : isMid ? '#E8E8E8' : '#FFFFFF',
+    stormCloud: isDark ? '#616161' : isMid ? '#808080' : '#9E9E9E',
+    tree: isDark ? '#33691E' : isMid ? '#5A8F32' : '#689F38',
+    treeDark: isDark ? '#1B5E20' : isMid ? '#2E7D32' : '#33691E',
+    trunk: isDark ? '#212121' : isMid ? '#3E2723' : '#4E342E',
+    cash: isDark ? '#B0B0B0' : isMid ? '#C8C8C8' : '#E0E0E0',
+    savings: isDark ? '#C2A636' : isMid ? '#D4B83D' : '#F3CF44',
+    investment: isDark ? '#0033AA' : isMid ? '#0044CC' : '#0055FF',
+    super: isDark ? '#6A1B9A' : isMid ? '#7B1FA2' : '#9C27B0',
+    debt: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
+    taxVault: isDark ? '#0A0A0A' : isMid ? '#2A2A2A' : '#1A1A1A',
+    water: isDark ? '#0033AA' : isMid ? '#0044CC' : '#0055FF',
+    waterNegative: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
+    rocket: isDark ? '#B0B0B0' : isMid ? '#D0D0D0' : '#EBEBEB',
+    rocketAccent: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
+    construction: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
+    crane: isDark ? '#C2A636' : isMid ? '#D4B83D' : '#F3CF44',
+    scaffolding: isDark ? '#212121' : isMid ? '#3A3A3A' : '#424242',
+    trafficRed: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
+    trafficGreen: isDark ? '#388E3C' : isMid ? '#43A047' : '#4CAF50',
+    trafficYellow: isDark ? '#C2A636' : isMid ? '#D4B83D' : '#F3CF44',
+    roadMarking: isDark ? '#B0B0B0' : isMid ? '#D8D8D8' : '#FFFFFF',
+    dock: isDark ? '#3E2723' : isMid ? '#4E342E' : '#5D4037',
+  }), [isDark, isMid]);
+
+  // ============ SUB-COMPONENTS ============
+
+  const StreetLamp = ({ position }: { position: [number, number, number] }) => (
+    <group position={position}>
+      <mesh position={[0, 0.45, 0]} castShadow>
+        <cylinderGeometry args={[0.02, 0.025, 0.9, 6]} />
+        <meshStandardMaterial color="#607D8B" />
+      </mesh>
+      <mesh position={[0.1, 0.88, 0]}>
+        <boxGeometry args={[0.2, 0.02, 0.02]} />
+        <meshStandardMaterial color="#607D8B" />
+      </mesh>
+      <mesh position={[0.2, 0.84, 0]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshStandardMaterial color="#FFF9C4" emissive="#FFF59D" emissiveIntensity={0.4} />
+      </mesh>
+    </group>
+  );
+
+  const Window = ({ position, size }: { position: [number, number, number]; size: [number, number, number] }) => (
+    <mesh position={position}>
+      <boxGeometry args={size} />
+      <meshStandardMaterial color={themeColors.window} emissive="#4FC3F7" emissiveIntensity={0.2} />
+    </mesh>
+  );
+
+  const Tree = ({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const handleClick = (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      showTooltip({
+        type: 'tree',
+        title: 'Green Space',
+        description: 'Trees represent financial health. More trees appear when your city is thriving.',
+        icon: '🌳',
+        color: themeColors.tree
+      });
+    };
+    return (
+      <group position={position}>
+        <mesh position={[0, 0.12 * scale, 0]} castShadow>
+          <cylinderGeometry args={[0.04 * scale, 0.06 * scale, 0.24 * scale, 8]} />
+          <meshStandardMaterial color={themeColors.trunk} />
+        </mesh>
+        <mesh position={[0, 0.32 * scale, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}>
+          <sphereGeometry args={[0.22 * scale, 10, 8]} />
+          <meshStandardMaterial color={themeColors.tree} />
+        </mesh>
+        <mesh position={[0, 0.48 * scale, 0]} castShadow>
+          <sphereGeometry args={[0.14 * scale, 10, 8]} />
+          <meshStandardMaterial color={themeColors.treeDark} />
+        </mesh>
+      </group>
+    );
+  };
+
+  const TrafficLight = ({ position, rotation, isGreen, isYellow }: { position: [number, number, number]; rotation?: number; isGreen: boolean; isYellow: boolean }) => (
+    <group position={position} rotation={[0, rotation || 0, 0]}>
+      <mesh position={[0, 0.4, 0]}><cylinderGeometry args={[0.03, 0.04, 0.8, 8]} /><meshStandardMaterial color="#424242" /></mesh>
+      <mesh position={[0, 0.85, 0]}><boxGeometry args={[0.12, 0.3, 0.08]} /><meshStandardMaterial color="#212121" /></mesh>
+      <mesh position={[0, 0.93, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficRed} emissive={themeColors.trafficRed} emissiveIntensity={!isGreen && !isYellow ? 2 : 0.1} /></mesh>
+      <mesh position={[0, 0.85, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficYellow} emissive={themeColors.trafficYellow} emissiveIntensity={isYellow ? 2 : 0.1} /></mesh>
+      <mesh position={[0, 0.77, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficGreen} emissive={themeColors.trafficGreen} emissiveIntensity={isGreen && !isYellow ? 2 : 0.1} /></mesh>
+    </group>
+  );
+
+  const Crosswalk = ({ position, rotation }: { position: [number, number, number]; rotation?: number }) => (
+    <group position={position} rotation={[0, rotation || 0, 0]}>
+      {[0, 1, 2, 3, 4].map(i => (
+        <mesh key={i} position={[0, 0.05, -0.4 + i * 0.2]}>
+          <boxGeometry args={[0.8, 0.01, 0.12]} />
+          <meshStandardMaterial color={themeColors.roadMarking} />
+        </mesh>
+      ))}
+    </group>
+  );
+
+  const Cloud = ({ position, scale = 1, isStorm = false }: { position: [number, number, number]; scale?: number; isStorm?: boolean }) => {
+    const color = isStorm ? themeColors.stormCloud : themeColors.cloud;
+    return (
+      <group position={position}>
+        <mesh><sphereGeometry args={[0.8 * scale, 12, 10]} /><meshStandardMaterial color={color} transparent opacity={0.85} depthWrite={false} /></mesh>
+        <mesh position={[0.6 * scale, -0.1, 0.2 * scale]}><sphereGeometry args={[0.6 * scale, 10, 8]} /><meshStandardMaterial color={color} transparent opacity={0.8} depthWrite={false} /></mesh>
+        <mesh position={[-0.5 * scale, 0.1, 0.1 * scale]}><sphereGeometry args={[0.55 * scale, 10, 8]} /><meshStandardMaterial color={color} transparent opacity={0.8} depthWrite={false} /></mesh>
+      </group>
+    );
+  };
+
+  const DriftingCloud = ({ initialPosition, speed, scale, isStorm = false }: { initialPosition: [number, number, number]; speed: number; scale: number; isStorm?: boolean }) => {
+    const ref = useRef<THREE.Group>(null);
+    useFrame((_, delta) => { if (ref.current) { ref.current.position.x += speed * delta; if (ref.current.position.x > 12) ref.current.position.x = -12; } });
+    return <group ref={ref} position={initialPosition}><Cloud position={[0, 0, 0]} scale={scale} isStorm={isStorm} /></group>;
+  };
+
+  const AssetBuilding = ({ position, height, type, balance, name }: { position: [number, number, number]; height: number; type: string; balance: number; name?: string }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const getColor = () => {
+      switch(type) {
+        case 'SAVINGS': return themeColors.savings;
+        case 'INVESTMENT': return themeColors.investment;
+        case 'SUPER': return themeColors.super;
+        default: return themeColors.cash;
+      }
+    };
+    const floors = Math.min(Math.floor(height / 0.35), 10);
+    const width = 0.95;
+    const handleClick = (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      showTooltip({ type: 'asset', title: name || type, subtitle: type, value: `$${balance.toLocaleString()}`, description: 'Liquidity storage node.', icon: '🏦', color: getColor() });
+    };
+    return (
+      <group position={position}>
+        <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[width, height, width]} />
+          <meshStandardMaterial color={getColor()} roughness={0.4} />
+        </mesh>
+        {Array.from({ length: floors }).map((_, f) => (
+          <group key={f}>
+            <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
+            <Window position={[-width/2 - 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
+            <Window position={[0, 0.22 + f * 0.35, width/2 + 0.01]} size={[width * 0.6, 0.14, 0.02]} />
+            <Window position={[0, 0.22 + f * 0.35, -width/2 - 0.01]} size={[width * 0.6, 0.14, 0.02]} />
+          </group>
+        ))}
+      </group>
+    );
+  };
+
+  const DebtBuilding = ({ position, height, type, balance, name }: { position: [number, number, number]; height: number; type: string; balance: number; name?: string }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const smokeRef = useRef<THREE.Group>(null);
+    useFrame(({ clock }) => { if (smokeRef.current) { smokeRef.current.children.forEach((child, i) => { child.position.y = 0.12 + Math.sin(clock.elapsedTime * 2 + i) * 0.1 + i * 0.12; (child as THREE.Mesh).scale.setScalar(0.8 + Math.sin(clock.elapsedTime * 3 + i) * 0.25); }); } });
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'debt', title: name || type.replace('_', ' '), subtitle: 'Liability', value: `-$${balance.toLocaleString()}`, description: 'Liability extraction point.', icon: '📉', color: themeColors.debt }); };
+    const floors = Math.min(Math.floor(height / 0.35), 8);
+    const width = 0.9;
+    return (
+      <group position={position}>
+        <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[width, height, width]} />
+          <meshStandardMaterial color={themeColors.debt} roughness={0.5} />
+        </mesh>
+        {Array.from({ length: floors }).map((_, f) => (
+          <group key={f}>
+            <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.12, width * 0.55]} />
+            <Window position={[-width/2 - 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.12, width * 0.55]} />
+            <Window position={[0, 0.22 + f * 0.35, width/2 + 0.01]} size={[width * 0.55, 0.12, 0.02]} />
+            <Window position={[0, 0.22 + f * 0.35, -width/2 - 0.01]} size={[width * 0.55, 0.12, 0.02]} />
+          </group>
+        ))}
+        <group ref={smokeRef} position={[0, height + 0.25, 0]}>
+          {[0, 1, 2, 3].map(i => (
+            <mesh key={i} position={[0, i * 0.12, 0]}>
+              <sphereGeometry args={[0.06 + i * 0.02, 8, 8]} />
+              <meshStandardMaterial color={themeColors.smoke} transparent opacity={0.4 - i * 0.08} />
+            </mesh>
+          ))}
+        </group>
+      </group>
+    );
+  };
+
+  const LaunchPad = ({ position, goal }: { position: [number, number, number]; goal: Goal }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const progress = Math.min(goal.currentAmount / goal.targetAmount, 1);
+    const rocketHeight = 0.4 + progress * 0.7;
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'goal', title: goal.name, subtitle: `${goal.valueTag} Goal`, value: `$${goal.currentAmount.toLocaleString()} / $${goal.targetAmount.toLocaleString()}`, description: 'Strategic target module.', icon: '🚀', color: progress >= 1 ? '#4CAF50' : '#2196F3' }); };
+    return (
+      <group position={position}>
+        <mesh position={[0, 0.08, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.6, 0.65, 0.16, 16]} /><meshStandardMaterial color={themeColors.concrete} /></mesh>
+        <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.4, 0.5, 16]} /><meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#FFC107'} /></mesh>
+        {progress > 0.05 && (
+          <group position={[0, 0.2, 0]}>
+            <mesh position={[0, rocketHeight / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} /><meshStandardMaterial color={themeColors.rocket} metalness={0.3} /></mesh>
+            <mesh position={[0, rocketHeight + 0.12, 0]} onClick={handleClick} onPointerDown={handleClick}><coneGeometry args={[0.1, 0.25, 12]} /><meshStandardMaterial color={themeColors.rocketAccent} /></mesh>
+          </group>
+        )}
+      </group>
+    );
+  };
+
+  const TaxVault = ({ position, amount }: { position: [number, number, number]; amount: number }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'taxvault', title: 'Tax Vault', value: `$${amount.toLocaleString()}`, description: 'Quarantined tax reserves.', icon: '🏛️', color: themeColors.taxVault }); };
+    return (
+      <group position={position}>
+        <mesh position={[0, 0.12, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.7, 0.24, 0.7]} /><meshStandardMaterial color="#37474F" /></mesh>
+        <mesh position={[0, 0.45, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.6, 0.42, 0.6]} /><meshStandardMaterial color={themeColors.taxVault} metalness={0.4} roughness={0.3} /></mesh>
+      </group>
+    );
+  };
+
+  const HarborDock = ({ position, savings }: { position: [number, number, number]; savings: number }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'harbor', title: 'Liquidity Harbor', value: `$${savings.toLocaleString()}`, description: 'Available liquid reserves.', icon: '⚓', color: themeColors.water }); };
+    return (
+      <group position={position}>
+        <mesh position={[0, -0.02, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[2.8, 0.12, 2.0]} /><meshStandardMaterial color={themeColors.water} transparent opacity={0.85} /></mesh>
+        <mesh position={[0.6, 0.06, 0]} onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.35, 0.06, 1.8]} /><meshStandardMaterial color={themeColors.dock} /></mesh>
+      </group>
+    );
+  };
+
+  const CashflowFountain = ({ surplus }: { surplus: number; maxSurplus: number }) => {
+    const { showTooltip } = useContext(TooltipContext);
+    const isNegative = surplus < 0;
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'fountain', title: 'Cashflow Fountain', value: `${isNegative ? '-' : '+'}$${Math.abs(surplus).toLocaleString()}/mo`, description: 'System liquidity generator.', icon: isNegative ? '🔴' : '⛲', color: isNegative ? '#EF5350' : '#4CAF50' }); };
+    return (
+      <group position={[0, 0, 0]}>
+        <mesh position={[0, 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[1.1, 1.2, 0.08, 24]} /><meshStandardMaterial color="#E0E0E0" /></mesh>
+        <mesh position={[0, 0.08, 0]} onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.8, 0.8, 0.08, 20]} /><meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.8} /></mesh>
+      </group>
+    );
+  };
+
+  // ============ TRAFFIC SYSTEM ============
+  const CAR_COLORS = [0xFF4F00, 0x0055FF, 0xF3CF44, 0x1A1A1A, 0xFFFFFF];
+  const PEOPLE_COLORS = [0xFF4F00, 0x0055FF, 0xF3CF44, 0x1A1A1A];
+  const STOP_LINE = 1.8;
+  
+  type CarDirection = 'EAST' | 'WEST' | 'NORTH' | 'SOUTH';
+  
+  const Car = ({ direction, speed, horizontalGreen }: { direction: CarDirection; speed: number; horizontalGreen: boolean }) => {
+    const ref = useRef<THREE.Group>(null);
+    const color = useMemo(() => CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)], []);
+    
+    const getInitialPosition = (): [number, number, number] => {
+      switch(direction) {
+        case 'EAST': return [-7, 0.12, -0.4];
+        case 'WEST': return [7, 0.12, 0.4];
+        case 'NORTH': return [0.4, 0.12, 7];
+        case 'SOUTH': return [-0.4, 0.12, -7];
+      }
+    };
+    
+    const getRotation = (): number => {
+      switch(direction) {
+        case 'EAST': return 0;
+        case 'WEST': return Math.PI;
+        case 'NORTH': return -Math.PI / 2;
+        case 'SOUTH': return Math.PI / 2;
+      }
+    };
+    
+    const initialPos = useMemo(() => getInitialPosition(), [direction]);
+    
+    useFrame((_, delta) => {
+      if (!ref.current) return;
+      const pos = ref.current.position;
+      
+      const isHorizontal = direction === 'EAST' || direction === 'WEST';
+      const canGo = isHorizontal ? horizontalGreen : !horizontalGreen;
+      
+      let shouldStop = false;
+      if (!canGo) {
+        if (direction === 'EAST' && pos.x < -STOP_LINE && pos.x > -STOP_LINE - 1) shouldStop = true;
+        if (direction === 'WEST' && pos.x > STOP_LINE && pos.x < STOP_LINE + 1) shouldStop = true;
+        if (direction === 'SOUTH' && pos.z < -STOP_LINE && pos.z > -STOP_LINE - 1) shouldStop = true;
+        if (direction === 'NORTH' && pos.z > STOP_LINE && pos.z < STOP_LINE + 1) shouldStop = true;
+      }
+      
+      if (!shouldStop) {
+        const move = speed * delta * 60;
+        switch(direction) {
+          case 'EAST': pos.x += move; if (pos.x > 8) pos.x = -8; break;
+          case 'WEST': pos.x -= move; if (pos.x < -8) pos.x = 8; break;
+          case 'NORTH': pos.z -= move; if (pos.z < -8) pos.z = 8; break;
+          case 'SOUTH': pos.z += move; if (pos.z > 8) pos.z = -8; break;
+        }
+      }
+    });
+    
+    return (
+      <group ref={ref} position={initialPos} rotation={[0, getRotation(), 0]}>
+        <mesh castShadow><boxGeometry args={[0.4, 0.15, 0.22]} /><meshStandardMaterial color={color} /></mesh>
+        <mesh position={[0, 0.1, 0]} castShadow><boxGeometry args={[0.22, 0.1, 0.18]} /><meshStandardMaterial color={color} /></mesh>
+        <mesh position={[0.12, 0.02, 0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
+        <mesh position={[0.12, 0.02, -0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
+        <mesh position={[-0.12, 0.02, 0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
+        <mesh position={[-0.12, 0.02, -0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
+      </group>
+    );
+  };
+  
+  type PedestrianQuadrant = 'NW' | 'NE' | 'SW' | 'SE';
+  
+  const Pedestrian = ({ quadrant, speed, horizontalGreen }: { quadrant: PedestrianQuadrant; speed: number; horizontalGreen: boolean }) => {
+    const ref = useRef<THREE.Group>(null);
+    const legRef = useRef<THREE.Group>(null);
+    const color = useMemo(() => PEOPLE_COLORS[Math.floor(Math.random() * PEOPLE_COLORS.length)], []);
+    const skinColor = 0xFFD5B5;
+    
+    const corners = useMemo(() => {
+      const offset = 4.5;
+      const inner = 1.5;
+      switch(quadrant) {
+        // NW quadrant: Asset buildings area (sidewalk around buildings)
+        case 'NW': return [[-offset, inner], [-offset, -offset], [-inner, -offset], [-inner, inner]];
+        // NE quadrant: Debt buildings area (sidewalk around buildings)
+        case 'NE': return [[inner, -offset], [offset, -offset], [offset, inner], [inner, inner]];
+        // SW quadrant: Goals/Launchpad area (sidewalk around rockets)
+        case 'SW': return [[-inner, offset], [-offset, offset], [-offset, -inner], [-inner, -inner]];
+        // SE quadrant: Only the outer edge sidewalk (avoid harbor/water at center)
+        case 'SE': return [[offset, inner], [offset, offset], [inner + 2.5, offset], [inner + 2.5, inner]];
+      }
+    }, [quadrant]);
+    
+    const cornerIdxRef = useRef(Math.floor(Math.random() * 4));
+    const progressRef = useRef(Math.random());
+    
+    useFrame((_, delta) => {
+      if (!ref.current) return;
+      
+      const currentCorner = corners[cornerIdxRef.current];
+      const nextCorner = corners[(cornerIdxRef.current + 1) % 4];
+      
+      progressRef.current += speed * delta * 0.5;
+      
+      if (progressRef.current >= 1) {
+        progressRef.current = 0;
+        cornerIdxRef.current = (cornerIdxRef.current + 1) % 4;
+      }
+      
+      const x = currentCorner[0] + (nextCorner[0] - currentCorner[0]) * progressRef.current;
+      const z = currentCorner[1] + (nextCorner[1] - currentCorner[1]) * progressRef.current;
+      
+      ref.current.position.set(x, 0.12, z);
+      
+      const dx = nextCorner[0] - currentCorner[0];
+      const dz = nextCorner[1] - currentCorner[1];
+      ref.current.rotation.y = Math.atan2(dx, dz);
+      
+      if (legRef.current) {
+        legRef.current.rotation.x = Math.sin(progressRef.current * Math.PI * 8) * 0.4;
+      }
+    });
+    
+    return (
+      <group ref={ref}>
+        <mesh position={[0, 0.18, 0]} castShadow><capsuleGeometry args={[0.06, 0.12, 4, 8]} /><meshStandardMaterial color={color} /></mesh>
+        <mesh position={[0, 0.35, 0]} castShadow><sphereGeometry args={[0.05, 8, 8]} /><meshStandardMaterial color={skinColor} /></mesh>
+        <group ref={legRef} position={[0, 0.05, 0]}>
+          <mesh position={[0.02, 0, 0]}><capsuleGeometry args={[0.02, 0.06, 4, 8]} /><meshStandardMaterial color="#1A1A1A" /></mesh>
+          <mesh position={[-0.02, 0, 0]}><capsuleGeometry args={[0.02, 0.06, 4, 8]} /><meshStandardMaterial color="#1A1A1A" /></mesh>
+        </group>
+      </group>
+    );
+  };
+
+  const CityScene = () => {
+    const cityRef = useRef<THREE.Group>(null);
+    const { horizontalGreen, isYellow } = useTrafficLight();
+    useFrame((_, delta) => { if (cityRef.current && autoRotate) cityRef.current.rotation.y += delta * 0.04; });
+    const assetsAcc = useMemo(() => accounts.filter(a => ['CASH', 'SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type)), [accounts]);
+    const debtsAcc = useMemo(() => accounts.filter(a => ['LOAN', 'CREDIT_CARD', 'HECS'].includes(a.type)), [accounts]);
+    const maxBalance = useMemo(() => Math.max(...accounts.map(a => a.balance), 1), [accounts]);
+    
+    // Traffic density based on health score
+    const numCars = health.score > 70 ? 6 : health.score > 40 ? 4 : 2;
+    const numPedestrians = health.score > 70 ? 12 : health.score > 40 ? 8 : 4;
+    
+    const carConfigs = useMemo(() => {
+      const directions: CarDirection[] = ['EAST', 'WEST', 'NORTH', 'SOUTH'];
+      return Array.from({ length: numCars }, (_, i) => ({
+        id: `car-${i}`,
+        direction: directions[i % 4],
+        speed: 0.025 + Math.random() * 0.01
+      }));
+    }, [numCars]);
+    
+    const pedestrianConfigs = useMemo(() => {
+      const quadrants: PedestrianQuadrant[] = ['NW', 'NE', 'SW', 'SE'];
+      return Array.from({ length: numPedestrians }, (_, i) => ({
+        id: `ped-${i}`,
+        quadrant: quadrants[i % 4],
+        speed: 0.3 + Math.random() * 0.2
+      }));
+    }, [numPedestrians]);
+    
+    return (
+      <group ref={cityRef}>
+        <mesh position={[0, -0.15, 0]} receiveShadow><boxGeometry args={[14, 0.3, 14]} /><meshStandardMaterial color="#37474F" /></mesh>
+        <mesh position={[-3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#2E3B1E' : isMid ? '#5A7A3C' : '#7CB342'} /></mesh>
+        <mesh position={[3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#1A1A1A' : isMid ? '#4A7A2E' : '#689F38'} /></mesh>
+        <mesh position={[-3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#334D20' : isMid ? '#6B943A' : '#8BC34A'} /></mesh>
+        <mesh position={[3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#2D4A2F' : isMid ? '#5E9060' : '#81C784'} /></mesh>
+        <mesh position={[-4.5, 0.02, 0]} receiveShadow><boxGeometry args={[5, 0.04, 2.2]} /><meshStandardMaterial color={themeColors.road} /></mesh>
+        <mesh position={[4.5, 0.02, 0]} receiveShadow><boxGeometry args={[5, 0.04, 2.2]} /><meshStandardMaterial color={themeColors.road} /></mesh>
+        <mesh position={[0, 0.02, -4.5]} receiveShadow><boxGeometry args={[2.2, 0.04, 5]} /><meshStandardMaterial color={themeColors.road} /></mesh>
+        <mesh position={[0, 0.02, 4.5]} receiveShadow><boxGeometry args={[2.2, 0.04, 5]} /><meshStandardMaterial color={themeColors.road} /></mesh>
+        <mesh position={[0, 0.02, 0]} receiveShadow><boxGeometry args={[2.2, 0.04, 2.2]} /><meshStandardMaterial color={themeColors.road} /></mesh>
+        {[[-3.8, -3.8], [-3.8, 3.8], [3.8, -3.8], [3.8, 3.8]].map(([bx, bz], i) => (
+          <group key={i}>
+            <mesh position={[bx, 0.11, bz > 0 ? bz - 2.4 : bz + 2.4]} receiveShadow><boxGeometry args={[5.1, 0.08, 0.4]} /><meshStandardMaterial color={themeColors.sidewalk} /></mesh>
+            <mesh position={[bx > 0 ? bx - 2.4 : bx + 2.4, 0.11, bz]} receiveShadow><boxGeometry args={[0.4, 0.08, 5.1]} /><meshStandardMaterial color={themeColors.sidewalk} /></mesh>
+          </group>
+        ))}
+        
+        {/* Traffic Lights */}
+        <TrafficLight position={[-1.3, 0, -1.3]} rotation={Math.PI / 4} isGreen={horizontalGreen} isYellow={isYellow && horizontalGreen} />
+        <TrafficLight position={[1.3, 0, 1.3]} rotation={-Math.PI * 3 / 4} isGreen={horizontalGreen} isYellow={isYellow && horizontalGreen} />
+        <TrafficLight position={[1.3, 0, -1.3]} rotation={-Math.PI / 4} isGreen={!horizontalGreen} isYellow={isYellow && !horizontalGreen} />
+        <TrafficLight position={[-1.3, 0, 1.3]} rotation={Math.PI * 3 / 4} isGreen={!horizontalGreen} isYellow={isYellow && !horizontalGreen} />
+        
+        {/* Crosswalks */}
+        <Crosswalk position={[-1.5, 0, 0]} rotation={0} />
+        <Crosswalk position={[1.5, 0, 0]} rotation={0} />
+        <Crosswalk position={[0, 0, -1.5]} rotation={Math.PI / 2} />
+        <Crosswalk position={[0, 0, 1.5]} rotation={Math.PI / 2} />
+        
+        {/* Cars */}
+        {carConfigs.map(cfg => (
+          <Car key={cfg.id} direction={cfg.direction} speed={cfg.speed} horizontalGreen={horizontalGreen} />
+        ))}
+        
+        {/* Pedestrians */}
+        {pedestrianConfigs.map(cfg => (
+          <Pedestrian key={cfg.id} quadrant={cfg.quadrant} speed={cfg.speed} horizontalGreen={horizontalGreen} />
+        ))}
+        
+        <CashflowFountain surplus={monthlySurplus} maxSurplus={Math.max(health.monthlyIncome, 5000)} />
+        {/* Asset Buildings - NW Quadrant (max 4) */}
+        {assetsAcc.slice(0, 4).map((acc, i) => {
+          const positions: [number, number, number][] = [[-4.0, 0.1, -4.0], [-2.8, 0.1, -4.0], [-4.0, 0.1, -2.8], [-2.8, 0.1, -2.8]];
+          return <AssetBuilding key={acc.id} position={positions[i]} height={Math.max(1.2, (acc.balance / maxBalance) * 4.0)} type={acc.type} balance={acc.balance} name={acc.name} />;
+        })}
+        {/* Debt Buildings - NE Quadrant (max 3) */}
+        {debtsAcc.slice(0, 3).map((acc, i) => {
+          const positions: [number, number, number][] = [[4.0, 0.1, -4.0], [2.8, 0.1, -4.0], [4.0, 0.1, -2.8]];
+          return <DebtBuilding key={acc.id} position={positions[i]} height={Math.max(1.0, (acc.balance / maxBalance) * 3.0)} type={acc.type} balance={acc.balance} name={acc.name} />;
+        })}
+        {/* Launch Pads - SW Quadrant (max 3) */}
+        {goals.slice(0, 3).map((goal, i) => {
+          const positions: [number, number, number][] = [[-4.2, 0.1, 3.5], [-3.0, 0.1, 3.5], [-4.2, 0.1, 4.8]];
+          return <LaunchPad key={goal.id} position={positions[i]} goal={goal} />;
+        })}
+        <HarborDock position={[3.5, 0.08, 3.8]} savings={health.savings} />
+        {health.taxVault > 0 && <TaxVault position={[4.8, 0.1, 2.8]} amount={health.taxVault} />}
+        {([[-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5]] as [number, number, number][]).map((pos, i) => <Tree key={i} position={pos} scale={0.8} />)}
+        <DriftingCloud initialPosition={[-8, 8, -6]} speed={0.15} scale={1.2} isStorm={isLowScore} />
+        <DriftingCloud initialPosition={[5, 9, -3]} speed={0.12} scale={0.9} isStorm={isLowScore} />
+      </group>
+    );
+  };
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 8, 70));
   const handleZoomOut = () => setZoom(z => Math.max(z - 8, 22));
@@ -1052,168 +625,130 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({ onNavigate, accoun
   const hideTooltip = () => setTooltip(null);
 
   const getSkyClass = () => {
-    if (isFuture) return "bg-gradient-to-b from-indigo-900 to-purple-900";
-    if (isLowScore) return "bg-gradient-to-b from-slate-500 to-slate-600";
-    if (health.score > 70) return "bg-gradient-to-b from-sky-300 to-sky-400";
-    return "bg-gradient-to-b from-sky-400 to-slate-400";
+    if (isFuture) return "bg-[#1A1A1A]";
+    // Theme-based sky: light = bright, mid = soft grey, dark = near black
+    if (isLowScore) {
+      if (isDark) return "bg-[#0A0A0A]";
+      if (isMid) return "bg-[#A8A8A8]";
+      return "bg-[#D1D1D1]";
+    }
+    if (health.score > 70) {
+      if (isDark) return "bg-[#1A1A1A]";
+      if (isMid) return "bg-[#B8B8B8]";
+      return "bg-[#E8E8E8]";
+    }
+    if (isDark) return "bg-[#111111]";
+    if (isMid) return "bg-[#C0C0C0]";
+    return "bg-[#DEDEDE]";
   };
 
-  // Camera settings based on view mode
   const cameraPosition: [number, number, number] = viewMode === 'birdseye' 
-    ? [0, 30, 0.1]  // Top-down view
-    : [20, 20, 20]; // Isometric view
+    ? [0, 30, 0.1]  
+    : [20, 20, 20]; 
   
   const polarAngle = viewMode === 'birdseye' 
-    ? { min: 0, max: 0.1 }  // Lock to top-down
-    : { min: Math.PI / 4, max: Math.PI / 3 }; // Normal isometric range
+    ? { min: 0, max: 0.1 }  
+    : { min: Math.PI / 4, max: Math.PI / 3 }; 
 
   return (
     <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden`}>
       
-      {/* View Controls - Left side vertical stack */}
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5">
-        {/* Zoom Controls */}
-        <div className="flex flex-col bg-slate-900/70 backdrop-blur rounded-lg overflow-hidden">
-          <button 
-            onClick={handleZoomIn}
-            className="px-2 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
-            title="Zoom In"
-          >
-            +
-          </button>
-          <div className="h-px w-full bg-slate-600"></div>
-          <button 
-            onClick={handleZoomOut}
-            className="px-2 py-1.5 text-white hover:bg-white/20 transition-colors text-sm font-bold"
-            title="Zoom Out"
-          >
-            −
-          </button>
+      <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
+        <div className="flex flex-col bg-industrial-base rounded-xl overflow-hidden shadow-tactile-sm border-t border-l border-white/60">
+          <button onClick={handleZoomIn} className="px-3 py-2 text-industrial-text hover:bg-white/10 transition-colors text-sm font-black">+</button>
+          <div className="h-px w-full bg-industrial-well-shadow-light/50 shadow-well"></div>
+          <button onClick={handleZoomOut} className="px-3 py-2 text-industrial-text hover:bg-white/10 transition-colors text-sm font-black">−</button>
         </div>
         
-        {/* View Toggle */}
-        <button 
-          onClick={toggleView}
-          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'birdseye' ? 'bg-cyan-500 text-slate-900' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
-          title={viewMode === 'birdseye' ? 'Isometric View' : "Bird's Eye View"}
-        >
-          {viewMode === 'birdseye' ? '🏙️' : '🦅'}
+        <button onClick={toggleView} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-sm border-t border-l border-white/60 ${viewMode === 'birdseye' ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}>
+          {viewMode === 'birdseye' ? '🦅' : '🏙️'}
         </button>
         
-        {/* Auto Rotate */}
-        <button 
-          onClick={() => setAutoRotate(!autoRotate)} 
-          className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all ${autoRotate ? 'bg-blue-500 text-white' : 'bg-slate-900/70 backdrop-blur text-white hover:bg-slate-700/70'}`}
-          title={autoRotate ? 'Stop Rotation' : 'Auto Rotate'}
-        >
+        <button onClick={() => setAutoRotate(!autoRotate)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-sm border-t border-l border-white/60 ${autoRotate ? 'bg-industrial-orange text-white' : 'bg-industrial-base text-industrial-text'}`}>
           ⟳
         </button>
       </div>
 
-      {/* Overlays - only show when not in minimal mode */}
       {!minimal && (
         <>
-          {/* Header */}
           <div className="absolute top-4 left-4 z-10 pointer-events-none">
-            <h2 className="text-slate-800 font-black text-xl drop-shadow-md">{isFuture ? 'FUTURE CITY' : 'WEALTH CITY'}</h2>
-            <p className="text-slate-700 text-xs font-bold">{accounts.length} accounts • {goals.length} goals</p>
+            <h2 className="text-industrial-text font-black text-xl uppercase tracking-tighter drop-shadow-sm">{isFuture ? 'Sector 7 // Future' : 'Grid // Primary'}</h2>
+            <p className="tactile-label text-industrial-subtext/60">{accounts.length} ACCOUNTS • {goals.length} TARGETS</p>
           </div>
 
-          {/* Score Badge */}
-          <div className="absolute top-14 right-4 z-10">
-            <div className={`px-3 py-1.5 rounded-full text-sm font-bold shadow ${health.score > 70 ? 'bg-green-500 text-white' : health.score > 40 ? 'bg-yellow-500 text-slate-800' : 'bg-red-500 text-white'}`}>
-              Score: {health.score}
+          <div className="absolute top-4 right-4 z-10">
+            <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter shadow-tactile-sm border-t border-l border-white/60 ${health.score > 70 ? 'bg-emerald-500 text-white' : health.score > 40 ? 'bg-industrial-yellow text-industrial-dark-base' : 'bg-industrial-orange text-white'}`}>
+              SCORE: {health.score}
             </div>
           </div>
 
-          {/* Cashflow Indicator */}
-          <div className="absolute top-16 left-4 z-10 bg-white/90 backdrop-blur rounded-lg px-3 py-1.5 shadow text-xs flex items-center gap-2">
-            <span className={`font-bold ${monthlySurplus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {monthlySurplus >= 0 ? '↑' : '↓'} ${Math.abs(monthlySurplus).toLocaleString()}/mo
+          <div className="absolute top-16 left-4 z-10 bg-industrial-base/90 backdrop-blur rounded-xl px-4 py-2 shadow-tactile-sm border-t border-l border-white/60 flex items-center gap-3">
+            <span className={`text-[10px] font-black tracking-tighter ${monthlySurplus >= 0 ? 'text-emerald-500' : 'text-industrial-orange'}`}>
+              {monthlySurplus >= 0 ? '↑' : '↓'} ${Math.abs(monthlySurplus).toLocaleString()} / MO
             </span>
             {totalSubCost > 0 && <>
-              <span className="text-slate-400">|</span>
-              <span className="text-orange-600">💧 ${Math.round(totalSubCost)}/mo</span>
+              <div className="w-px h-3 bg-industrial-well-shadow-light/50"></div>
+              <span className="text-[10px] font-black text-industrial-blue uppercase tracking-tighter">BURN: ${Math.round(totalSubCost)}</span>
             </>}
           </div>
 
-          {/* Goals Panel */}
-          <div className="absolute bottom-4 right-4 z-10 bg-white/90 backdrop-blur rounded-lg p-3 shadow-lg max-w-[180px]">
-            <p className="text-slate-500 text-xs font-semibold mb-1.5 flex justify-between">
-              <span>🚀 MISSIONS</span>
-              {hasWeeds && <span className="text-red-500 animate-pulse">🌿</span>}
-            </p>
-            {goals.length === 0 && <p className="text-[10px] text-slate-400">No active goals.</p>}
+          <div className="absolute bottom-4 right-4 z-10 bg-industrial-base/90 backdrop-blur rounded-2xl p-4 shadow-tactile-raised border-t border-l border-white/60 max-w-[200px]">
+            <div className="flex justify-between items-center mb-3">
+              <span className="tactile-label text-industrial-subtext/60">Target Modules</span>
+              <LEDIndicator active={hasWeeds} color="orange" />
+            </div>
+            {goals.length === 0 && <p className="text-[10px] font-bold text-industrial-subtext/40 uppercase">System idle.</p>}
             {goals.slice(0, 3).map(g => {
               const p = Math.min(g.currentAmount / g.targetAmount, 1);
               return (
-                <div key={g.id} className="text-xs mb-1.5">
-                  <div className="flex justify-between text-slate-700">
-                    <span className="truncate max-w-[80px]">{g.name}</span>
-                    <span className={p >= 1 ? 'text-green-600 font-bold' : ''}>{p >= 1 ? '✓' : `${Math.round(p * 100)}%`}</span>
+                <div key={g.id} className="mb-3 last:mb-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-[10px] font-black text-industrial-text uppercase tracking-tighter truncate max-w-[100px]">{g.name}</span>
+                    <span className={`text-[10px] font-black ${p >= 1 ? 'text-emerald-500' : 'text-industrial-subtext/40'}`}>{Math.round(p * 100)}%</span>
                   </div>
-                  <div className="w-full h-1 bg-slate-200 rounded-full mt-0.5">
-                    <div className={`h-full rounded-full ${p >= 1 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${p * 100}%` }} />
+                  <div className="w-full h-2 bg-industrial-well-bg rounded-full shadow-well p-0.5">
+                    <div className={`h-full rounded-full transition-all duration-1000 ${p >= 1 ? 'bg-emerald-500' : 'bg-industrial-blue'}`} style={{ width: `${p * 100}%` }} />
                   </div>
                 </div>
               );
             })}
           </div>
 
-          {/* Legend */}
-          <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur rounded-lg p-2 shadow text-[10px] space-y-0.5">
-            <div className="font-semibold text-slate-600 mb-1">QUADRANTS</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-yellow-400"></div> NW: Banks</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-red-400"></div> NE: Debts</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-blue-400"></div> SW: Goals</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-cyan-400"></div> SE: Harbor</div>
+          <div className="absolute bottom-4 left-4 z-10 bg-industrial-base/80 backdrop-blur rounded-xl p-3 shadow-tactile-sm border-t border-l border-white/10 space-y-1.5">
+            <div className="tactile-label text-industrial-subtext/60 mb-2">Sector Index</div>
+            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-industrial-yellow shadow-sm"></div> NW: Banks</div>
+            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-industrial-orange shadow-sm"></div> NE: Debts</div>
+            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-industrial-blue shadow-sm"></div> SW: Goals</div>
+            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-white shadow-sm border border-black/10"></div> SE: Harbor</div>
           </div>
         </>
       )}
 
-      {/* Tooltip Panel - positioned in center of view */}
       {tooltip && (
-        <div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-slate-900/95 backdrop-blur-sm rounded-xl p-4 shadow-2xl max-w-[280px] w-[85%] animate-in fade-in zoom-in-95 duration-200 border border-slate-700/50"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button 
-            onClick={hideTooltip}
-            className="absolute -top-2 -right-2 bg-slate-700 hover:bg-slate-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm shadow-lg"
-          >
-            ×
-          </button>
-          <div className="flex items-start gap-3">
-            <div className="text-3xl flex-shrink-0">{tooltip.icon}</div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-white text-sm truncate pr-4">{tooltip.title}</h3>
-              {tooltip.subtitle && (
-                <p className="text-xs text-slate-400">{tooltip.subtitle}</p>
-              )}
-              {tooltip.value && (
-                <p className="text-xl font-bold mt-1" style={{ color: tooltip.color }}>{tooltip.value}</p>
-              )}
-              <p className="text-xs text-slate-300 mt-2 leading-relaxed">{tooltip.description}</p>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40" onClick={(e) => e.stopPropagation()}>
+          <ChassisWell label="Module Diagnostics" className="max-w-[300px] w-full animate-in zoom-in-95 duration-200">
+            <button onClick={hideTooltip} className="absolute top-4 right-4 tactile-label text-industrial-subtext/40 hover:text-industrial-text">[X]</button>
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 bg-industrial-well-bg rounded-xl flex items-center justify-center text-3xl shadow-well shrink-0">{tooltip.icon}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-black text-industrial-text uppercase tracking-tighter mb-1 truncate pr-6">{tooltip.title}</h3>
+                {tooltip.subtitle && <p className="tactile-label text-industrial-subtext/60 mb-2">{tooltip.subtitle}</p>}
+                {tooltip.value && <p className="text-2xl font-black tracking-tighter" style={{ color: tooltip.color }}>{tooltip.value}</p>}
+                <p className="text-[11px] font-medium text-industrial-subtext/80 mt-3 leading-relaxed">{tooltip.description}</p>
+              </div>
             </div>
-          </div>
+          </ChassisWell>
         </div>
       )}
 
       <Canvas shadows dpr={[1, 2]} onClick={() => tooltip && hideTooltip()}>
         <TooltipContext.Provider value={{ showTooltip, hideTooltip }}>
           <OrthographicCamera makeDefault position={cameraPosition} zoom={zoom} near={-50} far={200} />
-          <OrbitControls 
-            autoRotate={autoRotate} 
-            autoRotateSpeed={0.5} 
-            enableZoom={false} 
-            enablePan={false} 
-            minPolarAngle={polarAngle.min} 
-            maxPolarAngle={polarAngle.max}
-          />
+          <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={polarAngle.min} maxPolarAngle={polarAngle.max} />
           <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
           <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
           {isFuture && <pointLight position={[-5, 5, -5]} intensity={1} color="#bc13fe" distance={20} />}
-          <CityScene accounts={accounts} health={health} goals={goals} weeklyBuilds={weeklyBuilds} autoRotate={false} subscriptions={subscriptions} />
+          <CityScene />
         </TooltipContext.Provider>
       </Canvas>
     </div>

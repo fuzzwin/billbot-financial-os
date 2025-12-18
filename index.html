@@ -8,28 +8,30 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>BillBot | Financial Operating System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              slate: {
-                850: '#1e293b',
-                900: '#0f172a',
-                950: '#020617',
-              },
-              neon: {
-                blue: '#00f3ff',
-                purple: '#bc13fe',
-                green: '#0aff68',
-              }
+              'industrial-base': 'var(--industrial-base)',
+              'industrial-text': 'var(--industrial-text)',
+              'industrial-subtext': 'var(--industrial-subtext)',
+              'industrial-highlight': 'var(--industrial-highlight)',
+              'industrial-shadow': 'var(--industrial-shadow)',
+              'industrial-well-bg': 'var(--industrial-well-bg)',
+              'industrial-orange': '#FF4F00',
+              'industrial-blue': '#0055FF',
+              'industrial-yellow': '#F3CF44',
             },
-            fontFamily: {
-              mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
-            },
-            animation: {
-              smoke: 'float-up 3s infinite linear',
+            boxShadow: {
+              'tactile-raised': 'var(--shadow-raised)',
+              'tactile-pressed': 'var(--shadow-pressed)',
+              'tactile-sm': 'var(--shadow-sm)',
+              'well': 'var(--shadow-well)',
             }
           }
         }
@@ -37,9 +39,26 @@
     </script>
     <style>
       body {
-        background-color: #020617;
-        color: #e2e8f0;
+        background-color: var(--industrial-base);
+        color: var(--industrial-text);
         -webkit-tap-highlight-color: transparent;
+        font-family: 'Inter', sans-serif;
+      }
+      
+      .tactile-label {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: -0.025em;
+        color: var(--industrial-subtext);
+      }
+
+      .led-glow-red {
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+      }
+
+      .led-glow-green {
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
       }
       
       /* Safe area padding for mobile notches/home indicators */

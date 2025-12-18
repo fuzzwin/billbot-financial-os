@@ -2,7 +2,10 @@
 import React, { useState } from 'react';
 import { FinancialHealth } from '../types';
 import { adviseOnPurchase } from '../services/geminiService';
-import { searchEffectiveLife } from '../services/complianceService';
+import { TactileButton } from './ui/TactileButton';
+import { RecessedInput } from './ui/RecessedInput';
+import { ChassisWell } from './ui/ChassisWell';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 interface PurchaseAdvisorProps {
     health: FinancialHealth;
@@ -16,10 +19,6 @@ export const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ health }) => {
     const [verdict, setVerdict] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // FEATURE 3: ASSET SCANNER LOGIC
-    // Estimate Tax Refund based on cost and marginal rate (assumed 32.5% for avg user)
-    // In a full app, this would use the precise effective life, but for the "Scanner" UX,
-    // users want immediate "Money Back" numbers.
     const numericCost = parseFloat(cost) || 0;
     const marginalRate = 0.325; 
     const estimatedRefund = isWorkRelated ? numericCost * marginalRate : 0;
@@ -43,108 +42,109 @@ export const PurchaseAdvisor: React.FC<PurchaseAdvisorProps> = ({ health }) => {
 
     if (!isOpen) {
         return (
-            <button 
+            <TactileButton 
                 onClick={() => setIsOpen(true)}
-                className="w-full bg-gradient-to-r from-neon-purple to-indigo-600 text-white font-black text-xl italic py-6 rounded-2xl shadow-xl hover:scale-[1.02] transition-transform border border-white/10 relative overflow-hidden group"
+                color="white"
+                fullWidth
+                size="lg"
+                className="!py-8 !rounded-[2rem] border border-industrial-blue/20 group relative overflow-hidden"
             >
-                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                <span className="relative flex items-center justify-center gap-3">
-                    🛍️ ASSET SCANNER / ADVISOR
-                </span>
-            </button>
+                <div className="absolute inset-0 bg-industrial-blue/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+                <div className="relative flex flex-col items-center gap-2">
+                    <span className="text-3xl mb-1">🛍️</span>
+                    <span className="text-sm font-black text-industrial-text tracking-widest uppercase">Asset Scanner // Advisor</span>
+                    <div className="flex items-center gap-1.5">
+                        <LEDIndicator active={true} color="blue" />
+                        <span className="text-[9px] text-industrial-subtext/40 font-black uppercase tracking-[0.2em]">Operational Logic: Active</span>
+                    </div>
+                </div>
+            </TactileButton>
         );
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-            <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
-                <button onClick={reset} className="absolute top-4 right-4 text-slate-500 hover:text-white">✕</button>
-                
-                <h2 className="text-2xl font-black text-white mb-6 italic text-center">THE SCANNER</h2>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-industrial-base/95 backdrop-blur-sm animate-in fade-in">
+            <ChassisWell className="w-full max-w-md relative" label="Neural Asset Scanner">
+                <button onClick={reset} className="absolute top-4 right-6 text-industrial-subtext/60 hover:text-industrial-text text-xl">✕</button>
                 
                 {!verdict ? (
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs font-bold text-slate-400">ITEM NAME</label>
-                            <input 
-                                autoFocus
-                                type="text" 
-                                placeholder="e.g. MacBook Pro, Steel Cap Boots"
-                                value={item}
-                                onChange={e => setItem(e.target.value)}
-                                className="w-full bg-slate-800 border-b-2 border-slate-600 text-white text-lg p-2 outline-none focus:border-neon-purple"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-400">PRICE TAG</label>
-                            <div className="relative">
-                                <span className="absolute left-2 top-2 text-slate-500">$</span>
-                                <input 
-                                    type="number" 
-                                    placeholder="0.00"
-                                    value={cost}
-                                    onChange={e => setCost(e.target.value)}
-                                    className="w-full bg-slate-800 border-b-2 border-slate-600 text-white text-lg p-2 pl-6 outline-none focus:border-neon-purple"
-                                />
-                            </div>
-                        </div>
+                    <div className="space-y-6 pt-4">
+                        <RecessedInput 
+                            autoFocus
+                            label="Module Identifier"
+                            placeholder="e.g. MacBook Pro, Steel Cap Boots"
+                            value={item}
+                            onChange={e => setItem(e.target.value)}
+                        />
+                        <RecessedInput 
+                            label="Acquisition Cost ($)"
+                            type="number" 
+                            placeholder="0.00"
+                            value={cost}
+                            onChange={e => setCost(e.target.value)}
+                        />
 
-                        {/* FEATURE 3: WORK TOGGLE */}
-                        <div className="flex items-center gap-3 bg-slate-800 p-3 rounded-lg border border-slate-700">
+                        {/* WORK TOGGLE */}
+                        <div className="flex items-center gap-4 bg-industrial-well-bg p-4 rounded-2xl shadow-well border border-black/5">
                              <input 
                                 type="checkbox" 
                                 checked={isWorkRelated} 
                                 onChange={e => setIsWorkRelated(e.target.checked)}
-                                className="w-5 h-5 accent-emerald-500"
+                                className="w-6 h-6 rounded-lg accent-industrial-blue cursor-pointer"
                             />
                             <div>
-                                <p className="text-white font-bold text-sm">Is this for work?</p>
-                                <p className="text-xs text-slate-400">Unlocks 2025 Tax Depreciation logic.</p>
+                                <p className="text-[11px] font-black text-industrial-text uppercase tracking-tight">Professional Utility</p>
+                                <p className="text-[9px] text-industrial-subtext/60 font-medium uppercase tracking-widest">Enable 2025 Depreciation Logic</p>
                             </div>
                         </div>
 
                         {isWorkRelated && numericCost > 0 && (
-                            <div className="bg-emerald-900/30 border border-emerald-500/30 p-4 rounded-lg animate-in slide-in-from-top-2">
-                                <div className="flex justify-between items-end mb-1">
-                                    <span className="text-emerald-400 font-bold text-sm">ESTIMATED TAX REFUND</span>
-                                    <span className="text-emerald-400 font-mono font-bold">+${estimatedRefund.toFixed(0)}</span>
+                            <div className="bg-emerald-500/5 border border-emerald-500/20 p-5 rounded-2xl animate-in slide-in-from-top-2">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Est. Tax Credit</span>
+                                    <span className="text-emerald-500 font-black font-mono">+$${estimatedRefund.toFixed(0)}</span>
                                 </div>
-                                <div className="flex justify-between items-end border-t border-emerald-500/30 pt-2">
-                                    <span className="text-white font-black">REAL COST</span>
-                                    <span className="text-white font-mono font-black text-xl">${realCost.toFixed(0)}</span>
+                                <div className="flex justify-between items-end border-t border-emerald-500/10 pt-3">
+                                    <span className="text-[10px] font-black text-industrial-text uppercase tracking-widest">Effective Cost</span>
+                                    <span className="text-industrial-text font-black font-mono text-2xl tracking-tighter">${realCost.toFixed(0)}</span>
                                 </div>
-                                <p className="text-[10px] text-emerald-200/60 mt-2">
-                                    *Assumes effective life depreciation claim over 2-3 years at avg marginal rate.
+                                <p className="text-[8px] text-industrial-subtext/40 font-medium mt-3 uppercase tracking-tight leading-relaxed">
+                                    *Analysis: Claim over 2-3 years @ avg marginal rate (32.5%).
                                 </p>
                             </div>
                         )}
 
-                        <button 
+                        <TactileButton 
                             onClick={handleCheck}
                             disabled={loading || !item || !cost}
-                            className="w-full bg-neon-purple text-white font-bold py-4 rounded-xl mt-4 hover:bg-purple-600 disabled:opacity-50 transition-colors"
+                            color="blue"
+                            fullWidth
+                            size="lg"
+                            className="mt-6"
                         >
-                            {loading ? 'CONSULTING THE CITY...' : 'RUN AFFORDABILITY CHECK'}
-                        </button>
+                            {loading ? 'CONSULTING GRID NEURAL...' : 'EXECUTE FEASIBILITY SCAN'}
+                        </TactileButton>
                     </div>
                 ) : (
-                    <div className="text-center space-y-4 animate-in zoom-in-95">
-                        <div className="text-6xl mb-2">
+                    <div className="text-center py-6 space-y-6 animate-in zoom-in-95">
+                        <div className="text-6xl mb-4 filter drop-shadow-lg">
                             {verdict.includes("Green Light") ? "🟢" : verdict.includes("Red Light") ? "🔴" : "🟡"}
                         </div>
-                        <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                            <p className="text-lg font-bold text-white mb-2">{verdict.split('.')[0]}.</p>
-                            <p className="text-slate-400 text-sm">{verdict.split('.').slice(1).join('.')}</p>
+                        <div className="bg-industrial-well-bg p-6 rounded-2xl shadow-well border border-black/5 text-left">
+                            <h3 className="text-sm font-black text-industrial-text uppercase tracking-tight mb-3">
+                                {verdict.includes("Green Light") ? "VERDICT: ACCUMULATE" : verdict.includes("Red Light") ? "VERDICT: ABORT" : "VERDICT: CAUTION"}
+                            </h3>
+                            <p className="text-industrial-subtext text-xs font-medium leading-relaxed">{verdict.split('.').slice(1).join('.')}</p>
                         </div>
                         <button 
-                            onClick={reset}
-                            className="text-slate-400 hover:text-white text-sm underline"
+                            onClick={() => { setVerdict(null); setItem(''); setCost(''); setIsWorkRelated(false); }}
+                            className="tactile-label text-industrial-subtext/60 hover:text-industrial-text underline decoration-2 underline-offset-4"
                         >
                             Scan another item
                         </button>
                     </div>
                 )}
-            </div>
+            </ChassisWell>
         </div>
     );
 }

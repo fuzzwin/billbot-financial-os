@@ -1,5 +1,9 @@
 
 import React, { useState } from 'react';
+import { ChassisWell } from './ui/ChassisWell';
+import { RecessedInput } from './ui/RecessedInput';
+import { TactileButton } from './ui/TactileButton';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 export const BatteryROI: React.FC = () => {
     const [cost, setCost] = useState<number>(12000);
@@ -20,78 +24,98 @@ export const BatteryROI: React.FC = () => {
     const paybackYears = realCost / savingsPerYear;
 
     return (
-        <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-slate-900 border border-slate-700 p-6 rounded-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <svg className="w-32 h-32 text-neon-green" fill="currentColor" viewBox="0 0 24 24"><path d="M16 9v-4l8 7-8 7v-4h-8v-6h8zm-16-7v20h14v-2h-12v-16h12v-2h-14z"/></svg>
-                </div>
-
-                <div className="relative z-10">
-                    <h2 className="text-3xl font-black text-white italic mb-2">BATTERY ROI ENGINE <span className="text-neon-green not-italic text-sm border border-neon-green px-2 rounded">2025 REBATES ACTIVE</span></h2>
-                    <p className="text-slate-400 mb-8 max-w-lg">
-                        Thinking of getting a battery? The 2025 Federal "Tapering" Rebate rewards systems under 14kWh. 
-                        Let's calculate your real price.
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">QUOTED SYSTEM COST (INSTALLED)</label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-3 text-slate-400">$</span>
-                                <input 
-                                    type="number" 
-                                    value={cost}
-                                    onChange={(e) => setCost(Number(e.target.value))}
-                                    className="w-full bg-slate-800 border-b-2 border-slate-600 focus:border-neon-green text-white text-2xl p-2 pl-8 outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-slate-500 mb-1">SYSTEM SIZE (kWh)</label>
-                            <input 
-                                type="number" 
-                                value={size}
-                                onChange={(e) => setSize(Number(e.target.value))}
-                                className="w-full bg-slate-800 border-b-2 border-slate-600 focus:border-neon-green text-white text-2xl p-2 outline-none"
-                            />
-                            <p className="text-xs text-slate-500 mt-2">
-                                {size > TAPER_THRESHOLD ? '⚠️ Over 14kWh Threshold (Rebate Reduced)' : '✅ Optimal Size for Max Rebate'}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-slate-400 font-bold">2025 Federal STC Rebate</span>
-                            <span className="text-neon-green font-mono font-bold text-xl">-${rebate.toLocaleString()}</span>
-                        </div>
-                        <div className="h-px bg-slate-700 mb-4"></div>
-                        <div className="flex justify-between items-end">
-                            <span className="text-white font-black text-lg">REAL COST</span>
-                            <span className="text-white font-black text-4xl">${realCost.toLocaleString()}</span>
-                        </div>
-                         <div className="mt-4 flex gap-2 items-center bg-slate-900 p-2 rounded text-xs text-slate-400">
-                             <span>⚡ Est. Payback Period:</span>
-                             <span className="text-white font-bold">{paybackYears.toFixed(1)} Years</span>
-                             <span>(assuming $1,800/yr savings)</span>
-                         </div>
-                    </div>
+        <div className="max-w-4xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4">
+            
+            <div className="mb-8 px-2 text-center">
+                <h2 className="text-3xl font-black text-industrial-text uppercase tracking-tighter flex items-center justify-center gap-3">
+                    Battery ROI Engine
+                    <span className="bg-industrial-blue/10 text-industrial-blue text-[9px] border border-industrial-blue/50 px-2 py-0.5 rounded uppercase tracking-widest font-black">2025 REBATES ACTIVE</span>
+                </h2>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  <LEDIndicator active={true} color="blue" />
+                  <p className="tactile-label text-industrial-subtext/60">Federal "Tapering" Protocol // Model V1.2</p>
                 </div>
             </div>
 
-            {/* Recommendation */}
-            <div className="bg-gradient-to-r from-emerald-900/50 to-slate-900 border border-emerald-500/30 p-6 rounded-xl">
-                <h3 className="text-emerald-400 font-bold mb-2">BillBot Strategy:</h3>
-                {size > 14 ? (
-                     <p className="text-slate-300 text-sm">
-                        You are losing rebate value by going over 14kWh. Consider a 13.5kWh unit (like Powerwall 2) to claim the full ${REBATE_BASE} rebate.
-                     </p>
-                ) : (
-                    <p className="text-slate-300 text-sm">
-                        Great choice. This size maximizes the 2025 government incentive. Combined with a Virtual Power Plant (VPP) plan, you could eliminate your bill entirely.
-                    </p>
-                )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                    <ChassisWell label="Operational Input">
+                        <div className="space-y-6">
+                            <RecessedInput 
+                                label="Quoted System Cost (Installed AUD)"
+                                type="number" 
+                                value={cost}
+                                onChange={(e) => setCost(Number(e.target.value))}
+                            />
+
+                            <div className="space-y-2">
+                                <RecessedInput 
+                                    label="Storage Capacity (kWh)"
+                                    type="number" 
+                                    value={size}
+                                    onChange={(e) => setSize(Number(e.target.value))}
+                                />
+                                <div className="flex items-center gap-2 px-1">
+                                    <LEDIndicator active={size <= TAPER_THRESHOLD} color={size <= TAPER_THRESHOLD ? "green" : "orange"} />
+                                    <p className="text-[10px] font-black uppercase tracking-tight text-industrial-subtext/60">
+                                        {size > TAPER_THRESHOLD ? 'Over 14kWh Taper Threshold' : 'Optimal Efficiency Configuration'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </ChassisWell>
+
+                    <ChassisWell label="Strategic Advisory">
+                        <div className="flex gap-4 items-start">
+                            <div className="text-3xl filter drop-shadow-sm">⚡</div>
+                            <div className="flex-1">
+                                <h4 className="text-[11px] font-black text-industrial-text uppercase tracking-tighter mb-1">BillBot Recommendation</h4>
+                                {size > 14 ? (
+                                    <p className="text-industrial-subtext text-xs leading-relaxed font-medium">
+                                        You are losing rebate value by exceeding the 14kWh threshold. Consider a 13.5kWh unit (like Powerwall 2) to claim the full <span className="text-industrial-blue font-bold">${REBATE_BASE}</span> rebate.
+                                    </p>
+                                ) : (
+                                    <p className="text-industrial-subtext text-xs leading-relaxed font-medium">
+                                        Optimal choice. This configuration maximizes the 2025 government incentive. Combined with a VPP (Virtual Power Plant) plan, city self-sufficiency increases by <span className="text-emerald-500 font-bold">45%</span>.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </ChassisWell>
+                </div>
+
+                <div className="space-y-6">
+                    <ChassisWell label="Financial Projections" className="h-full">
+                        <div className="space-y-8 py-4">
+                            <div className="flex justify-between items-center bg-industrial-well-bg p-4 rounded-xl shadow-well border border-black/5">
+                                <span className="text-[10px] font-black text-industrial-subtext uppercase">Govt STC Rebate</span>
+                                <span className="text-emerald-500 font-black font-mono text-xl">-${rebate.toLocaleString()}</span>
+                            </div>
+
+                            <div className="text-center">
+                                <p className="tactile-label text-industrial-subtext/60 mb-1">Adjusted Capital Outlay</p>
+                                <p className="text-5xl font-black text-industrial-text tracking-tighter">${realCost.toLocaleString()}</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-industrial-base p-4 rounded-xl shadow-tactile-sm border border-white/10 text-center">
+                                    <p className="tactile-label text-industrial-subtext/40 mb-1">Est. Savings</p>
+                                    <p className="text-lg font-black text-industrial-text font-mono">$1.8k/YR</p>
+                                </div>
+                                <div className="bg-industrial-base p-4 rounded-xl shadow-tactile-sm border border-white/10 text-center">
+                                    <p className="tactile-label text-industrial-subtext/40 mb-1">ROI Window</p>
+                                    <p className="text-lg font-black text-industrial-blue font-mono">{paybackYears.toFixed(1)}Y</p>
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-t border-industrial-border-dark/10">
+                                <TactileButton color="blue" fullWidth>
+                                    Commit to Strategy
+                                </TactileButton>
+                            </div>
+                        </div>
+                    </ChassisWell>
+                </div>
             </div>
         </div>
     );

@@ -2,6 +2,10 @@
 import React, { useState } from 'react';
 import { AccountItem, HardshipRequest, HardshipType } from '../types';
 import { generateHardshipLetter } from '../services/complianceService';
+import { TactileButton } from './ui/TactileButton';
+import { RecessedInput } from './ui/RecessedInput';
+import { ChassisWell } from './ui/ChassisWell';
+import { LEDIndicator } from './ui/LEDIndicator';
 
 interface CrisisCommandProps {
     accounts: AccountItem[];
@@ -42,127 +46,162 @@ export const CrisisCommand: React.FC<CrisisCommandProps> = ({ accounts }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4">
+        <div className="max-w-4xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4">
             
-            <div className="bg-red-950/30 border border-red-500/50 p-6 rounded-2xl mb-8 flex items-center gap-6 relative overflow-hidden">
-                <div className="absolute -left-10 -top-10 w-32 h-32 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="text-6xl z-10">☎️</div>
+            <div className="bg-industrial-orange/10 border border-industrial-orange/50 p-6 rounded-[2rem] mb-8 flex items-center gap-6 relative overflow-hidden shadow-well">
+                <div className="absolute -left-10 -top-10 w-32 h-32 bg-industrial-orange/20 rounded-full blur-3xl animate-pulse"></div>
+                <div className="text-6xl z-10 filter drop-shadow-md">☎️</div>
                 <div className="z-10">
-                    <h2 className="text-3xl font-black text-red-500 italic tracking-tighter">CRISIS COMMAND</h2>
-                    <p className="text-red-200">Financial Emergency Protocol Active.</p>
+                    <h2 className="text-3xl font-black text-industrial-orange uppercase tracking-tighter">CRISIS COMMAND</h2>
+                    <div className="flex items-center gap-2">
+                        <LEDIndicator active={true} color="orange" />
+                        <p className="tactile-label text-industrial-subtext/60">Financial Emergency Protocol Active // Link: Priority</p>
+                    </div>
                 </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-2 mb-6">
-                <button onClick={() => setMode('TRIAGE')} className={`flex-1 py-3 font-bold rounded-lg transition-colors ${mode === 'TRIAGE' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-                    1. TRIAGE
+            <div className="flex gap-2 mb-8 bg-industrial-well-bg p-1.5 rounded-2xl shadow-well border-t border-l border-black/5">
+                <button 
+                    onClick={() => setMode('TRIAGE')} 
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${mode === 'TRIAGE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext hover:text-industrial-text'}`}
+                >
+                    01. TRIAGE
                 </button>
-                <button onClick={() => setMode('LETTER')} className={`flex-1 py-3 font-bold rounded-lg transition-colors ${mode === 'LETTER' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-                    2. HARDSHIP GENERATOR
+                <button 
+                    onClick={() => setMode('LETTER')} 
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${mode === 'LETTER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext hover:text-industrial-text'}`}
+                >
+                    02. GENERATOR
                 </button>
-                <button onClick={() => setMode('OMBUDSMAN')} className={`flex-1 py-3 font-bold rounded-lg transition-colors ${mode === 'OMBUDSMAN' ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
-                    3. ESCALATE
+                <button 
+                    onClick={() => setMode('OMBUDSMAN')} 
+                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${mode === 'OMBUDSMAN' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext hover:text-industrial-text'}`}
+                >
+                    03. ESCALATE
                 </button>
             </div>
 
             {/* TRIAGE MODE */}
             {mode === 'TRIAGE' && (
                 <div className="space-y-6">
-                    <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl">
-                        <h3 className="text-xl font-bold text-white mb-4">The Priority Hierarchy</h3>
-                        <p className="text-slate-400 mb-6">When you can't pay everyone, you must pay the "Survival Bills" first. Ignore the noise.</p>
+                    <ChassisWell label="Priority Triage Protocol">
+                        <p className="tactile-label text-industrial-subtext/60 mb-6 uppercase tracking-wide">Optimization Logic: Survival First</p>
                         
                         <div className="space-y-4">
-                            <div className="flex gap-4 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
-                                <span className="text-2xl">🏠</span>
+                            <div className="flex gap-4 p-4 bg-industrial-base rounded-xl shadow-tactile-sm border border-white/10">
+                                <div className="w-12 h-12 bg-industrial-well-bg rounded-xl flex items-center justify-center text-2xl shadow-well">🏠</div>
                                 <div>
-                                    <h4 className="font-bold text-emerald-400">1. Roof & Essentials</h4>
-                                    <p className="text-sm text-slate-300">Rent/Mortgage, Electricity, Water, Food. Keep the lights on.</p>
+                                    <h4 className="text-sm font-black text-industrial-text uppercase tracking-tight">1. Roof & Essentials</h4>
+                                    <p className="text-xs text-industrial-subtext font-medium mt-1 leading-relaxed">Rent/Mortgage, Electricity, Water, Food. Keep the lights on.</p>
                                 </div>
                             </div>
-                            <div className="flex gap-4 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
-                                <span className="text-2xl">🚗</span>
+                            <div className="flex gap-4 p-4 bg-industrial-base rounded-xl shadow-tactile-sm border border-white/10">
+                                <div className="w-12 h-12 bg-industrial-well-bg rounded-xl flex items-center justify-center text-2xl shadow-well">🚗</div>
                                 <div>
-                                    <h4 className="font-bold text-amber-400">2. Critical Assets</h4>
-                                    <p className="text-sm text-slate-300">Car Loan (if needed for work), Phone/Internet (for job hunting).</p>
+                                    <h4 className="text-sm font-black text-industrial-text uppercase tracking-tight">2. Critical Assets</h4>
+                                    <p className="text-xs text-industrial-subtext font-medium mt-1 leading-relaxed">Car Loan (if needed for work), Phone/Internet (for job hunting).</p>
                                 </div>
                             </div>
-                            <div className="flex gap-4 p-4 bg-red-900/20 border border-red-500/30 rounded-lg opacity-80">
-                                <span className="text-2xl">💳</span>
+                            <div className="flex gap-4 p-4 bg-industrial-orange/5 rounded-xl shadow-tactile-sm border border-industrial-orange/20">
+                                <div className="w-12 h-12 bg-industrial-orange/10 rounded-xl flex items-center justify-center text-2xl shadow-well border border-industrial-orange/20">💳</div>
                                 <div>
-                                    <h4 className="font-bold text-red-400">3. Unsecured Debt (Wait List)</h4>
-                                    <p className="text-sm text-slate-300">Credit Cards, Personal Loans, BNPL. These cannot take your house.</p>
-                                    <p className="text-xs text-red-300 mt-1 font-bold">👉 Go to Step 2 to freeze these.</p>
+                                    <h4 className="text-sm font-black text-industrial-orange uppercase tracking-tight">3. Unsecured Debt (Wait List)</h4>
+                                    <p className="text-xs text-industrial-subtext font-medium mt-1 leading-relaxed">Credit Cards, Personal Loans, BNPL. These cannot take your house.</p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <LEDIndicator active={true} color="orange" />
+                                        <p className="text-[10px] text-industrial-orange font-black uppercase">Strategy: Go to Step 2 to freeze these.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </ChassisWell>
                 </div>
             )}
 
             {/* LETTER GENERATOR */}
             {mode === 'LETTER' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-700">
-                            <label className="block text-xs font-bold text-slate-400 mb-1">Select Debt to Freeze</label>
-                            <select 
-                                value={selectedDebtId} 
-                                onChange={(e) => setSelectedDebtId(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white outline-none"
-                            >
-                                <option value="">Select a creditor...</option>
-                                {debts.map(d => (
-                                    <option key={d.id} value={d.id}>{d.name} (${d.balance})</option>
-                                ))}
-                            </select>
-                        </div>
+                    <div className="space-y-6">
+                        <ChassisWell label="Parameter Input">
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="tactile-label px-1 text-industrial-subtext/60">Select Debt Module</label>
+                                    <select 
+                                        value={selectedDebtId} 
+                                        onChange={(e) => setSelectedDebtId(e.target.value)}
+                                        className="w-full bg-industrial-base rounded-xl px-4 py-3 text-sm font-bold text-industrial-text shadow-well outline-none appearance-none cursor-pointer border border-black/5"
+                                    >
+                                        <option value="">Select identifier...</option>
+                                        {debts.map(d => (
+                                            <option key={d.id} value={d.id}>{d.name} (${d.balance})</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-700">
-                            <label className="block text-xs font-bold text-slate-400 mb-1">Reason for Hardship</label>
-                            <input 
-                                type="text"
-                                placeholder="e.g. reduced working hours, medical emergency" 
-                                value={reason} 
-                                onChange={(e) => setReason(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white outline-none"
-                            />
-                        </div>
-
-                        <div className="bg-slate-900 p-4 rounded-xl border border-slate-700">
-                            <label className="block text-xs font-bold text-slate-400 mb-1">Proposed Solution</label>
-                            <div className="flex gap-2 mb-2">
-                                <button onClick={() => setType('MORATORIUM')} className={`flex-1 py-2 text-xs font-bold rounded ${type === 'MORATORIUM' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                                    Pause Payments (Moratorium)
-                                </button>
-                                <button onClick={() => setType('REDUCED_PAYMENT')} className={`flex-1 py-2 text-xs font-bold rounded ${type === 'REDUCED_PAYMENT' ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                                    Reduced Payments
-                                </button>
-                            </div>
-                            {type === 'REDUCED_PAYMENT' && (
-                                <input 
-                                    type="number"
-                                    placeholder="Amount you can afford ($)" 
-                                    value={offer} 
-                                    onChange={(e) => setOffer(e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-700 rounded p-2 text-white outline-none"
+                                <RecessedInput 
+                                    label="Reason for Hardship"
+                                    placeholder="e.g. reduced working hours" 
+                                    value={reason} 
+                                    onChange={(e) => setReason(e.target.value)}
                                 />
-                            )}
-                        </div>
 
-                        <button onClick={handleGenerate} className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-xl">
-                            GENERATE LEGAL LETTER
-                        </button>
+                                <div className="space-y-1.5">
+                                    <label className="tactile-label px-1 text-industrial-subtext/60">Proposed Solution</label>
+                                    <div className="flex gap-2 bg-industrial-well-bg p-1 rounded-xl shadow-well border border-black/5">
+                                        <button 
+                                            onClick={() => setType('MORATORIUM')} 
+                                            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all ${type === 'MORATORIUM' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext'}`}
+                                        >
+                                            Pause
+                                        </button>
+                                        <button 
+                                            onClick={() => setType('REDUCED_PAYMENT')} 
+                                            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all ${type === 'REDUCED_PAYMENT' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext'}`}
+                                        >
+                                            Reduced
+                                        </button>
+                                    </div>
+                                    {type === 'REDUCED_PAYMENT' && (
+                                        <div className="pt-2">
+                                            <RecessedInput 
+                                                type="number"
+                                                placeholder="Affordable Amount ($)" 
+                                                value={offer} 
+                                                onChange={(e) => setOffer(e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <TactileButton 
+                                    onClick={handleGenerate} 
+                                    color="orange" 
+                                    fullWidth
+                                    className="mt-4"
+                                >
+                                    GENERATE PROTOCOL LETTER
+                                </TactileButton>
+                            </div>
+                        </ChassisWell>
                     </div>
 
-                    <div className="bg-slate-100 text-slate-900 p-6 rounded-xl font-mono text-xs whitespace-pre-wrap shadow-xl relative overflow-auto h-[500px]">
-                        {generatedLetter ? generatedLetter : <span className="text-slate-400 italic">Select options to preview letter...</span>}
+                    <div className="bg-industrial-well-bg text-industrial-text p-8 rounded-[2rem] font-mono text-[11px] whitespace-pre-wrap shadow-well border border-black/5 relative overflow-auto h-[500px]">
+                        <div className="absolute top-0 left-0 w-full h-10 bg-gradient-to-b from-industrial-well-bg to-transparent pointer-events-none z-10"></div>
+                        <div className="pt-4">
+                            {generatedLetter ? generatedLetter : <span className="text-industrial-subtext/40 italic">Configure parameters to initialize preview...</span>}
+                        </div>
                         {generatedLetter && (
-                             <button onClick={copyToClipboard} className="absolute top-4 right-4 bg-slate-900 text-white px-3 py-1 rounded text-xs font-bold hover:bg-slate-700">
-                                 COPY TEXT
-                             </button>
+                             <TactileButton 
+                                onClick={copyToClipboard} 
+                                color="white" 
+                                size="sm"
+                                className="absolute top-4 right-4 z-20 shadow-tactile-sm"
+                             >
+                                 COPY OUTPUT
+                             </TactileButton>
                         )}
+                        <div className="absolute bottom-0 left-0 w-full h-10 bg-gradient-to-t from-industrial-well-bg to-transparent pointer-events-none z-10"></div>
                     </div>
                 </div>
             )}
@@ -170,27 +209,27 @@ export const CrisisCommand: React.FC<CrisisCommandProps> = ({ accounts }) => {
             {/* OMBUDSMAN */}
             {mode === 'OMBUDSMAN' && (
                 <div className="space-y-6">
-                     <div className="bg-slate-900 border border-slate-700 p-6 rounded-xl">
-                        <h3 className="text-xl font-bold text-white mb-4">Did they refuse your request?</h3>
-                        <p className="text-slate-400 mb-6">
+                     <ChassisWell label="Escalation Protocols">
+                        <h3 className="text-sm font-black text-industrial-text mb-4 uppercase tracking-tighter">Request Denied or Ignored?</h3>
+                        <p className="text-xs text-industrial-subtext font-medium leading-relaxed mb-8">
                             Creditors legally must consider hardship requests. If they ignore you or unreasonably refuse, you can escalate to an External Dispute Resolution (EDR) scheme. It is free and stops legal action immediately.
                         </p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <a href="https://www.afca.org.au/" target="_blank" rel="noreferrer" className="block p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors group">
-                                <h4 className="font-bold text-white group-hover:text-neon-blue">AFCA</h4>
-                                <p className="text-xs text-slate-400 mt-1">Banks, Credit Cards, Loans.</p>
+                            <a href="https://www.afca.org.au/" target="_blank" rel="noreferrer" className="bg-industrial-base p-6 rounded-xl shadow-tactile-sm border border-white/10 hover:shadow-md transition-all group text-center">
+                                <h4 className="text-sm font-black text-industrial-text group-hover:text-industrial-blue uppercase tracking-tight mb-2">AFCA</h4>
+                                <p className="tactile-label opacity-50">Banks, Credit, Loans</p>
                             </a>
-                            <a href="https://www.ewon.com.au/" target="_blank" rel="noreferrer" className="block p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors group">
-                                <h4 className="font-bold text-white group-hover:text-neon-blue">EWON / EWOV</h4>
-                                <p className="text-xs text-slate-400 mt-1">Energy & Water Bills.</p>
+                            <a href="https://www.ewon.com.au/" target="_blank" rel="noreferrer" className="bg-industrial-base p-6 rounded-xl shadow-tactile-sm border border-white/10 hover:shadow-md transition-all group text-center">
+                                <h4 className="text-sm font-black text-industrial-text group-hover:text-industrial-blue uppercase tracking-tight mb-2">EWON / EWOV</h4>
+                                <p className="tactile-label opacity-50">Energy & Water</p>
                             </a>
-                            <a href="https://www.tio.com.au/" target="_blank" rel="noreferrer" className="block p-4 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-600 transition-colors group">
-                                <h4 className="font-bold text-white group-hover:text-neon-blue">TIO</h4>
-                                <p className="text-xs text-slate-400 mt-1">Phone & Internet Bills.</p>
+                            <a href="https://www.tio.com.au/" target="_blank" rel="noreferrer" className="bg-industrial-base p-6 rounded-xl shadow-tactile-sm border border-white/10 hover:shadow-md transition-all group text-center">
+                                <h4 className="text-sm font-black text-industrial-text group-hover:text-industrial-blue uppercase tracking-tight mb-2">TIO</h4>
+                                <p className="tactile-label opacity-50">Phone & Internet</p>
                             </a>
                         </div>
-                     </div>
+                     </ChassisWell>
                 </div>
             )}
 
