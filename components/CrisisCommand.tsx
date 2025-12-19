@@ -46,37 +46,37 @@ export const CrisisCommand: React.FC<CrisisCommandProps> = ({ accounts }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4">
+        <div className="max-w-4xl mx-auto pb-32 animate-in fade-in slide-in-from-bottom-4">
             
-            <div className="bg-industrial-orange/10 border border-industrial-orange/50 p-6 rounded-[2rem] mb-8 flex items-center gap-6 relative overflow-hidden shadow-well">
-                <div className="absolute -left-10 -top-10 w-32 h-32 bg-industrial-orange/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="text-6xl z-10 filter drop-shadow-md">☎️</div>
+            <div className="bg-industrial-orange/5 border border-industrial-orange/20 p-8 rounded-[3rem] mb-10 flex items-center gap-8 relative overflow-hidden shadow-tactile-raised border-t border-l border-white/40">
+                <div className="absolute -left-10 -top-10 w-40 h-40 bg-industrial-orange/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="text-6xl z-10 filter drop-shadow-2xl">🚨</div>
                 <div className="z-10">
-                    <h2 className="text-3xl font-black text-industrial-orange uppercase tracking-tighter">CRISIS COMMAND</h2>
-                    <div className="flex items-center gap-2">
+                    <h2 className="text-3xl font-black text-industrial-orange uppercase tracking-tighter leading-none mb-2">CRISIS COMMAND</h2>
+                    <div className="flex items-center gap-3">
                         <LEDIndicator active={true} color="orange" />
-                        <p className="tactile-label text-industrial-subtext/60">Financial Emergency Protocol Active // Link: Priority</p>
+                        <p className="tactile-label !text-industrial-orange/60">Hardship Protocol // System Priority 0</p>
                     </div>
                 </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-2 mb-8 bg-industrial-well-bg p-1.5 rounded-2xl shadow-well border-t border-l border-black/5">
+            <div className="flex gap-2 mb-10 bg-industrial-well-bg p-2 rounded-[2rem] shadow-well border-t border-l border-black/5">
                 <button 
                     onClick={() => setMode('TRIAGE')} 
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${mode === 'TRIAGE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext hover:text-industrial-text'}`}
+                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${mode === 'TRIAGE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
                 >
                     01. TRIAGE
                 </button>
                 <button 
                     onClick={() => setMode('LETTER')} 
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${mode === 'LETTER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext hover:text-industrial-text'}`}
+                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${mode === 'LETTER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
                 >
                     02. GENERATOR
                 </button>
                 <button 
                     onClick={() => setMode('OMBUDSMAN')} 
-                    className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${mode === 'OMBUDSMAN' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext hover:text-industrial-text'}`}
+                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${mode === 'OMBUDSMAN' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
                 >
                     03. ESCALATE
                 </button>

@@ -11,6 +11,47 @@ import { RecessedInput } from './components/ui/RecessedInput';
 import { ChassisWell } from './components/ui/ChassisWell';
 import { LEDIndicator } from './components/ui/LEDIndicator';
 
+// --- DELIGHT: CONFETTI ---
+const ConfettiBurst = ({ onDone }: { onDone: () => void }) => {
+  useEffect(() => {
+    const durationMs = 1900;
+    const timeout = window.setTimeout(onDone, durationMs);
+    return () => window.clearTimeout(timeout);
+  }, [onDone]);
+
+  const pieces = useMemo(() => {
+    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#A855F7'];
+    return Array.from({ length: 26 }).map((_, i) => {
+      const left = Math.random() * 100;
+      const x = (Math.random() * 120 - 60).toFixed(0);
+      const delay = (Math.random() * 150).toFixed(0);
+      const size = 8 + Math.round(Math.random() * 8);
+      const bg = colors[i % colors.length];
+      return { id: i, left, x, delay, size, bg };
+    });
+  }, []);
+
+  return (
+    <>
+      {pieces.map(p => (
+        <div
+          key={p.id}
+          className="bb-confetti"
+          style={{
+            left: `${p.left}vw`,
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            backgroundColor: p.bg,
+            animationDelay: `${p.delay}ms`,
+            // @ts-ignore - CSS custom property
+            ['--x' as any]: `${p.x}px`,
+          }}
+        />
+      ))}
+    </>
+  );
+};
+
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
   constructor(props: any) {
@@ -30,14 +71,14 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-industrial-base text-industrial-text p-8">
-          <ChassisWell className="max-w-2xl w-full" label="Critical System Fault">
+          <ChassisWell className="max-w-2xl w-full" label="App Error">
               <div className="flex flex-col items-center text-center">
                   <div className="w-20 h-20 bg-industrial-orange rounded-2xl flex items-center justify-center text-4xl shadow-lg mb-8 text-white">
                       ⚠️
                   </div>
-                  <h1 className="text-2xl font-black mb-4 uppercase tracking-tighter">System Kernel Panic</h1>
+                  <h1 className="text-2xl font-black mb-4 tracking-tight">Something went wrong</h1>
                   <p className="mb-8 text-industrial-subtext text-sm font-medium leading-relaxed">
-                    A critical error has occurred in the financial grid. Emergency restart protocol is required.
+                    BillBot hit an unexpected error. Reloading usually fixes it.
                   </p>
                   
                   <div className="w-full bg-industrial-well-bg p-6 rounded-2xl shadow-well border-t border-l border-black/5 mb-8 overflow-auto">
@@ -52,7 +93,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
                     fullWidth
                     size="lg"
                   >
-                    Initiate Cold Reboot
+                    Reload app
                   </TactileButton>
               </div>
           </ChassisWell>
@@ -109,7 +150,7 @@ const WelcomeOverlay = ({ onComplete }: { onComplete: () => void }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-industrial-base/95 p-6 backdrop-blur-sm">
-      <ChassisWell className="max-w-md w-full !p-8" label="System Initialization">
+      <ChassisWell className="max-w-md w-full !p-8" label="Welcome">
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="w-24 h-24 bg-industrial-base/50 rounded-3xl flex items-center justify-center text-6xl shadow-well mb-10 border-t border-l border-white/10">
             {current.icon}
@@ -128,12 +169,12 @@ const WelcomeOverlay = ({ onComplete }: { onComplete: () => void }) => {
 
           <TactileButton 
             onClick={() => isLast ? onComplete() : setStep(s => s + 1)}
-            color={isLast ? "orange" : "white"}
+            color={isLast ? "blue" : "white"}
             fullWidth
             size="lg"
             className="!rounded-2xl"
           >
-            {isLast ? "INITIALIZE OS" : "LOAD NEXT MODULE"}
+            {isLast ? "Get started" : "Next"}
           </TactileButton>
         </div>
       </ChassisWell>
@@ -153,7 +194,7 @@ const getThemeIcon = (theme: ThemeMode) => {
 const ThemeToggle = ({ theme, onToggle }: { theme: ThemeMode, onToggle: () => void }) => (
   <button 
     onClick={onToggle}
-    className="w-9 h-9 flex items-center justify-center bg-industrial-base rounded-xl shadow-tactile-raised border-t border-l border-industrial-highlight/50 active:shadow-well active:scale-95 transition-all"
+    className="w-11 h-11 flex items-center justify-center bg-industrial-base rounded-xl shadow-tactile-raised border border-white/20 active:translate-y-[1px] transition-all"
     title={`Theme: ${theme}`}
   >
     <span className="text-base">{getThemeIcon(theme)}</span>
@@ -164,16 +205,16 @@ const ThemeToggle = ({ theme, onToggle }: { theme: ThemeMode, onToggle: () => vo
 const HealthScoreRing = ({ score }: { score: number }) => {
   const circumference = 2 * Math.PI * 45;
   const progress = (score / 100) * circumference;
-  const color = score >= 70 ? '#10b981' : score >= 40 ? '#F3CF44' : '#FF4F00';
+  const color = score >= 70 ? 'var(--industrial-green)' : score >= 40 ? 'var(--industrial-yellow)' : 'var(--industrial-orange)';
   
   return (
-    <div className="relative w-28 h-28 flex items-center justify-center bg-industrial-base rounded-full shadow-well">
-      <svg className="w-[90%] h-[90%] transform -rotate-90 drop-shadow-sm">
-        <circle cx="50%" cy="50%" r="40%" stroke="var(--color-well-bg)" strokeWidth="8" fill="none" />
+    <div className="relative w-24 h-24 flex items-center justify-center bg-industrial-base rounded-full shadow-pressed border border-black/5">
+      <svg className="w-[85%] h-[85%] transform -rotate-90">
+        <circle cx="50%" cy="50%" r="40%" stroke="rgba(0,0,0,0.05)" strokeWidth="6" fill="none" />
         <circle 
           cx="50%" cy="50%" r="40%" 
           stroke={color} 
-          strokeWidth="8" 
+          strokeWidth="6" 
           fill="none"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -182,8 +223,8 @@ const HealthScoreRing = ({ score }: { score: number }) => {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-industrial-text tracking-tighter">{score}</span>
-        <span className="text-[9px] font-black uppercase tracking-tighter text-industrial-subtext/60">Rating</span>
+        <span className="text-2xl font-black text-industrial-text tracking-tighter leading-none">{score}</span>
+        <span className="text-[9px] font-bold uppercase tracking-widest text-industrial-subtext/60 mt-1">Score</span>
       </div>
     </div>
   );
@@ -196,34 +237,32 @@ const CashLeftCard = ({ income, expenses }: { income: number, expenses: number }
   const isHealthy = surplus > 0;
   
   return (
-    <div className="bg-industrial-base border border-white/10 rounded-2xl p-5 shadow-tactile-raised">
-      <div className="flex justify-between items-start mb-4">
+    <div className="bg-industrial-base border-t border-l border-white/20 rounded-2xl p-5 shadow-tactile-raised">
+      <div className="flex justify-between items-start mb-5">
         <div>
-          <p className="tactile-label text-industrial-subtext/60 mb-1">Monthly Surplus</p>
-          <p className={`text-3xl font-black tracking-tighter ${isHealthy ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {isHealthy ? '+' : ''}${surplus.toLocaleString()}
+          <p className="tactile-label mb-1 opacity-60 text-[8px]">Monthly Liquidity</p>
+          <p className={`text-2xl font-black tracking-tighter ${isHealthy ? 'text-industrial-green' : 'text-industrial-orange'}`}>
+            {isHealthy ? '+' : ''}${surplus.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <LEDIndicator active={isHealthy} color={isHealthy ? 'green' : 'red'} label={isHealthy ? 'Status: OK' : 'Status: DEFICIT'} />
-        </div>
+        <LEDIndicator active={isHealthy} color={isHealthy ? 'green' : 'orange'} />
       </div>
       
-      <div className="h-6 bg-industrial-well-bg rounded-lg shadow-well overflow-hidden mb-3 p-1">
+      <div className="h-6 bg-industrial-well-bg rounded-lg shadow-well overflow-hidden mb-4 p-1 border-t border-l border-black/5">
         <div 
-          className={`h-full rounded-md transition-all duration-1000 ${isHealthy ? 'bg-industrial-blue' : 'bg-industrial-orange'}`}
+          className={`h-full rounded-md transition-all duration-1000 ${isHealthy ? 'bg-industrial-blue' : 'bg-[#EF4444]'}`}
           style={{ width: `${Math.min(100, percentage)}%` }}
         />
       </div>
       
       <div className="flex justify-between">
         <div className="flex flex-col">
-          <span className="tactile-label text-industrial-subtext/60">Expenses</span>
-          <span className="text-xs font-bold text-industrial-text">${expenses.toLocaleString()}</span>
+          <span className="tactile-label !text-[7px] mb-0.5 opacity-40">Burn</span>
+          <span className="text-[10px] font-black text-industrial-text">${expenses.toLocaleString()}</span>
         </div>
         <div className="flex flex-col items-end">
-          <span className="tactile-label text-industrial-subtext/60">Income</span>
-          <span className="text-xs font-bold text-industrial-text">${income.toLocaleString()}</span>
+          <span className="tactile-label !text-[7px] mb-0.5 opacity-40">Inflow</span>
+          <span className="text-[10px] font-black text-industrial-text">${income.toLocaleString()}</span>
         </div>
       </div>
     </div>
@@ -245,76 +284,12 @@ const NextActionCard = ({
   // AI-like logic to determine next action
   const getNextAction = () => {
     const surplus = health.monthlyIncome - health.monthlyExpenses;
-    
-    // Crisis mode
-    if (surplus < 0) {
-      return {
-        icon: "🚨",
-        title: "Deficit Detected",
-        description: `Gap: $${Math.abs(surplus).toLocaleString()}. Action required.`,
-        action: "Fix Flow",
-        view: AppView.MONEY,
-        urgent: true
-      };
-    }
-    
-    // Optimizable subscriptions
+    if (surplus < 0) return { icon: "🚨", title: "Deficit detected", description: `-$${Math.abs(surplus).toLocaleString()} gap`, action: "Fix", view: AppView.MONEY, urgent: true };
     const killable = subscriptions.filter(s => s.isOptimizable);
-    if (killable.length > 0) {
-      const total = killable.reduce((sum, s) => sum + s.amount, 0);
-      return {
-        icon: "✂️",
-        title: `${killable.length} Redundant Subscriptions`,
-        description: `Potentially $${(total * 12).toFixed(0)}/yr in savings.`,
-        action: "Review",
-        view: AppView.MONEY,
-        urgent: false
-      };
-    }
-    
-    // Targets needing more cash
-    const underfunded = goals.filter(g => {
-      if (g.goalType === 'rocket' && g.deadline) {
-        const days = Math.max(1, (new Date(g.deadline).getTime() - Date.now()) / (1000 * 3600 * 24));
-        const weekly = (g.targetAmount - g.currentAmount) / (days / 7);
-        return weekly > (surplus / 4);
-      }
-      return false;
-    });
-    
-    if (underfunded.length > 0) {
-      return {
-        icon: "🎯",
-        title: `Target Lag: ${underfunded[0].name}`,
-        description: "Velocity below threshold for deadline.",
-        action: "Boost",
-        view: AppView.GOALS,
-        urgent: false
-      };
-    }
-    
-    // Ready to unlock
+    if (killable.length > 0) return { icon: "✂️", title: "Unused module", description: `${killable.length} redundant subs`, action: "Axe", view: AppView.MONEY, urgent: false };
     const ready = goals.filter(g => g.currentAmount >= g.targetAmount);
-    if (ready.length > 0) {
-      return {
-        icon: "🎉",
-        title: `${ready[0].name} Complete`,
-        description: "Funds allocated. Ready for deployment.",
-        action: "Deploy",
-        view: AppView.GOALS,
-        urgent: false
-      };
-    }
-    
-    // All good
-    return {
-      icon: "✨",
-      title: "System Nominal",
-      description: `All financial vectors on track.`,
-      action: "Status",
-      view: AppView.GOALS,
-      urgent: false
-    };
+    if (ready.length > 0) return { icon: "🏁", title: "Target locked", description: `${ready[0].name} achieved`, action: "Launch", view: AppView.GOALS, urgent: false };
+    return { icon: "⚙️", title: "System nominal", description: `All vectors stable`, action: "Status", view: AppView.GOALS, urgent: false };
   };
   
   const action = getNextAction();
@@ -322,20 +297,20 @@ const NextActionCard = ({
   return (
     <button 
       onClick={() => onAction(action.view)}
-      className={`w-full text-left bg-industrial-base border-t border-l border-white/10 rounded-xl p-4 shadow-tactile-raised group transition-all duration-75 active:shadow-tactile-pressed active:translate-y-[1px]`}
+      className="w-full text-left bg-industrial-base border-t border-l border-white/20 rounded-2xl p-4 shadow-tactile-raised active:shadow-tactile-pressed active:translate-y-[1px] transition-all"
     >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 flex items-center justify-center bg-industrial-well-bg rounded-lg shadow-well">
-          <span className={`text-2xl ${action.urgent ? 'animate-pulse' : ''}`}>{action.icon}</span>
+        <div className="w-12 h-12 flex items-center justify-center bg-industrial-well-bg rounded-xl shadow-well border-t border-l border-black/5">
+          <span className="text-2xl">{action.icon}</span>
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <LEDIndicator active={action.urgent} color="red" />
-            <h3 className="text-industrial-text font-black text-sm uppercase tracking-tighter truncate">{action.title}</h3>
+          <div className="flex items-center gap-2 mb-0.5">
+            <LEDIndicator active={action.urgent} color="orange" />
+            <h3 className="text-industrial-text font-black text-xs uppercase tracking-tight truncate">{action.title}</h3>
           </div>
-          <p className="text-industrial-subtext text-[11px] font-medium truncate">{action.description}</p>
+          <p className="text-industrial-subtext text-[10px] font-medium truncate opacity-60">{action.description}</p>
         </div>
-        <div className={`px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-tighter whitespace-nowrap shadow-tactile-sm ${action.urgent ? 'bg-industrial-orange text-white' : 'bg-industrial-blue text-white'}`}>
+        <div className={`px-3 py-1.5 rounded-lg font-black text-[9px] uppercase tracking-widest shadow-sm transition-colors ${action.urgent ? 'bg-industrial-orange text-white' : 'bg-industrial-well-bg text-industrial-subtext'}`}>
           {action.action}
         </div>
       </div>
@@ -394,12 +369,12 @@ const HomeView = ({
   
   // Get next action for overlay
   const getNextAction = () => {
-    if (surplus < 0) return { icon: "🚨", text: "Spending exceeds income", urgent: true };
+    if (surplus < 0) return { icon: "🚨", text: "Spending too much", urgent: true };
     const killable = subscriptions.filter(s => s.isOptimizable);
-    if (killable.length > 0) return { icon: "✂️", text: `Kill ${killable.length} subs`, urgent: false };
+    if (killable.length > 0) return { icon: "✂️", text: `Cancel ${killable.length} subs`, urgent: false };
     const ready = goals.filter(g => g.currentAmount >= g.targetAmount);
     if (ready.length > 0) return { icon: "🎉", text: `${ready[0].name} ready!`, urgent: false };
-    return { icon: "✨", text: "On track", urgent: false };
+    return { icon: "✨", text: "Looking good", urgent: false };
   };
   const action = getNextAction();
   
@@ -409,122 +384,124 @@ const HomeView = ({
     
     // Priority-based insights
     if (surplus < -500) {
-      return { icon: '⚡', text: `Spending exceeds income by $${Math.abs(surplus).toLocaleString()}. Let's find quick wins!` };
+      return { icon: '⚡', text: `Spending exceeds income by $${Math.abs(surplus).toLocaleString()}. Let's find some savings!` };
     }
     if (totalSubs > 5) {
-      return { icon: '📺', text: `${totalSubs} subscriptions active. Review to find hidden savings.` };
+      return { icon: '📺', text: `${totalSubs} subscriptions active. Review to save some cash.` };
     }
     if (activeGoals === 0) {
-      return { icon: '🎯', text: 'No active targets. Add a goal to start building momentum!' };
+      return { icon: '🎯', text: 'No active goals. Add a goal to start saving!' };
     }
     if (surplus > 1000) {
-      return { icon: '🚀', text: `$${surplus.toLocaleString()} monthly surplus! Accelerate your targets.` };
+      return { icon: '🚀', text: `$${surplus.toLocaleString()} extra this month! Put it towards your goals.` };
     }
     if (netWorth > 50000) {
-      return { icon: '✨', text: 'Strong position. Consider diversifying into investments.' };
+      return { icon: '✨', text: 'Great work! You have a strong net worth.' };
     }
     if (health.checkInStreak && health.checkInStreak >= 3) {
-      return { icon: '🔥', text: `${health.checkInStreak} day streak! Consistency builds wealth.` };
+      return { icon: '🔥', text: `${health.checkInStreak} day streak! Keep it up.` };
     }
     if (surplus > 0 && surplus < 500) {
-      return { icon: '💡', text: 'Tip: Review subscriptions to boost your monthly surplus.' };
+      return { icon: '💡', text: 'Tip: Cancel a subscription to boost your monthly savings.' };
     }
-    return { icon: '💡', text: 'Track spending this week to unlock AI insights.' };
+    return { icon: '💡', text: 'Track your spending this week for AI tips.' };
   };
   
-  // Theme-aware UI colors
+  // Health status text
+  const getHealthStatus = () => {
+    if (health.score >= 80) return { text: 'Excellent', color: 'text-emerald-400' };
+    if (health.score >= 60) return { text: 'Good', color: 'text-green-400' };
+    if (health.score >= 40) return { text: 'Fair', color: 'text-amber-400' };
+    return { text: 'Needs Work', color: 'text-orange-400' };
+  };
+  const healthStatus = getHealthStatus();
+  
   return (
-    <div className="animate-in fade-in duration-500 -mx-4 -mt-6 flex flex-col" style={{ height: 'calc(100vh - 100px)' }}>
-      {/* City Container - Takes available space */}
-      <div className="relative flex-1 min-h-0 bg-industrial-well-bg">
-        {/* The City */}
-        <div className="absolute inset-0">
-          <IsometricCity 
-            accounts={accounts}
-            health={health}
-            goals={goals}
-            theme={theme}
-            subscriptions={subscriptions}
-            hasWeeds={subscriptions.some(s => s.isOptimizable)}
-            isFuture={false}
-            onNavigate={onNavigate}
-            minimal={true}
-            weeklyBuilds={impulseItems.map(i => ({
-              id: i.id,
-              name: i.name,
-              target: i.price,
-              saved: i.savedAmount
-            }))}
-          />
+    <div className="animate-in fade-in duration-500 -mx-4 -mt-6 relative" style={{ height: 'calc(100vh - 80px)' }}>
+      {/* Full-Screen City Map */}
+      <div className="absolute inset-0">
+        <IsometricCity 
+          accounts={accounts}
+          health={health}
+          goals={goals}
+          theme={theme}
+          subscriptions={subscriptions}
+          hasWeeds={subscriptions.some(s => s.isOptimizable)}
+          isFuture={false}
+          onNavigate={onNavigate}
+          minimal={true}
+          weeklyBuilds={impulseItems.map(i => ({
+            id: i.id,
+            name: i.name,
+            target: i.price,
+            saved: i.savedAmount
+          }))}
+        />
+      </div>
+      
+      {/* TOP OVERLAY: Key Info */}
+      <div className="absolute top-4 left-4 right-4 z-30 flex justify-between items-start pointer-events-none">
+        {/* Left: Net Worth + Health */}
+        <div className="pointer-events-auto bg-industrial-base/95 backdrop-blur-md rounded-2xl px-4 py-2 shadow-tactile-raised border border-white/40">
+          <p className={`text-lg font-black tracking-tight ${netWorth >= 0 ? 'text-industrial-green' : 'text-industrial-orange'}`}>
+            ${Math.abs(netWorth).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </p>
+          <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext/70">Net Worth</p>
         </div>
         
-        {/* TOP OVERLAY: Header + Insight */}
-        <div className="absolute top-0 left-0 right-0 z-30 p-3 pointer-events-none">
-          <div className="flex flex-col gap-2">
-            {/* Header Row */}
-            <div className="flex justify-between items-center pointer-events-auto">
-              <div className="bg-industrial-base/95 backdrop-blur-md rounded-2xl p-2.5 flex items-center gap-3 shadow-tactile-raised border-t border-l border-industrial-highlight/50">
-                <div className="relative w-10 h-10 flex items-center justify-center bg-industrial-well-bg rounded-lg shadow-well">
-                  <span className="text-lg font-black text-industrial-text tracking-tighter">{health.score}</span>
-                  <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-industrial-base ${health.score >= 70 ? 'bg-emerald-500' : health.score >= 40 ? 'bg-amber-500' : 'bg-orange-500'}`} />
-                </div>
-                <div>
-                  <h1 className="text-xs font-black text-industrial-text uppercase tracking-tighter">BillBot OS</h1>
-                  <p className="text-[9px] font-bold text-industrial-subtext uppercase">V2.5 // INDUSTRIAL</p>
-                </div>
-              </div>
-              
-              <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-            </div>
-            
-            {/* Insight Card */}
-            <div className="flex justify-center pointer-events-auto">
-              <div className="bg-neutral-700 rounded-xl px-4 py-2 flex items-center gap-3 shadow-lg border border-white/10">
-                <span className="text-base">{getInsight().icon}</span>
-                <p className="text-[9px] font-bold text-white/90 uppercase tracking-wider leading-tight max-w-[200px]">{getInsight().text}</p>
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-              </div>
-            </div>
+        {/* Right: Health Score + Theme */}
+        <div className="pointer-events-auto flex items-center gap-2">
+          <div className="bg-industrial-base/95 backdrop-blur-md rounded-2xl px-4 py-2 shadow-tactile-raised border border-white/40 text-right">
+            <p className={`text-lg font-black tracking-tight ${health.score >= 70 ? 'text-industrial-green' : health.score >= 40 ? 'text-industrial-yellow' : 'text-industrial-orange'}`}>{health.score}</p>
+            <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext/70">Stability</p>
           </div>
+          <button 
+            onClick={onToggleTheme}
+            className="w-11 h-11 rounded-2xl bg-industrial-base/95 backdrop-blur-md border border-white/40 shadow-tactile-raised flex items-center justify-center text-lg active:translate-y-[1px] transition-all"
+            title={`Theme: ${theme}`}
+          >
+            {theme === 'light' ? '☀️' : theme === 'mid' ? '🌤️' : '🌙'}
+          </button>
         </div>
       </div>
       
-      {/* BOTTOM SECTION: Stats + Actions - Fixed at bottom, above nav */}
-      <div className="bg-industrial-base px-4 py-3 space-y-2">
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: 'Asset Value', value: `$${Math.abs(netWorth).toLocaleString()}`, color: netWorth >= 0 ? 'text-emerald-600' : 'text-orange-500' },
-            { label: 'Active Mods', value: activeGoals, color: 'text-blue-600' },
-            { label: 'Power Level', value: health.willpowerPoints || 0, color: 'text-amber-600' }
-          ].map((stat, i) => (
-            <div key={i} className="bg-industrial-well-bg rounded-xl p-2 text-center shadow-well">
-              <p className={`text-sm font-black tracking-tighter ${stat.color}`}>{stat.value}</p>
-              <p className="text-[8px] font-bold text-industrial-subtext uppercase mt-0.5">{stat.label}</p>
+      {/* BOTTOM OVERLAY: Quick Stats + Actions */}
+      <div className="absolute bottom-4 left-4 right-4 z-30 pointer-events-none">
+        <div className="pointer-events-auto space-y-2">
+          {/* Quick Stats Row */}
+          <div className="flex gap-2 justify-center">
+            <div className="bg-industrial-base/95 backdrop-blur-md rounded-xl px-4 py-2 shadow-tactile-sm border border-white/30 flex items-center gap-2">
+              <span className="text-industrial-blue text-sm">🎯</span>
+              <span className="text-industrial-text font-black text-[10px] uppercase tracking-widest">{activeGoals} Goals</span>
             </div>
-          ))}
-        </div>
-        
-        {/* Action Buttons Row */}
-        <div className="flex gap-2">
-          <TactileButton 
-            onClick={() => onNavigate(surplus < 0 ? AppView.MONEY : AppView.GOALS)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5"
-            color={action.urgent ? "orange" : "white"}
-          >
-            <span className="text-base">{action.icon}</span>
-            <span className="text-sm">{action.text}</span>
-          </TactileButton>
+            <div className="bg-industrial-base/95 backdrop-blur-md rounded-xl px-4 py-2 shadow-tactile-sm border border-white/30 flex items-center gap-2">
+              <span className="text-industrial-yellow text-sm">🔥</span>
+              <span className="text-industrial-text font-black text-[10px] uppercase tracking-widest">{health.checkInStreak || 0} Streak</span>
+            </div>
+          </div>
           
-          <TactileButton 
-            onClick={onShowCheckIn}
-            color="blue"
-            className="flex items-center gap-2 px-6 py-2.5"
-          >
-            <span className="text-base">⚡</span>
-            <span className="text-sm">Sync</span>
-            <div className="bg-white/20 px-1.5 py-0.5 rounded text-[9px] font-black">{health.checkInStreak || 0}🔥</div>
-          </TactileButton>
+          {/* Action Buttons Row */}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => onNavigate(surplus < 0 ? AppView.MONEY : AppView.GOALS)}
+              className={`flex-1 flex items-center justify-center gap-3 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-tactile-raised border transition-all active:translate-y-[1px] ${
+                action.urgent 
+                  ? 'bg-[#EF4444] text-white border-white/20' 
+                  : 'bg-industrial-base/95 text-industrial-text border-white/40'
+              }`}
+            >
+              <span>{action.icon}</span>
+              <span>{action.text}</span>
+            </button>
+            
+            <button 
+              onClick={onShowCheckIn}
+              className="flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-industrial-blue text-white font-black text-xs uppercase tracking-widest border border-white/20 shadow-tactile-raised active:translate-y-[1px] transition-all"
+            >
+              <span>⚡</span>
+              <span>Update</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -562,11 +539,11 @@ const AccountModal = ({
   };
   
   return (
-    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <ChassisWell className="max-w-md w-full" label={account ? 'Edit Asset Module' : 'Initialize New Asset'}>
+    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <ChassisWell className="w-full sm:max-w-md sm:w-full rounded-t-3xl sm:rounded-2xl" label={account ? 'Edit account' : 'Add account'}>
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <label className="tactile-label px-1">Unit Classification</label>
+            <label className="tactile-label px-1">Account type</label>
             <select 
               value={type} 
               onChange={(e) => setType(e.target.value as AccountType)}
@@ -583,14 +560,14 @@ const AccountModal = ({
           </div>
 
           <RecessedInput 
-            label="Module Identifier"
+            label="Name"
             placeholder="e.g. NAB High Interest" 
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <RecessedInput 
-            label="Current Value ($)"
+            label="Balance ($)"
             type="number" 
             placeholder="0.00" 
             value={balance}
@@ -599,7 +576,7 @@ const AccountModal = ({
 
           {isDebt && type !== 'HECS' && (
             <RecessedInput 
-              label="Operational Rate (% APR)"
+              label="Interest rate (% APR)"
               type="number" 
               placeholder="e.g. 18.5" 
               value={interestRate}
@@ -609,15 +586,15 @@ const AccountModal = ({
 
           <div className="flex gap-4 pt-4">
             <button onClick={onClose} className="flex-1 tactile-label text-industrial-subtext/40 hover:text-industrial-text transition-colors">
-              Abort
+              Cancel
             </button>
             <TactileButton 
               onClick={handleSave} 
               disabled={!name || !balance}
-              color="orange"
+              color={isDebt ? "red" : "blue"}
               className="flex-1"
             >
-              {account ? 'Sync' : 'Confirm'}
+              Save
             </TactileButton>
           </div>
         </div>
@@ -658,18 +635,18 @@ const SubscriptionModal = ({
   };
   
   return (
-    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <ChassisWell className="max-w-md w-full" label="Register Service Agreement">
+    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <ChassisWell className="w-full sm:max-w-md sm:w-full rounded-t-3xl sm:rounded-2xl" label="Add subscription">
         <div className="space-y-6">
           <RecessedInput 
-            label="Service Provider"
+            label="Service"
             placeholder="e.g. Netflix" 
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <RecessedInput 
-            label="Recurring Cost ($)"
+            label="Cost ($)"
             type="number" 
             placeholder="0.00" 
             value={amount}
@@ -677,7 +654,7 @@ const SubscriptionModal = ({
           />
 
           <div className="space-y-1.5">
-            <label className="tactile-label px-1">Billing Interval</label>
+            <label className="tactile-label px-1">Billing cycle</label>
             <select 
               value={cycle} 
               onChange={(e) => setCycle(e.target.value as 'MONTHLY' | 'YEARLY' | 'WEEKLY')}
@@ -690,7 +667,7 @@ const SubscriptionModal = ({
           </div>
 
           <div className="space-y-1.5">
-            <label className="tactile-label px-1">Classification</label>
+            <label className="tactile-label px-1">Category</label>
             <select 
               value={category} 
               onChange={(e) => setCategory(e.target.value)}
@@ -707,7 +684,7 @@ const SubscriptionModal = ({
 
           <div className="flex gap-4 pt-4">
             <button onClick={onClose} className="flex-1 tactile-label text-industrial-subtext/40 hover:text-industrial-text transition-colors">
-              Abort
+              Cancel
             </button>
             <TactileButton 
               onClick={handleSave} 
@@ -715,7 +692,7 @@ const SubscriptionModal = ({
               color="blue"
               className="flex-1"
             >
-              Confirm
+              Save
             </TactileButton>
           </div>
         </div>
@@ -767,11 +744,11 @@ const BillModal = ({
   };
   
   return (
-    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <ChassisWell className="max-w-md w-full max-h-[90vh] overflow-y-auto" label={bill ? 'Update Obligation' : 'Register New Bill'}>
+    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <ChassisWell className="w-full sm:max-w-md sm:w-full max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl" label={bill ? 'Edit bill' : 'Add bill'}>
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <label className="tactile-label px-1">Classification</label>
+            <label className="tactile-label px-1">Category</label>
             <select 
               value={category} 
               onChange={(e) => setCategory(e.target.value as BillCategory)}
@@ -784,14 +761,14 @@ const BillModal = ({
           </div>
 
           <RecessedInput 
-            label="Creditor / Provider"
+            label="Biller"
             placeholder="e.g. AGL Electricity" 
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <RecessedInput 
-            label="Invoiced Amount ($)"
+            label="Amount ($)"
             type="number" 
             placeholder="0.00" 
             value={amount}
@@ -799,7 +776,7 @@ const BillModal = ({
           />
 
           <div className="space-y-1.5">
-            <label className="tactile-label px-1">Invoicing Cycle</label>
+            <label className="tactile-label px-1">Cycle</label>
             <select 
               value={cycle} 
               onChange={(e) => setCycle(e.target.value as Bill['cycle'])}
@@ -814,14 +791,14 @@ const BillModal = ({
           </div>
 
           <RecessedInput 
-            label="Execution Date"
+            label="Next due date"
             type="date" 
             value={nextDueDate}
             onChange={(e) => setNextDueDate(e.target.value)}
           />
 
           <RecessedInput 
-            label="Parameters / Notes"
+            label="Notes (optional)"
             placeholder="e.g. Account #12345" 
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -831,20 +808,20 @@ const BillModal = ({
             <div className={`w-5 h-5 rounded border border-black/20 flex items-center justify-center transition-all ${isAutoPay ? 'bg-emerald-500 border-emerald-600 shadow-[0_0_8px_rgba(16,185,129,0.4)]' : 'bg-industrial-base shadow-inner'}`}>
               {isAutoPay && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" /></svg>}
             </div>
-            <span className="text-xs font-black text-industrial-text uppercase tracking-tighter">Automated Execution Active</span>
+            <span className="text-xs font-black text-industrial-text tracking-tight">Auto-pay enabled</span>
           </div>
 
           <div className="flex gap-4 pt-4">
             <button onClick={onClose} className="flex-1 tactile-label text-industrial-subtext/40 hover:text-industrial-text transition-colors">
-              Abort
+              Cancel
             </button>
             <TactileButton 
               onClick={handleSave} 
               disabled={!name || !amount}
-              color="orange"
+              color="blue"
               className="flex-1"
             >
-              Confirm
+              Save
             </TactileButton>
           </div>
         </div>
@@ -881,18 +858,18 @@ const ImportModal = ({
   };
   
   return (
-    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <ChassisWell className="max-w-md w-full" label="Manual Transaction Entry">
+    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <ChassisWell className="w-full sm:max-w-md sm:w-full rounded-t-3xl sm:rounded-2xl" label="Add transaction">
         <div className="space-y-6">
           <RecessedInput 
-            label="Merchant Identifier"
+            label="Merchant"
             placeholder="e.g. Woolworths" 
             value={merchant}
             onChange={(e) => setMerchant(e.target.value)}
           />
 
           <RecessedInput 
-            label="Transaction Value ($)"
+            label="Amount ($)"
             type="number" 
             placeholder="0.00" 
             value={amount}
@@ -900,14 +877,14 @@ const ImportModal = ({
           />
 
           <RecessedInput 
-            label="Execution Date"
+            label="Date"
             type="date" 
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
 
           <div className="space-y-1.5">
-            <label className="tactile-label px-1">Classification</label>
+            <label className="tactile-label px-1">Category</label>
             <select 
               value={category} 
               onChange={(e) => setCategory(e.target.value)}
@@ -926,7 +903,7 @@ const ImportModal = ({
 
           <div className="flex gap-4 pt-4">
             <button onClick={onClose} className="flex-1 tactile-label text-industrial-subtext/40 hover:text-industrial-text transition-colors">
-              Abort
+              Cancel
             </button>
             <TactileButton 
               onClick={handleSave} 
@@ -934,7 +911,7 @@ const ImportModal = ({
               color="blue"
               className="flex-1"
             >
-              Confirm
+              Save
             </TactileButton>
           </div>
         </div>
@@ -1018,26 +995,38 @@ const MoneyView = ({
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-500">
       <div className="px-2">
-        <h1 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">Cashflow Control</h1>
+        <h1 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">My Money</h1>
         <div className="flex items-center gap-2 mt-1">
           <LEDIndicator active={true} color="blue" />
-          <p className="tactile-label text-industrial-subtext/60">Registry // Liquidity Status</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60">Income & Spending Status</p>
         </div>
       </div>
       
-      {/* Tab Navigation */}
-      <div className="flex gap-2 bg-industrial-well-bg p-2 rounded-2xl shadow-well overflow-x-auto">
+      {/* Tab Navigation - TE Inspired Segmented Look */}
+      <div className="flex gap-1.5 bg-industrial-well-bg p-1.5 rounded-2xl shadow-well overflow-x-auto no-scrollbar">
         {(['overview', 'accounts', 'bills', 'subscriptions', 'transactions'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 min-w-[60px] py-3 px-2 rounded-xl transition-all duration-75 relative ${activeTab === tab ? 'bg-industrial-base shadow-tactile-sm text-industrial-text' : 'text-industrial-subtext hover:text-industrial-text'}`}
+            className={`
+              flex-1 min-w-[75px] py-3 px-1.5 rounded-xl transition-all duration-300 relative
+              ${activeTab === tab 
+                ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' 
+                : 'text-industrial-subtext/50 hover:text-industrial-text'
+              }
+            `}
           >
             <div className="flex flex-col items-center gap-1">
-              <span className="text-lg">{tab === 'overview' ? '📊' : tab === 'accounts' ? '🏦' : tab === 'bills' ? '🧾' : tab === 'subscriptions' ? '📺' : '💳'}</span>
-              <span className="text-[9px] font-black uppercase tracking-tighter">{tab}</span>
+              <span className={`text-lg transition-transform ${activeTab === tab ? 'scale-110' : ''}`}>
+                {tab === 'overview' ? '📊' : tab === 'accounts' ? '🏦' : tab === 'bills' ? '🧾' : tab === 'subscriptions' ? '📺' : '💳'}
+              </span>
+              <span className="text-[9px] font-black uppercase tracking-widest">{tab === 'overview' ? 'Stats' : tab}</span>
             </div>
-            {activeTab === tab && <div className="absolute top-1 right-1"><LEDIndicator active color="blue" /></div>}
+            {activeTab === tab && (
+              <div className="absolute top-1.5 right-1.5">
+                <div className="w-1 h-1 rounded-full bg-industrial-blue" />
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -1045,38 +1034,38 @@ const MoneyView = ({
       {activeTab === 'overview' && (
         <div className="space-y-6">
           {/* Income */}
-          <ChassisWell label="Revenue Inputs">
-            <div className="flex justify-between items-center mb-6">
+          <ChassisWell label="MONTHLY INCOME">
+            <div className="flex justify-between items-center mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-industrial-well-bg rounded-lg shadow-well flex items-center justify-center">💰</div>
-                <h3 className="text-sm font-black text-industrial-text uppercase tracking-tighter">Monthly Intake</h3>
+                <div className="w-10 h-10 bg-industrial-well-bg rounded-xl shadow-well flex items-center justify-center text-lg">💰</div>
+                <h3 className="text-xs font-black text-industrial-text uppercase tracking-widest">Money In</h3>
               </div>
               <TactileButton 
                 onClick={() => setShowAddIncome(!showAddIncome)}
                 size="sm"
               >
-                Config
+                Edit
               </TactileButton>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
-                <span className="tactile-label">Primary Salary</span>
-                <span className="text-lg font-black text-emerald-500 tracking-tighter">${health.monthlyIncome.toLocaleString()}</span>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-3.5 bg-industrial-base px-5 rounded-xl shadow-tactile-sm border-t border-l border-white/10">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Salary</span>
+                <span className="text-base font-black text-industrial-green tracking-tight">${health.monthlyIncome.toLocaleString()}</span>
               </div>
               {health.gigIncome && health.gigIncome > 0 && (
-                <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
-                  <span className="tactile-label">Gig / Side Income</span>
-                  <span className="text-lg font-black text-emerald-500 tracking-tighter">${health.gigIncome.toLocaleString()}</span>
+                <div className="flex justify-between items-center py-3.5 bg-industrial-base px-5 rounded-xl shadow-tactile-sm border-t border-l border-white/10">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Gig / Side</span>
+                  <span className="text-base font-black text-industrial-green tracking-tight">${health.gigIncome.toLocaleString()}</span>
                 </div>
               )}
               {health.taxVault > 0 && (
-                <div className="flex justify-between items-center py-4 bg-industrial-dark-base px-5 rounded-2xl border border-white/5 shadow-lg">
+                <div className="flex justify-between items-center py-3.5 bg-industrial-well-bg px-5 rounded-xl shadow-inner opacity-80">
                   <div className="flex items-center gap-2">
-                    <LEDIndicator active color="orange" />
-                    <span className="tactile-label text-white/40">Quarantined Tax</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-industrial-orange" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-text/40">Tax Saved</span>
                   </div>
-                  <span className="text-lg font-black text-industrial-yellow tracking-tighter">-${health.taxVault.toLocaleString()}</span>
+                  <span className="text-base font-black text-industrial-orange tracking-tight">-${health.taxVault.toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -1084,13 +1073,13 @@ const MoneyView = ({
             {showAddIncome && (
               <div className="mt-8 pt-6 border-t border-industrial-well-shadow-light/50 space-y-6">
                 <RecessedInput 
-                  label="Monthly Net Intake" 
+                  label="Monthly Income" 
                   type="number"
                   value={health.monthlyIncome}
                   onChange={(e) => onUpdateHealth({...health, monthlyIncome: parseFloat(e.target.value) || 0})}
                 />
                 <RecessedInput 
-                  label="Baseline Operational Expenses" 
+                  label="Baseline Monthly Spending" 
                   type="number"
                   value={health.monthlyExpenses}
                   onChange={(e) => onUpdateHealth({...health, monthlyExpenses: parseFloat(e.target.value) || 0})}
@@ -1100,45 +1089,45 @@ const MoneyView = ({
           </ChassisWell>
           
           {/* Expenses Summary */}
-          <ChassisWell label="Resource Outflow">
+          <ChassisWell label="MONTHLY SPENDING">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-industrial-well-bg rounded-lg shadow-well flex items-center justify-center">💸</div>
-              <h3 className="text-sm font-black text-industrial-text uppercase tracking-tighter">Allocation Summary</h3>
+              <h3 className="text-sm font-black text-industrial-text uppercase tracking-tighter">Summary</h3>
             </div>
             
             <div className="space-y-4">
-              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
-                <span className="tactile-label">Fixed Obligations</span>
+              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px]">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Regular Bills</span>
                 <span className="text-lg font-black text-industrial-text tracking-tighter">-${monthlyBillsTotal.toFixed(0)}</span>
               </div>
-              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
-                <span className="tactile-label">Service Subscriptions</span>
+              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px]">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Subscriptions</span>
                 <span className="text-lg font-black text-industrial-text tracking-tighter">-${monthlySubTotal.toFixed(0)}</span>
               </div>
-              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
-                <span className="tactile-label">Other Discretionary</span>
+              <div className="flex justify-between items-center py-4 bg-industrial-base px-5 rounded-2xl shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px]">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Other Spending</span>
                 <span className="text-lg font-black text-industrial-text tracking-tighter">-${health.monthlyExpenses.toLocaleString()}</span>
               </div>
             </div>
             
-            <div className="mt-8 pt-6 border-t border-industrial-well-shadow-light/50 flex justify-between items-center">
-              <span className="tactile-label text-industrial-subtext/60">Total Monthly Burn</span>
-              <span className="text-2xl font-black text-industrial-orange tracking-tighter">-${(health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal).toFixed(0)}</span>
+            <div className="mt-8 pt-6 border-t border-industrial-shadow/30 flex justify-between items-center">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60">Total Monthly Out</span>
+              <span className="text-2xl font-black text-industrial-orange tracking-tighter">-${(health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
             </div>
           </ChassisWell>
           
           {/* Surplus */}
-          <div className={`p-6 rounded-[2rem] shadow-tactile-raised border-t border-l border-white/10 ${health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal) > 0 ? 'bg-emerald-500/5' : 'bg-industrial-orange/5'}`}>
+          <div className={`p-6 rounded-[2rem] shadow-tactile-sm border-t border-l border-white/10 ${health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal) > 0 ? 'bg-industrial-green/5' : 'bg-industrial-orange/5'}`}>
             <div className="flex justify-between items-center">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <LEDIndicator active={true} color={health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal) > 0 ? 'green' : 'red'} />
-                  <span className="tactile-label text-industrial-subtext">Operational Surplus</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Money Left Over</span>
                 </div>
-                <p className="text-industrial-subtext/40 text-[10px] font-bold uppercase tracking-tight">Net flow after all allocations</p>
+                <p className="text-industrial-subtext/40 text-[9px] font-bold uppercase tracking-tight">After all bills & spending</p>
               </div>
-              <span className={`font-black text-3xl tracking-tighter ${health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal) > 0 ? 'text-emerald-500' : 'text-industrial-orange'}`}>
-                ${(health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal)).toLocaleString()}
+              <span className={`font-black text-3xl tracking-tighter ${health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal) > 0 ? 'text-industrial-green' : 'text-industrial-orange'}`}>
+                ${(health.monthlyIncome - (health.monthlyExpenses + monthlySubTotal + monthlyBillsTotal)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
               </span>
             </div>
           </div>
@@ -1148,28 +1137,38 @@ const MoneyView = ({
       {activeTab === 'accounts' && (
         <div className="space-y-6">
           {/* Assets */}
-          <ChassisWell label="Liquidity Assets">
+          <ChassisWell label="BANK ACCOUNTS">
             <div className="space-y-3">
               {assets.map(acc => (
-                <div key={acc.id} className="flex justify-between items-center py-4 px-5 bg-industrial-base rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
+                <div key={acc.id} className="flex justify-between items-center py-4 px-5 bg-industrial-base rounded-2xl shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px]">
                   <div>
                     <p className="text-industrial-text font-black uppercase text-xs tracking-tighter">{acc.name}</p>
-                    <p className="tactile-label mt-0.5">{acc.type}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext mt-0.5">{acc.type}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-emerald-500 font-black tracking-tighter text-lg">${acc.balance.toLocaleString()}</span>
+                    <span className="text-industrial-green font-black tracking-tighter text-lg">${acc.balance.toLocaleString()}</span>
                     <div className="flex gap-2">
                       <button 
                         onClick={() => { setEditingAccount(acc); setShowAccountModal(true); }}
-                        className="text-industrial-subtext hover:text-industrial-text transition-colors p-1"
+                        aria-label="Edit account"
+                        className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-industrial-text hover:bg-industrial-well-bg transition-colors"
                       >
-                        [E]
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                        </svg>
                       </button>
                       <button 
                         onClick={() => onUpdateAccounts(accounts.filter(a => a.id !== acc.id))}
-                        className="text-industrial-subtext hover:text-industrial-orange transition-colors p-1"
+                        aria-label="Delete account"
+                        className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
                       >
-                        [X]
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M7 6l1 14h8l1-14" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -1182,20 +1181,20 @@ const MoneyView = ({
                 size="sm"
                 className="mt-4"
               >
-                + Initialize Asset
+                + Add Account
               </TactileButton>
             </div>
           </ChassisWell>
           
           {/* Liabilities */}
-          <ChassisWell label="Debt Obligations">
+          <ChassisWell label="DEBT & LOANS">
             <div className="space-y-3">
               {liabilities.map(acc => (
-                <div key={acc.id} className="flex justify-between items-center py-4 px-5 bg-industrial-base rounded-2xl shadow-tactile-sm border-t border-l border-white/10">
+                <div key={acc.id} className="flex justify-between items-center py-4 px-5 bg-industrial-base rounded-2xl shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px]">
                   <div>
                     <p className="text-industrial-text font-black uppercase text-xs tracking-tighter">{acc.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="tactile-label">{acc.type}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext">{acc.type}</p>
                       {acc.interestRate && <span className="text-[8px] bg-industrial-orange/10 text-industrial-orange px-1 rounded font-black">{acc.interestRate}% APR</span>}
                     </div>
                   </div>
@@ -1204,15 +1203,25 @@ const MoneyView = ({
                     <div className="flex gap-2">
                       <button 
                         onClick={() => { setEditingAccount(acc); setShowAccountModal(true); }}
-                        className="text-industrial-subtext hover:text-industrial-text transition-colors p-1"
+                        aria-label="Edit debt"
+                        className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-industrial-text hover:bg-industrial-well-bg transition-colors"
                       >
-                        [E]
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                        </svg>
                       </button>
                       <button 
                         onClick={() => onUpdateAccounts(accounts.filter(a => a.id !== acc.id))}
-                        className="text-industrial-subtext hover:text-industrial-orange transition-colors p-1"
+                        aria-label="Delete debt"
+                        className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
                       >
-                        [X]
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M7 6l1 14h8l1-14" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -1221,11 +1230,11 @@ const MoneyView = ({
               <TactileButton 
                 onClick={() => { setEditingAccount(null); setShowAccountModal(true); setNewAccountType('CREDIT_CARD'); }}
                 fullWidth
-                color="orange"
+                color="red"
                 size="sm"
                 className="mt-4"
               >
-                + Initialize Debt
+                + Add Debt
               </TactileButton>
             </div>
           </ChassisWell>
@@ -1252,18 +1261,18 @@ const MoneyView = ({
       
       {activeTab === 'bills' && (
         <div className="space-y-6">
-          <ChassisWell label="Operational Obligations">
+          <ChassisWell label="MONTHLY BILLS">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <p className="tactile-label">Monthly Burn</p>
-                <p className="text-2xl font-black text-industrial-orange tracking-tighter">-${monthlyBillsTotal.toFixed(0)}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Monthly Bill Total</p>
+                <p className="text-2xl font-black text-industrial-orange tracking-tighter">-${monthlyBillsTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
               </div>
               <TactileButton 
                 onClick={() => { setEditingBill(null); setShowBillModal(true); }}
-                color="orange"
+                color="blue"
                 size="sm"
               >
-                + Initialize Bill
+                + Add Bill
               </TactileButton>
             </div>
             
@@ -1276,7 +1285,7 @@ const MoneyView = ({
                 }, {} as Record<BillCategory, Bill[]>)
               ).map(([category, categoryBills]) => (
                 <div key={category} className="space-y-3">
-                  <h4 className="tactile-label px-2 opacity-50 flex items-center gap-2">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.15em] px-2 text-industrial-subtext/60 flex items-center gap-2">
                     {categoryIcons[category as BillCategory]} {category.replace('_', ' ')}
                   </h4>
                   {categoryBills.map(bill => {
@@ -1289,23 +1298,43 @@ const MoneyView = ({
                     return (
                       <div 
                         key={bill.id} 
-                        className={`bg-industrial-base rounded-2xl p-4 shadow-tactile-sm border-t border-l border-white/10 ${isOverdue ? 'ring-1 ring-industrial-orange/30' : isDueSoon ? 'ring-1 ring-industrial-yellow/30' : ''}`}
+                        className={`bg-industrial-base rounded-2xl p-4 shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px] ${isOverdue ? 'ring-1 ring-industrial-orange/30' : isDueSoon ? 'ring-1 ring-industrial-yellow/30' : ''}`}
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-industrial-text font-black uppercase text-xs tracking-tighter">{bill.name}</p>
-                              {bill.isAutoPay && <span className="text-[8px] bg-emerald-500/10 text-emerald-500 px-1 rounded font-black">AUTO</span>}
+                              {bill.isAutoPay && <span className="text-[8px] bg-industrial-green/10 text-industrial-green px-1 rounded font-black">AUTO</span>}
                               {isOverdue && <span className="text-[8px] bg-industrial-orange/10 text-industrial-orange px-1 rounded font-black">OVERDUE</span>}
                               {isDueSoon && !isOverdue && <span className="text-[8px] bg-industrial-yellow/10 text-industrial-yellow px-1 rounded font-black">SOON</span>}
                             </div>
-                            <p className="tactile-label mt-1 opacity-60">Due {bill.nextDueDate} // {bill.cycle.toLowerCase()}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext mt-1 opacity-60">Due {bill.nextDueDate} // {bill.cycle.toLowerCase()}</p>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="text-industrial-text font-black tracking-tighter">${bill.amount}</span>
+                            <span className="text-industrial-text font-black tracking-tighter text-base">${bill.amount.toLocaleString()}</span>
                             <div className="flex gap-2">
-                              <button onClick={() => { setEditingBill(bill); setShowBillModal(true); }} className="text-industrial-subtext hover:text-industrial-text p-1">[E]</button>
-                              <button onClick={() => onUpdateBills(bills.filter(b => b.id !== bill.id))} className="text-industrial-subtext hover:text-industrial-orange p-1">[X]</button>
+                              <button
+                                onClick={() => { setEditingBill(bill); setShowBillModal(true); }}
+                                aria-label="Edit bill"
+                                className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-industrial-text hover:bg-industrial-well-bg transition-colors"
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M12 20h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                  <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => onUpdateBills(bills.filter(b => b.id !== bill.id))}
+                                aria-label="Delete bill"
+                                className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
+                              >
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                  <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                                  <path d="M7 6l1 14h8l1-14" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                                  <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                                </svg>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1338,18 +1367,18 @@ const MoneyView = ({
       
       {activeTab === 'subscriptions' && (
         <div className="space-y-6">
-          <ChassisWell label="Service Registry">
+          <ChassisWell label="ACTIVE SUBS">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <p className="tactile-label">Annual Burn</p>
-                <p className="text-2xl font-black text-industrial-blue tracking-tighter">-${(monthlySubTotal * 12).toFixed(0)}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">Yearly Total</p>
+                <p className="text-2xl font-black text-industrial-blue tracking-tighter">-${(monthlySubTotal * 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
               </div>
               <TactileButton 
                 onClick={() => setShowSubModal(true)}
                 color="blue"
                 size="sm"
               >
-                + Initialize Sub
+                + Add Sub
               </TactileButton>
             </div>
             
@@ -1357,25 +1386,36 @@ const MoneyView = ({
               {subscriptions.map(sub => (
                 <div 
                   key={sub.id} 
-                  className={`bg-industrial-base rounded-2xl p-4 shadow-tactile-sm border-t border-l border-white/10 flex items-center justify-between ${sub.isOptimizable ? 'ring-1 ring-industrial-orange/30' : ''}`}
+                  className={`bg-industrial-base rounded-2xl p-4 shadow-tactile-sm border-t border-l border-white/10 flex items-center justify-between transition-all active:translate-y-[1px] ${sub.isOptimizable ? 'ring-1 ring-industrial-orange/30' : ''}`}
                 >
                   <div>
                     <div className="flex items-center gap-2">
                       <p className="text-industrial-text font-black uppercase text-xs tracking-tighter">{sub.name}</p>
-                      {sub.isOptimizable && <span className="text-[8px] bg-industrial-orange/10 text-industrial-orange px-1 rounded font-black">AXE?</span>}
+                      {sub.isOptimizable && <span className="text-[8px] bg-industrial-orange/10 text-industrial-orange px-1 rounded font-black">SAVE?</span>}
                     </div>
-                    <p className="tactile-label mt-1 opacity-60">${sub.amount} // {sub.cycle.toLowerCase()} // {sub.category}</p>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext mt-1 opacity-60">${sub.amount} // {sub.cycle.toLowerCase()} // {sub.category}</p>
                   </div>
                   <button 
                     onClick={() => killSubscription(sub.id)}
-                    className="bg-industrial-orange text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tighter shadow-sm active:translate-y-[1px]"
+                    className="min-h-[44px] px-4 py-2.5 rounded-xl bg-[#EF4444] text-white text-[12px] font-semibold tracking-wide shadow-tactile-raised border border-white/15 active:translate-y-[1px]"
                   >
-                    Axe 🪓
+                    Cancel
                   </button>
                 </div>
               ))}
               {subscriptions.length === 0 && (
-                <p className="tactile-label text-center py-8 opacity-50">No active subscriptions.</p>
+                <div className="text-center py-12 bg-industrial-base rounded-2xl shadow-tactile-sm border border-white/10">
+                  <div className="mx-auto w-20 h-20 rounded-2xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-4xl mb-6">
+                    📺
+                  </div>
+                  <h3 className="text-lg font-black text-industrial-text tracking-tight mb-2">No subscriptions added</h3>
+                  <p className="text-industrial-subtext/70 text-sm font-medium leading-relaxed max-w-[34ch] mx-auto mb-6">
+                    Track your recurring services so you can spot easy savings.
+                  </p>
+                  <TactileButton onClick={() => setShowSubModal(true)} color="blue" size="sm">
+                    Add a subscription
+                  </TactileButton>
+                </div>
               )}
             </div>
           </ChassisWell>
@@ -1384,42 +1424,56 @@ const MoneyView = ({
       
       {activeTab === 'transactions' && (
         <div className="space-y-6">
-          <ChassisWell label="Ledger History">
+          <ChassisWell label="RECENT SPENDING">
             <div className="flex justify-between items-center mb-6">
-              <p className="tactile-label opacity-50">{transactions.length} entries recorded</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext">{transactions.length} items found</p>
               <TactileButton 
                 onClick={() => setShowImportModal(true)}
                 color="white"
                 size="sm"
               >
-                + Data Ingest
+                + Import
               </TactileButton>
             </div>
             
             {transactions.length > 0 ? (
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
                 {transactions.slice().reverse().map(t => (
-                  <div key={t.id} className="bg-industrial-base/50 rounded-xl p-3 flex justify-between items-center border-b border-black/5 last:border-0 shadow-tactile-inset">
+                  <div key={t.id} className="bg-industrial-base rounded-xl p-3 flex justify-between items-center border border-white/10 shadow-tactile-sm transition-all active:translate-y-[1px]">
                     <div>
                       <p className="text-industrial-text font-black uppercase text-[10px] tracking-tighter">{t.merchant}</p>
-                      <p className="text-[9px] font-bold text-industrial-subtext/60">{t.date} // {t.category}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext">{t.date} // {t.category}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-industrial-orange font-black tracking-tighter text-sm">-${t.amount.toLocaleString()}</span>
                       <button 
                         onClick={() => onUpdateTransactions(transactions.filter(tx => tx.id !== t.id))}
-                        className="text-industrial-subtext hover:text-industrial-orange transition-colors"
+                        aria-label="Delete transaction"
+                        className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
                       >
-                        [X]
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M8 6V4h8v2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M7 6l1 14h8l1-14" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 border-2 border-dashed border-black/5 rounded-2xl">
-                <p className="tactile-label opacity-40 mb-4">Registry empty.</p>
-                <TactileButton onClick={() => setShowImportModal(true)} size="sm">Ingest File</TactileButton>
+              <div className="text-center py-14 bg-industrial-base rounded-2xl shadow-tactile-sm border border-white/10">
+                <div className="mx-auto w-20 h-20 rounded-2xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-4xl mb-6">
+                  🧾
+                </div>
+                <h3 className="text-lg font-black text-industrial-text tracking-tight mb-2">No transactions yet</h3>
+                <p className="text-industrial-subtext/70 text-sm font-medium leading-relaxed max-w-[32ch] mx-auto mb-6">
+                  Add a few purchases and BillBot will start spotting patterns.
+                </p>
+                <TactileButton onClick={() => setShowImportModal(true)} size="sm" color="blue">
+                  Add a transaction
+                </TactileButton>
               </div>
             )}
           </ChassisWell>
@@ -1475,8 +1529,8 @@ const GoalModal = ({
   const emojis = ['🚀', '🎯', '🌏', '🎮', '🏠', '🚗', '💎', '🎁', '🛡️', '✈️', '💻', '📱'];
   
   return (
-    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <ChassisWell className="max-w-md w-full max-h-[90vh] overflow-y-auto" label={goal ? 'Modify Objective' : 'Initialize Objective'}>
+    <div className="fixed inset-0 bg-industrial-base/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <ChassisWell className="w-full sm:max-w-md sm:w-full max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl" label={goal ? 'Edit goal' : 'Add goal'}>
         <div className="space-y-6">
           <div className="flex gap-4 bg-industrial-well-bg p-1.5 rounded-xl shadow-well">
             <button 
@@ -1509,14 +1563,14 @@ const GoalModal = ({
           </div>
 
           <RecessedInput 
-            label="Module Identifier"
+            label="Name"
             placeholder="e.g. Japan Trip" 
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <RecessedInput 
-            label="Allocation Target ($)"
+            label="Target amount ($)"
             type="number" 
             placeholder="0.00" 
             value={targetAmount}
@@ -1525,7 +1579,7 @@ const GoalModal = ({
 
           {goal && (
             <RecessedInput 
-              label="Currently Quarantined ($)"
+              label="Saved so far ($)"
               type="number" 
               placeholder="0.00" 
               value={currentAmount}
@@ -1544,15 +1598,15 @@ const GoalModal = ({
 
           <div className="flex gap-4 pt-4">
             <button onClick={onClose} className="flex-1 tactile-label text-industrial-subtext/40 hover:text-industrial-text transition-colors">
-              Abort
+              Cancel
             </button>
             <TactileButton 
               onClick={handleSave} 
               disabled={!name || !targetAmount}
-              color="orange"
+              color="blue"
               className="flex-1"
             >
-              {goal ? 'Sync' : 'Confirm'}
+              Save
             </TactileButton>
           </div>
         </div>
@@ -1579,6 +1633,7 @@ const GoalsView = ({
   const [newGoalAmount, setNewGoalAmount] = useState('');
   const [newGoalType, setNewGoalType] = useState<'rocket' | 'impulse'>('rocket');
   const [launchingId, setLaunchingId] = useState<string | null>(null);
+  const [confettiKey, setConfettiKey] = useState<number | null>(null);
   
   const weeklySurplus = Math.max(0, (health.monthlyIncome - health.monthlyExpenses) / 4);
   
@@ -1615,6 +1670,7 @@ const GoalsView = ({
   const launchGoal = (goal: Goal) => {
     if (launchingId) return;
     setLaunchingId(goal.id);
+    setConfettiKey(Date.now());
     
     setTimeout(() => {
       onUpdateGoals(goals.filter(g => g.id !== goal.id));
@@ -1642,28 +1698,29 @@ const GoalsView = ({
   
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-500">
+      {confettiKey && <ConfettiBurst onDone={() => setConfettiKey(null)} />}
       <div className="flex justify-between items-center px-2">
         <div>
-          <h1 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">Strategic Targets</h1>
+          <h1 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">My Goals</h1>
           <div className="flex items-center gap-2 mt-1">
             <LEDIndicator active={true} color="blue" />
-            <p className="tactile-label text-industrial-subtext/60">Registry // Asset Allocation</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60">Saving Progress</p>
           </div>
         </div>
         <TactileButton 
           onClick={() => setShowNewGoal(true)}
-          color="orange"
+          color="blue"
           size="sm"
         >
-          + New Mod
+          + Add Goal
         </TactileButton>
       </div>
       
       {/* Weekly Budget */}
-      <ChassisWell label="Velocity Multiplier">
+      <ChassisWell label="WEEKLY SAVINGS">
         <div className="flex justify-between items-center">
           <div>
-            <p className="tactile-label text-industrial-subtext/60 mb-1">Available Weekly Ammo</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60 mb-1">Available to Save</p>
             <p className="text-3xl font-black text-industrial-text tracking-tighter">${weeklySurplus.toFixed(0)}</p>
           </div>
           <div className="w-14 h-14 bg-industrial-well-bg rounded-xl flex items-center justify-center text-3xl shadow-well">💰</div>
@@ -1672,32 +1729,32 @@ const GoalsView = ({
       
       {/* New Goal Form */}
       {showNewGoal && (
-        <ChassisWell label="Module Initialization" className="animate-in slide-in-from-top-4">
+        <ChassisWell label="NEW GOAL" className="animate-in slide-in-from-top-4">
           <div className="space-y-6">
             <div className="flex gap-4 bg-industrial-well-bg p-1.5 rounded-xl shadow-well">
               <button 
                 onClick={() => setNewGoalType('rocket')}
                 className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all ${newGoalType === 'rocket' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
               >
-                🎯 Primary Target
+                🎯 Primary Goal
               </button>
               <button 
                 onClick={() => setNewGoalType('impulse')}
                 className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all ${newGoalType === 'impulse' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
               >
-                🅿️ Parked Request
+                🅿️ Wishlist
               </button>
             </div>
             
             <RecessedInput 
-              label="Target Identifier"
-              placeholder="e.g., Japan Sector Trip"
+              label="Goal Name"
+              placeholder="e.g. Japan Trip"
               value={newGoalName}
               onChange={(e) => setNewGoalName(e.target.value)}
             />
             
             <RecessedInput 
-              label="Required Allocation ($)"
+              label="Target Amount ($)"
               type="number"
               placeholder="0.00"
               value={newGoalAmount}
@@ -1705,8 +1762,8 @@ const GoalsView = ({
             />
             
             <div className="flex gap-4 pt-4">
-              <button onClick={() => setShowNewGoal(false)} className="flex-1 tactile-label text-industrial-subtext/60 hover:text-industrial-text transition-colors">Cancel</button>
-              <TactileButton onClick={addGoal} color="orange" className="flex-1">Initialize</TactileButton>
+              <button onClick={() => setShowNewGoal(false)} className="flex-1 text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60 hover:text-industrial-text transition-colors">Cancel</button>
+              <TactileButton onClick={addGoal} color="blue" className="flex-1">Add Goal</TactileButton>
             </div>
           </div>
         </ChassisWell>
@@ -1715,7 +1772,7 @@ const GoalsView = ({
       {/* Targets (Serious Goals) */}
       {rockets.length > 0 && (
         <div className="space-y-4">
-          <h3 className="tactile-label text-industrial-subtext/60 px-2">Primary Modules</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60 px-2">Primary Goals</h3>
             {rockets.map(goal => {
               const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
               const isReady = goal.currentAmount >= goal.targetAmount;
@@ -1724,52 +1781,50 @@ const GoalsView = ({
               return (
                 <div 
                   key={goal.id} 
-                  className={`bg-industrial-base rounded-2xl p-5 shadow-tactile-sm border-t border-l border-white/10 transition-all ${isLaunching ? 'animate-pulse scale-105' : ''}`}
+                  className={`bg-industrial-base rounded-[2rem] p-5 shadow-tactile-sm border-t border-l border-white/10 transition-all active:translate-y-[1px] ${isLaunching ? 'scale-[1.02]' : ''}`}
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-industrial-base rounded-xl flex items-center justify-center text-2xl shadow-well border-t border-l border-black/5">
+                      <div className="w-12 h-12 bg-industrial-well-bg shadow-pressed rounded-2xl flex items-center justify-center text-2xl border border-black/5">
                         {goal.emoji || '🚀'}
                       </div>
                       <div>
-                        <h4 className="text-sm font-black text-industrial-text uppercase tracking-tighter">{goal.name}</h4>
-                        <p className="tactile-label opacity-60 mt-0.5">{goal.valueTag}</p>
+                        <h4 className="text-sm font-black text-industrial-text uppercase tracking-tight leading-none">{goal.name}</h4>
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-industrial-subtext/60 mt-1.5">{goal.valueTag}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col items-end gap-1">
-                        <LEDIndicator active={isReady} color="green" />
-                        <span className="text-[10px] font-black text-industrial-subtext">{percent}%</span>
-                      </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className={`w-2 h-2 rounded-full shadow-sm ${isReady ? 'bg-industrial-green animate-pulse' : 'bg-industrial-blue opacity-30'}`} />
+                      <span className="text-[10px] font-black text-industrial-subtext/60">{percent}%</span>
                     </div>
                   </div>
                   
-                  <div className="h-4 bg-industrial-base rounded-lg shadow-well overflow-hidden mb-4 p-1 border-t border-l border-black/5">
+                  <div className="h-3 bg-industrial-well-bg shadow-pressed rounded-full overflow-hidden mb-5 p-0.5 border border-black/5">
                     <div 
-                      className={`h-full rounded-md transition-all duration-1000 ${isReady ? 'bg-emerald-500' : 'bg-industrial-blue'}`}
+                      className={`h-full rounded-full transition-all duration-1000 ${isReady ? 'bg-industrial-green' : 'bg-industrial-blue'}`}
                       style={{ width: `${percent}%` }}
                     />
                   </div>
                   
-                  <div className="flex justify-between items-center mb-6">
+                  <div className="flex justify-between items-center mb-6 px-1">
                     <div className="flex flex-col">
-                      <span className="tactile-label opacity-50">Saved</span>
-                      <span className="text-sm font-black text-industrial-text tracking-tighter">${goal.currentAmount.toLocaleString()}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest opacity-40 mb-1">Saved</span>
+                      <span className="text-[13px] font-black text-industrial-text tracking-tighter">${goal.currentAmount.toLocaleString()}</span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="tactile-label opacity-50">Target</span>
-                      <span className="text-sm font-black text-industrial-text tracking-tighter">${goal.targetAmount.toLocaleString()}</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest opacity-40 mb-1">Goal</span>
+                      <span className="text-[13px] font-black text-industrial-text tracking-tighter">${goal.targetAmount.toLocaleString()}</span>
                     </div>
                   </div>
                   
-                  <div className="flex gap-3">
+                  <div className="flex gap-2.5">
                     <TactileButton 
                       onClick={() => addCash(goal.id, 50)}
                       size="sm"
                       className="flex-1"
                       disabled={isReady}
                     >
-                      +50 Unit
+                      +$50
                     </TactileButton>
                     <TactileButton 
                       onClick={() => addCash(goal.id, weeklySurplus)}
@@ -1782,11 +1837,11 @@ const GoalsView = ({
                     {isReady && (
                       <TactileButton 
                         onClick={() => launchGoal(goal)}
-                        color="orange"
+                        color="blue"
                         size="sm"
                         className="flex-1"
                       >
-                        Launch
+                        Goal Met!
                       </TactileButton>
                     )}
                   </div>
@@ -1799,7 +1854,7 @@ const GoalsView = ({
       {/* Impulse/Parked (Delayed Gratification) */}
       {impulses.length > 0 && (
         <div className="space-y-4">
-          <h3 className="tactile-label text-industrial-subtext/60 px-2">Parked Acquisitions</h3>
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60 px-2">Wishlist Items</h3>
             {impulses.map(goal => {
               const percent = Math.round((goal.currentAmount / goal.targetAmount) * 100);
               const isReady = goal.currentAmount >= goal.targetAmount;
@@ -1807,32 +1862,32 @@ const GoalsView = ({
               return (
                 <div 
                   key={goal.id} 
-                  className="bg-industrial-base rounded-2xl p-5 shadow-tactile-sm border-t border-l border-white/10"
+                  className="bg-industrial-base rounded-2xl p-5 shadow-tactile-sm border border-white/10"
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-industrial-base rounded-xl flex items-center justify-center text-2xl shadow-well border-t border-l border-black/5">
+                      <div className="w-12 h-12 bg-industrial-base rounded-xl flex items-center justify-center text-2xl shadow-well border border-black/5">
                         {goal.emoji || '🎁'}
                       </div>
                       <div>
                         <h4 className="text-sm font-black text-industrial-text uppercase tracking-tighter">{goal.name}</h4>
                         <div className="flex items-center gap-2 mt-0.5">
                           <LEDIndicator active={true} color="yellow" />
-                          <p className="tactile-label opacity-60">Status: Holding</p>
+                          <p className="text-[9px] font-bold uppercase tracking-wider opacity-60">Status: Saving</p>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => onUpdateGoals(goals.filter(g => g.id !== goal.id))}
-                        className="tactile-label text-industrial-subtext hover:text-industrial-orange transition-colors"
+                        className="text-[9px] font-bold uppercase tracking-widest text-industrial-subtext hover:text-industrial-orange transition-colors"
                       >
                         [Delete]
                       </button>
                     </div>
                   </div>
                   
-                  <div className="h-4 bg-industrial-base rounded-lg shadow-well overflow-hidden mb-4 p-1 border-t border-l border-black/5">
+                  <div className="h-4 bg-industrial-base rounded-lg shadow-well overflow-hidden mb-4 p-1 border border-black/5">
                     <div 
                       className={`h-full rounded-md transition-all duration-1000 ${isReady ? 'bg-emerald-500' : 'bg-industrial-orange'}`}
                       style={{ width: `${percent}%` }}
@@ -1841,11 +1896,11 @@ const GoalsView = ({
                   
                   <div className="flex justify-between items-center mb-6">
                     <div className="flex flex-col">
-                      <span className="tactile-label opacity-50">Saved</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest opacity-50">Saved</span>
                       <span className="text-sm font-black text-industrial-text tracking-tighter">${goal.currentAmount.toLocaleString()}</span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="tactile-label opacity-50">Target</span>
+                      <span className="text-[9px] font-bold uppercase tracking-widest opacity-50">Price</span>
                       <span className="text-sm font-black text-industrial-text tracking-tighter">${goal.targetAmount.toLocaleString()}</span>
                     </div>
                   </div>
@@ -1870,7 +1925,7 @@ const GoalsView = ({
                     {isReady && (
                       <TactileButton 
                         onClick={() => skipImpulse(goal)}
-                        color="orange"
+                        color="blue"
                         size="sm"
                         className="flex-1"
                       >
@@ -1885,9 +1940,17 @@ const GoalsView = ({
       )}
       
       {goals.length === 0 && (
-        <div className="text-center py-20 bg-industrial-base rounded-[2rem] shadow-tactile-sm border-2 border-dashed border-black/5">
-          <p className="tactile-label opacity-40 mb-4">No active missions registry.</p>
-          <TactileButton onClick={() => setShowNewGoal(true)} color="blue" size="sm">Initialize Target</TactileButton>
+        <div className="text-center py-16 bg-industrial-base rounded-2xl shadow-tactile-sm border border-white/10">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-4xl mb-6">
+            🎯
+          </div>
+          <h3 className="text-lg font-black text-industrial-text tracking-tight mb-2">Set your first goal</h3>
+          <p className="text-industrial-subtext/70 text-sm font-medium leading-relaxed max-w-[28ch] mx-auto mb-6">
+            Pick something meaningful and start saving a little each week.
+          </p>
+          <TactileButton onClick={() => setShowNewGoal(true)} color="blue" size="sm">
+            Add a goal
+          </TactileButton>
         </div>
       )}
     </div>
@@ -1902,10 +1965,10 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-500">
       <div className="px-2">
-        <h1 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">Support & Ops</h1>
+        <h1 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">Support</h1>
         <div className="flex items-center gap-2 mt-1">
           <LEDIndicator active={true} color="blue" />
-          <p className="tactile-label text-industrial-subtext/60">System // Diagnostic Support</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-industrial-subtext/60">AI Advisor & Tools</p>
         </div>
       </div>
 
@@ -1918,7 +1981,11 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
             className={`flex-1 py-3 px-2 rounded-xl transition-all duration-75 relative ${activeSection === section ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext hover:text-industrial-text'}`}
           >
             <span className="text-[10px] font-black uppercase tracking-tighter">{section}</span>
-            {activeSection === section && <div className="absolute top-1 right-1"><LEDIndicator active color="blue" /></div>}
+            {activeSection === section && (
+              <div className="absolute top-1.5 right-1.5">
+                <div className="w-1 h-1 rounded-full bg-industrial-blue" />
+              </div>
+            )}
           </button>
         ))}
       </div>
@@ -1927,7 +1994,7 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
 
       {activeSection === 'tools' && (
         <div className="space-y-6">
-          <ChassisWell label="Utility Modules">
+          <ChassisWell label="CALCULATORS">
             <div className="grid grid-cols-1 gap-4">
               <TactileButton onClick={() => setActiveTool('tax')} color="white" fullWidth className="flex justify-between items-center px-6">
                 <span>ATO Asset Lookup</span>
@@ -1942,7 +2009,7 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
 
           {activeTool === 'tax' && (
             <div className="animate-in slide-in-from-top-4">
-              <ChassisWell label="ATO EFFECTIVE LIFE">
+              <ChassisWell label="ATO RULES">
                 <Advisor health={health} /> {/* Advisor component has the tools integrated */}
               </ChassisWell>
             </div>
@@ -1951,23 +2018,23 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
       )}
 
       {activeSection === 'crisis' && (
-        <ChassisWell label="Critical Protocol" className="bg-industrial-orange/5 border-industrial-orange/10">
+        <ChassisWell label="URGENT HELP" className="bg-industrial-orange/5 border-industrial-orange/10">
           <div className="flex flex-col items-center text-center p-4">
             <div className="w-20 h-20 bg-industrial-orange rounded-3xl flex items-center justify-center text-4xl shadow-lg mb-6 text-white animate-pulse">
               🚨
             </div>
-            <h3 className="text-xl font-black text-industrial-text uppercase tracking-tighter mb-2">Hardship Protocol Active</h3>
+            <h3 className="text-xl font-black text-industrial-text uppercase tracking-tighter mb-2">Hardship Protocol</h3>
             <p className="text-industrial-subtext text-sm font-medium mb-8 leading-relaxed">
-              System indicates resource outflow exceeds capacity. Initialize emergency containment sequence:
+              If you're struggling to pay your bills, follow this priority guide:
             </p>
             
             <div className="w-full space-y-4 mb-10 text-left">
               {[
-                { title: "Tier 1: Vital Stats", desc: "Rent, electricity, water, food", color: "blue" },
-                { title: "Tier 2: Operational Mobility", desc: "Transport, phone, internet", color: "yellow" },
-                { title: "Tier 3: Debt Moratorium", desc: "Credit cards, personal loans, BNPL", color: "orange" }
+                { title: "Priority 1: Essentials", desc: "Rent, power, water, food", color: "blue" },
+                { title: "Priority 2: Connectivity", desc: "Phone, internet, transport", color: "yellow" },
+                { title: "Priority 3: Unsecured Debt", desc: "Cards, loans, BNPL", color: "orange" }
               ].map((tier, i) => (
-                <div key={i} className="bg-industrial-base p-5 rounded-2xl shadow-well border-t border-l border-white/10 flex items-start gap-4">
+                <div key={i} className="bg-industrial-base p-5 rounded-2xl shadow-well border border-white/10 flex items-start gap-4">
                   <div className="mt-1"><LEDIndicator active color={tier.color as any} /></div>
                   <div>
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-industrial-text">{tier.title}</h4>
@@ -1979,11 +2046,11 @@ const HelpView = ({ health, accounts }: { health: FinancialHealth, accounts: Acc
 
             <TactileButton 
               onClick={() => window.open('https://www.moneysmart.gov.au/managing-your-money/managing-debts/financial-hardship', '_blank')}
-              color="orange"
+              color="red"
               fullWidth
               size="lg"
             >
-              Access External Support ↗
+              Get External Help ↗
             </TactileButton>
           </div>
         </ChassisWell>
@@ -2103,25 +2170,27 @@ const App = () => {
   };
 
   const navItems = [
-    { view: AppView.HOME, icon: '🏠', label: 'GRID' },
-    { view: AppView.MONEY, icon: '💸', label: 'CASH' },
+    { view: AppView.HOME, icon: '🏙️', label: 'GRID' },
+    { view: AppView.MONEY, icon: '📊', label: 'CASH' },
     { view: AppView.GOALS, icon: '🎯', label: 'MODS' },
-    { view: AppView.HELP, icon: '🛟', label: 'OPS' },
+    { view: AppView.HELP, icon: '🤖', label: 'OPS' },
   ];
 
   return (
-    <div className="min-h-screen bg-industrial-base text-industrial-text font-sans transition-colors duration-300" data-theme={theme}>
+    <div className="min-h-screen bg-industrial-base text-industrial-text font-sans transition-colors duration-500" data-theme={theme}>
       
-      {/* Theme Toggle */}
-      <div className="fixed top-6 right-6 z-[110]">
-        <button 
-          onClick={toggleTheme}
-          className="w-10 h-10 rounded-full bg-industrial-base shadow-tactile-raised border-t border-l border-industrial-highlight/50 flex items-center justify-center text-lg active:scale-95 active:shadow-well transition-all"
-          title={`Theme: ${theme}`}
-        >
-          {getThemeIcon(theme)}
-        </button>
-      </div>
+      {/* Theme Toggle - refined design */}
+      {view !== AppView.HOME && (
+        <div className="fixed top-6 right-6 z-[110]">
+          <button 
+            onClick={toggleTheme}
+            className="w-12 h-12 rounded-2xl bg-industrial-base shadow-tactile-raised border-t border-l border-white/40 flex items-center justify-center text-xl hover:scale-105 active:scale-95 active:shadow-well transition-all duration-200"
+            title={`Theme: ${theme}`}
+          >
+            {getThemeIcon(theme)}
+          </button>
+        </div>
+      )}
 
       {showWelcome && <WelcomeOverlay onComplete={handleWelcomeComplete} />}
       
@@ -2141,7 +2210,7 @@ const App = () => {
       )}
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto px-4 pt-6 pb-32">
+      <main className="max-w-lg mx-auto px-4 pt-8 pb-36">
         {view === AppView.HOME && (
           <HomeView 
             health={health}
@@ -2186,20 +2255,35 @@ const App = () => {
         )}
       </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-industrial-base/95 backdrop-blur-xl border-t border-l border-industrial-highlight/50 rounded-[2.5rem] shadow-tactile-raised z-[100] p-1.5">
-        <div className="flex justify-between items-center bg-industrial-well-bg/50 rounded-[2rem] shadow-well p-1">
+      {/* Bottom Navigation - TE Inspired Segmented Look */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-industrial-base/95 backdrop-blur-md border-t border-l border-white/30 rounded-3xl shadow-tactile-raised z-[100] p-1.5">
+        <div className="flex justify-between items-center bg-industrial-well-bg shadow-well rounded-2xl p-1">
           {navItems.map(item => (
             <button
               key={item.view}
               onClick={() => setView(item.view)}
-              className={`flex-1 py-3 px-0.5 flex flex-col items-center justify-center gap-1 transition-all rounded-2xl ${view === item.view ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext hover:text-industrial-text'}`}
+              onPointerDown={(e) => {
+                if (e.pointerType === 'touch') {
+                  e.preventDefault();
+                  setView(item.view);
+                }
+              }}
+              className={`
+                flex-1 py-3 px-1 flex flex-col items-center justify-center gap-1 transition-all duration-300 rounded-xl relative overflow-hidden
+                ${view === item.view 
+                  ? 'bg-industrial-base shadow-tactile-sm text-[#3B82F6]' 
+                  : 'text-industrial-subtext/50 hover:text-industrial-text'
+                }
+              `}
             >
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-[8px] font-black uppercase tracking-widest leading-none">{item.label}</span>
+              <span className={`text-xl transition-transform ${view === item.view ? 'scale-110' : ''}`}>{item.icon}</span>
+              <span className={`text-[8px] font-black uppercase tracking-[0.2em] leading-none ${view === item.view ? 'opacity-100' : 'opacity-60'}`}>
+                {item.label}
+              </span>
+              
               {view === item.view && (
-                <div className="mt-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-industrial-orange shadow-[0_0_4px_#FF4F00]" />
+                <div className="absolute top-1.5 right-1.5">
+                  <div className="w-1 h-1 rounded-full bg-[#3B82F6]" />
                 </div>
               )}
             </button>
@@ -2210,15 +2294,15 @@ const App = () => {
       {/* Goal Edit Modal */}
       {editingGoal && (
         <div className="fixed inset-0 bg-industrial-base/95 backdrop-blur-sm flex items-center justify-center z-[100] p-6">
-          <ChassisWell className="w-full max-w-md" label="Module Parameters">
+          <ChassisWell className="w-full max-w-md" label="Edit goal">
             <div className="space-y-6">
               <RecessedInput 
-                label="Module Identifier"
+                label="Name"
                 value={editingGoal.name}
                 onChange={(e) => setEditingGoal({...editingGoal, name: e.target.value})}
               />
               <RecessedInput 
-                label="Target Allocation ($)"
+                label="Target amount ($)"
                 type="number"
                 value={editingGoal.targetAmount}
                 onChange={(e) => setEditingGoal({...editingGoal, targetAmount: parseFloat(e.target.value) || 0})}
@@ -2233,7 +2317,7 @@ const App = () => {
                   color="blue"
                   className="flex-1"
                 >
-                  Sync Mod
+                  Save
                 </TactileButton>
               </div>
             </div>

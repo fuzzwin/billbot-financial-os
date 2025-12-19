@@ -8,20 +8,23 @@ export const RecessedInput: React.FC<RecessedInputProps> = ({ label, className =
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="tactile-label px-1">
+        <label className="tactile-label px-1 opacity-70">
           {label}
         </label>
       )}
-      <input
-        {...props}
-        className={`
-          w-full bg-industrial-base rounded-xl px-4 py-3 
-          text-sm font-bold text-industrial-text placeholder-industrial-subtext/50
-          shadow-well outline-none focus:ring-1 focus:ring-industrial-orange/30
-          transition-all duration-200
-          ${className}
-        `}
-      />
+      <div className="relative group">
+        <input
+          {...props}
+          className={`
+            w-full bg-industrial-well-bg/50 rounded-xl px-4 py-3.5
+            text-[15px] font-semibold text-industrial-text placeholder-industrial-subtext/45
+            shadow-pressed outline-none border border-black/5 min-h-[48px]
+            focus:bg-industrial-well-bg transition-all duration-200
+            focus:border-blue-500/30
+            ${className}
+          `}
+        />
+      </div>
     </div>
   );
 };

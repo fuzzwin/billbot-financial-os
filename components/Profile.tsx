@@ -41,9 +41,9 @@ export const Profile: React.FC<ProfileProps> = ({ health, onUpdate }) => {
   };
 
   const HelpTip = ({ title, text }: { title: string, text: string }) => (
-      <div className="bg-industrial-well-bg p-4 rounded-xl border border-black/5 mt-4">
-          <span className="text-[10px] font-black text-industrial-blue uppercase tracking-widest block mb-1">💡 {title}</span>
-          <span className="text-industrial-subtext text-[11px] font-medium leading-relaxed">{text}</span>
+      <div className="bg-industrial-well-bg p-5 rounded-2xl border border-white/5 mt-6 shadow-well transition-all hover:scale-[1.01]">
+          <span className="text-[10px] font-black text-industrial-blue uppercase tracking-[0.15em] block mb-2">💡 {title}</span>
+          <span className="text-industrial-subtext text-[11px] font-medium leading-relaxed opacity-80">{text}</span>
       </div>
   );
 

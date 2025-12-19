@@ -46,11 +46,11 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
 
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-industrial-base/95 backdrop-blur-md animate-in fade-in">
-                <ChassisWell className="max-w-md w-full" label="Synchronization Report">
+                <ChassisWell className="max-w-md w-full" label="Weekly check-in">
                     <div className="text-center">
                         <div className="text-6xl mb-6 animate-bounce filter drop-shadow-sm">{isProfit ? '📈' : '📉'}</div>
-                        <h2 className="text-2xl font-black text-industrial-text uppercase tracking-tighter mb-2">Registry Synced</h2>
-                        <p className="tactile-label text-industrial-subtext/60 mb-8">Operational parameters updated.</p>
+                        <h2 className="text-2xl font-black text-industrial-text tracking-tight mb-2">All set</h2>
+                        <p className="tactile-label text-industrial-subtext/60 mb-8">Balances updated.</p>
                         
                         <div className="bg-industrial-well-bg p-8 rounded-2xl shadow-well border-t border-l border-black/5 mb-8">
                             <p className="tactile-label text-industrial-subtext/40 mb-2">Net Value Delta</p>
@@ -65,7 +65,7 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
                             fullWidth
                             size="lg"
                         >
-                            Commit to Grid ⚡
+                            Done
                         </TactileButton>
                     </div>
                 </ChassisWell>
@@ -75,14 +75,14 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-industrial-base/95 backdrop-blur-md animate-in fade-in">
-            <ChassisWell className="max-w-md w-full" label="Unit Balance Verification">
+            <ChassisWell className="max-w-md w-full" label="Update balances">
                 <div className="space-y-8">
                     <div className="flex justify-between items-center bg-industrial-well-bg p-3 rounded-xl shadow-well border-t border-l border-black/5">
                         <div className="flex items-center gap-2">
                             <LEDIndicator active={true} color="blue" />
-                            <h2 className="text-[10px] font-black text-industrial-text uppercase tracking-widest">Serial Scan</h2>
+                            <h2 className="text-[10px] font-black text-industrial-text uppercase tracking-widest">Step</h2>
                         </div>
-                        <span className="text-[10px] font-black text-industrial-subtext/60 uppercase tracking-widest">Module {step + 1}/{accounts.length}</span>
+                        <span className="text-[10px] font-black text-industrial-subtext/60 uppercase tracking-widest">Account {step + 1}/{accounts.length}</span>
                     </div>
 
                     <div className="text-center">
@@ -90,7 +90,7 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
                         <h3 className="text-xl font-black text-industrial-text uppercase tracking-tight mb-6">{currentAccount.name}</h3>
                         
                         <div className="bg-industrial-well-bg p-4 rounded-xl shadow-well border-t border-l border-black/5 inline-block mb-8">
-                            <p className="text-[10px] font-black text-industrial-subtext/40 uppercase mb-1">Previous Registry</p>
+                            <p className="text-[10px] font-black text-industrial-subtext/40 uppercase mb-1">Previous balance</p>
                             <p className="text-lg font-black text-industrial-text tracking-tighter">${currentAccount.balance.toLocaleString()}</p>
                         </div>
 
@@ -98,7 +98,7 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
                             <RecessedInput 
                                 autoFocus
                                 type="number"
-                                label="Current Operational Value ($)"
+                                label="Current balance ($)"
                                 value={currentBalanceInput}
                                 onChange={(e) => setCurrentBalanceInput(e.target.value)}
                                 placeholder="Enter updated value..."
@@ -109,11 +109,11 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
 
                     <TactileButton 
                         onClick={handleNext}
-                        color="orange"
+                        color="blue"
                         fullWidth
                         size="lg"
                     >
-                        {currentBalanceInput ? 'Update & Advance →' : 'Bypass / No Change →'}
+                        {currentBalanceInput ? 'Save & next →' : 'Skip →'}
                     </TactileButton>
                 </div>
             </ChassisWell>

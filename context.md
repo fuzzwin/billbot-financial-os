@@ -624,6 +624,87 @@ Keys:
 
 ## 13. Changelog
 
+### v3.10 - UI Overhaul: Clarity, Controls, Delight (Dec 19, 2025)
+**Changes:**
+1. **Typography & Readability:** Increased base label sizing and reduced “all-caps everywhere” feel for better scanning and accessibility.
+2. **Color Semantics:** Standardized meaning across the app (blue = primary action, red = danger/debt, amber = warning) and synced Tailwind theme colors with CSS variables.
+3. **Component Polish:** Simplified `ChassisWell` to remove noisy nested wells while keeping tactile depth; improved LED glow to match indicator color.
+4. **Touch Targets:** Replaced tiny text controls with 44px+ icon buttons (edit/delete/close), and enlarged city controls for mobile friendliness.
+5. **Human-first Language:** Updated modals and weekly check-in copy to plain English while preserving subtle “OS” flavor.
+6. **Empty States:** Added illustrated empty states for Goals, Transactions, and Subscriptions with encouraging copy and clear CTAs.
+7. **Mobile Modals:** Converted key modals to bottom-sheet style on mobile (full-width, safe-area friendly).
+8. **Delight & Guidance:** Added a lightweight confetti burst on goal launches and introduced a city legend overlay (toggle “?”) to explain the map.
+9. **3D Stability:** Fixed Three.js console errors by avoiding invalid emissive color values.
+
+### v3.9 - Readability & Lingo Cleanup (Dec 18, 2025)
+**Changes:**
+1. **Simplified Lingo:** Replaced complex industrial terms with clear, everyday language:
+   - "Monthly Burn" -> "Monthly Spending"
+   - "Revenue Stream" -> "Monthly Income"
+   - "Strategic Targets" -> "My Goals"
+   - "Velocity Multiplier" -> "Weekly Savings"
+   - "Operational Surplus" -> "Money Left Over"
+   - "Initialize Asset" -> "Add Account"
+   - "Neural Advisor" -> "AI Advisor"
+2. **Visual Contrast:** 
+   - Improved text sizing and weight for better readability on light backgrounds.
+   - Replaced many all-caps "tactile-labels" with larger, bold, title-case headers.
+   - Updated modal and button terminology to be more direct (e.g., "Cfg" -> "Edit", "Exec" -> "Send").
+3. **3D Tooltip Clarity:** Updated Three.js tooltips to use human-friendly descriptions (e.g., "Your bank account" instead of "Liquidity storage node").
+4. **Theme Consistency:** Refined theme background colors and border treatments for cleaner UI separation.
+5. **Stability:** Fixed critical syntax errors in `App.tsx` caused by duplicated and nested component fragments.
+
+### v3.8 - Vibrancy & Environmental Color (Dec 18, 2025)
+**Changes:**
+1. **Lush Environments:** Replaced brutalist grey ground planes with **vibrant green grass** across all themes, using deep forest greens for dark mode and fresh lawn greens for light mode.
+2. **Skyward Bound:** Overhauled the skybox logic to use **blues and azure gradients** instead of monochromatic grays. Higher financial health scores now trigger a brighter, more vibrant sky blue.
+3. **Hydration Boost:** Brightened the **water colors** in the Harbor and Fountain to better contrast with the new greenery.
+4. **Natural Lighting:** Synchronized tree and foliage colors to match the new grass tones for a more cohesive "park" feel within the industrial grid.
+
+### v3.7 - Atmospheric Enhancements & Architectural Detail (Dec 18, 2025)
+**Changes:**
+1. **Tiered Waterworks:** Redesigned the **Cashflow Fountain** with a 3-tiered 3D structure, animated water splashes, and a recessed pool.
+2. **Night Sky & Stars:** Implemented a **Starfield system** that activates in Dark/Future modes to improve night-time atmosphere.
+3. **Advanced Roofscape:** Added **Helipads** and HVAC antenna units to building roofs, providing more vertical detail.
+4. **Urban Amenities:** Added **Sidewalk Benches** and refined street lamp geometry with metallic finishes.
+5. **Traffic Refinement:** Improved car wheel geometry and adjusted intersection stop-line proximity for smoother traffic visualization.
+
+### v3.6 - Grid Visualization Polish & Environmental Detail (Dec 18, 2025)
+**Changes:**
+1. **Infrastructure Detail:**
+   - Added **lane markings** to all roads for a more realistic traffic flow.
+   - Added **animated ripples** to the Harbor and Cashflow Fountain for dynamic water movement.
+   - Implemented **Ground Grid** system to reinforce the "Financial Grid" metaphor.
+2. **Ambience & Lighting:**
+   - Added **Street Lamps** on all quadrant corners with dynamic lighting (point lights active at night).
+   - Enhanced **Building Windows** with night-time emission (windows light up when theme is dark).
+   - Added **Car Headlights** with emissive glow for better visibility during night cycles.
+3. **Space Management:**
+   - Implemented **Construction Sites** (scaffolding and foundation pads) to fill empty quadrant slots when user has few accounts or goals.
+   - Added **Secondary Tree logic** to NW quadrant to create park-like environments in empty slots.
+   - Increased **Cloud density** with drifting animations.
+4. **Traffic Coordination:**
+   - Refined pedestrian corner logic to ensure walkers stay precisely on sidewalks.
+   - Synchronized environmental colors with industrial-neumorphic UI theme variables.
+
+### v3.5 - UI Visual Overhaul & Industrial Neumorphism (Dec 18, 2025)
+**Changes:**
+1. **Design System Refresh:** Transitioned to a more refined "Industrial Neumorphic" aesthetic across all themes.
+   - **Improved Shadows:** Increased blur radii and tuned shadow opacities for softer, deeper depth effects.
+   - **Refined Color Palette:** Updated base and accent colors for better contrast and cohesive look in Light, Mid, and Dark modes.
+   - **Enhanced Typography:** Improved font weights and letter spacings for better hierarchy and readability.
+2. **Component Upgrades:**
+   - **TactileButton:** Added subtle inner glows, improved active states, and theme-aware shadow colors for colored variants.
+   - **ChassisWell:** Increased structural depth with border highlights and more recessed "wells".
+   - **RecessedInput:** Improved visual depth and added focus ring animations.
+   - **LEDIndicator:** Enhanced glow effects and added realistic light reflections.
+3. **Navigation & UI Polishing:**
+   - **Bottom Navigation:** Improved active tab selection with scaled icons and pulsing indicator lights.
+   - **Tab Navigation:** Refined selection states in Money and Help views with tactile-inset designs.
+   - **Home Overlays:** Upgraded the 3D view overlays with high-quality backdrop blurs and refined typography.
+4. **Consistency Improvements:** Updated HECS Calculator, Crisis Command, and Profile onboarding to match the new industrial design language.
+5. **3D City Coordination:** Synchronized the Isometric City environmental colors with the updated UI theme variables for a seamless transition between 2D and 3D.
+
 ### v3.4 - Complete CRUD & Bills Management (Dec 18, 2025)
 **Changes:**
 1. **Full CRUD for Accounts** - Add, edit, and delete assets/liabilities in Money view

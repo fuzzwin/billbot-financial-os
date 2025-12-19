@@ -17,16 +17,18 @@ export const TactileButton: React.FC<TactileButtonProps> = ({
 }) => {
   const colorMap = {
     white: "bg-industrial-base text-industrial-text shadow-tactile-raised active:shadow-tactile-pressed",
-    orange: "bg-[#FF4F00] text-white shadow-[4px_4px_10px_rgba(0,0,0,0.3),-4px_-4px_10px_rgba(255,255,255,0.1)]",
-    blue: "bg-[#0055FF] text-white shadow-[4px_4px_10px_rgba(0,0,0,0.3),-4px_-4px_10px_rgba(255,255,255,0.1)]",
-    yellow: "bg-[#F3CF44] text-industrial-dark-base shadow-[4px_4px_10px_rgba(0,0,0,0.2),-4px_-4px_10px_rgba(255,255,255,0.1)]",
-    red: "bg-[#ef4444] text-white shadow-[4px_4px_10px_rgba(0,0,0,0.3),-4px_-4px_10px_rgba(255,255,255,0.1)]"
+    blue: "bg-industrial-blue text-white shadow-tactile-raised active:shadow-tactile-pressed border-t border-l border-white/20",
+    yellow: "bg-industrial-yellow text-industrial-text shadow-tactile-raised active:shadow-tactile-pressed border-t border-l border-white/20",
+    /* Reserve orange/red strictly for warning/danger semantics */
+    orange: "bg-industrial-orange text-white shadow-tactile-raised active:shadow-tactile-pressed border-t border-l border-white/20",
+    red: "bg-[#EF4444] text-white shadow-tactile-raised active:shadow-tactile-pressed border-t border-l border-white/20"
   };
 
   const sizeMap = {
-    sm: "px-3 py-1.5 text-[9px]",
-    md: "px-6 py-3 text-[11px]",
-    lg: "px-8 py-4 text-[13px]"
+    /* Minimum touch height ~44px (mobile) */
+    sm: "px-4 py-2.5 text-[12px] min-h-[44px]",
+    md: "px-5 py-3 text-[13px] min-h-[44px]",
+    lg: "px-7 py-4 text-[15px] min-h-[48px]"
   };
 
   return (
@@ -36,13 +38,15 @@ export const TactileButton: React.FC<TactileButtonProps> = ({
         ${colorMap[color]} 
         ${sizeMap[size]} 
         ${fullWidth ? 'w-full' : ''} 
-        rounded-xl font-black uppercase tracking-tighter transition-all duration-75 ease-in-out relative overflow-hidden 
-        active:shadow-tactile-pressed active:translate-y-[1px]
-        disabled:opacity-50 disabled:cursor-not-allowed
+        rounded-xl font-semibold tracking-wide transition-all duration-100 relative overflow-hidden 
+        active:translate-y-[1px]
+        disabled:opacity-40 disabled:cursor-not-allowed
         ${className}
       `}
     >
-      {children}
+      <div className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+      </div>
     </button>
   );
 };

@@ -58,10 +58,10 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
   const EffectiveLifeTool = () => {
     const results = searchEffectiveLife(assetSearch);
     return (
-        <ChassisWell label="ATO Life Assets" className="h-full">
-            <p className="tactile-label opacity-50 mb-6">Ref: TR 2024/3 // 2025 DETERMINATIONS</p>
+        <ChassisWell label="Tax Rule Lookup" className="h-full">
+            <p className="tactile-label opacity-50 mb-6">Ref: ATO TR 2024/3 // 2025 DETERMINATIONS</p>
             <RecessedInput 
-                placeholder="Search identifier (e.g. Laptop)"
+                placeholder="Search (e.g. Laptop)"
                 className="mb-6"
                 value={assetSearch}
                 onChange={(e) => setAssetSearch(e.target.value)}
@@ -73,7 +73,7 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
                             <span className="text-[11px] font-black text-industrial-text uppercase tracking-tighter">{item.asset}</span>
                             <span className="text-industrial-blue font-black text-xs">{item.lifeYears}Y</span>
                         </div>
-                        <div className="tactile-label opacity-50">Rate: {(item.rate * 100).toFixed(1)}% PC</div>
+                        <div className="tactile-label opacity-50">Depreciation: {(item.rate * 100).toFixed(1)}%</div>
                     </div>
                 ))}
             </div>
@@ -86,8 +86,8 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
           setAbnResult(validateABN(abnInput));
       }
       return (
-        <ChassisWell label="ABN VALIDATOR">
-            <p className="tactile-label opacity-50 mb-6">Integrity Check // Mod 11 Algorithm</p>
+        <ChassisWell label="ABN CHECKER">
+            <p className="tactile-label opacity-50 mb-6">Business Integrity Check</p>
             <RecessedInput 
                 placeholder="ABN (11 DIGITS)"
                 className="mb-4"
@@ -100,7 +100,7 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
                 fullWidth
                 className="mb-6"
             >
-                Verify Entity
+                Check ABN
             </TactileButton>
             {abnResult && (
                 <div className={`p-4 rounded-2xl shadow-well border ${abnResult.isValid ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-industrial-orange/10 border-industrial-orange/20 text-industrial-orange'}`}>
@@ -124,9 +124,9 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
             <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-0.5">
                     <LEDIndicator active={true} color="green" />
-                    <h2 className="text-sm font-black text-industrial-text uppercase tracking-widest">Neural Advisor</h2>
+                    <h2 className="text-sm font-black text-industrial-text uppercase tracking-widest">AI Advisor</h2>
                 </div>
-                <p className="tactile-label opacity-50 ml-4">System Operational // Link: Active</p>
+                <p className="tactile-label opacity-50 ml-4">AI Advisor Online</p>
             </div>
             <div className="bg-industrial-base px-3 py-1 rounded-lg shadow-well text-[9px] font-black text-industrial-subtext/60 uppercase border-t border-l border-white/5">AUD // COMPLIANT</div>
         </div>
@@ -165,16 +165,16 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyPress}
-                    placeholder="Input command (e.g. Optimize tax flow)"
+                    placeholder="Ask a question..."
                     className="flex-1 bg-transparent px-4 py-3 text-sm font-bold text-industrial-text placeholder-industrial-subtext/40 outline-none"
                 />
                 <TactileButton 
                     onClick={handleSend}
                     disabled={loading || !input.trim()}
-                    color="orange"
+                    color="blue"
                     size="md"
                 >
-                    Exec
+                    Send
                 </TactileButton>
             </div>
         </div>
@@ -187,13 +187,13 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
                     onClick={() => setActiveTool('EFFECTIVE_LIFE')}
                     className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${activeTool === 'EFFECTIVE_LIFE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext hover:text-industrial-text'}`}
                 >
-                    Asset Life
+                    Tax Rules
                 </button>
                 <button 
                     onClick={() => setActiveTool('ABN_CHECKER')}
                     className={`flex-1 py-3 text-[10px] font-black uppercase tracking-tighter rounded-xl transition-all ${activeTool === 'ABN_CHECKER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-blue' : 'text-industrial-subtext hover:text-industrial-text'}`}
                 >
-                    Entity Auth
+                    ABN Checker
                 </button>
             </div>
 
@@ -201,7 +201,7 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
                 {activeTool === 'NONE' && (
                     <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-industrial-base border-2 border-dashed border-black/5 rounded-[2rem]">
                         <div className="w-16 h-16 bg-industrial-base rounded-2xl flex items-center justify-center text-4xl shadow-well border-t border-l border-black/5 mb-6 opacity-40">🛠️</div>
-                        <p className="tactile-label opacity-40 leading-relaxed">Select a compliance module to assist with operational diagnostics.</p>
+                        <p className="tactile-label opacity-40 leading-relaxed">Select a tool to help with your finances.</p>
                     </div>
                 )}
                 {activeTool === 'EFFECTIVE_LIFE' && <EffectiveLifeTool />}

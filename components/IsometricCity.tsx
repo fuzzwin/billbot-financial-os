@@ -128,6 +128,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
   const [zoom, setZoom] = useState(minimal ? 45 : 35);
   const [autoRotate, setAutoRotate] = useState(false);
   const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
+  const [showLegend, setShowLegend] = useState(false);
   
   const isDark = theme === 'dark';
   const isMid = theme === 'mid';
@@ -143,61 +144,98 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
   // Theme colors: light = bright, mid = softer grey, dark = full dark
   const themeColors = useMemo(() => ({
     ...COLORS,
-    grass: isDark ? '#1A1A1A' : isMid ? '#A0A0A0' : '#D1D1D1',
-    sidewalk: isDark ? '#2A2A2A' : isMid ? '#B8B8B8' : '#E0E0E0',
-    road: isDark ? '#0A0A0A' : isMid ? '#2A2A2A' : '#1A1A1A',
-    concrete: isDark ? '#2A2A2A' : isMid ? '#9E9E9E' : '#BDBDBD',
-    window: isDark ? '#1A1A1A' : isMid ? '#B8D4E8' : '#E3F2FD',
-    cloud: isDark ? '#424242' : isMid ? '#E8E8E8' : '#FFFFFF',
-    stormCloud: isDark ? '#616161' : isMid ? '#808080' : '#9E9E9E',
-    tree: isDark ? '#33691E' : isMid ? '#5A8F32' : '#689F38',
-    treeDark: isDark ? '#1B5E20' : isMid ? '#2E7D32' : '#33691E',
-    trunk: isDark ? '#212121' : isMid ? '#3E2723' : '#4E342E',
-    cash: isDark ? '#B0B0B0' : isMid ? '#C8C8C8' : '#E0E0E0',
-    savings: isDark ? '#C2A636' : isMid ? '#D4B83D' : '#F3CF44',
-    investment: isDark ? '#0033AA' : isMid ? '#0044CC' : '#0055FF',
-    super: isDark ? '#6A1B9A' : isMid ? '#7B1FA2' : '#9C27B0',
-    debt: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
-    taxVault: isDark ? '#0A0A0A' : isMid ? '#2A2A2A' : '#1A1A1A',
-    water: isDark ? '#0033AA' : isMid ? '#0044CC' : '#0055FF',
-    waterNegative: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
-    rocket: isDark ? '#B0B0B0' : isMid ? '#D0D0D0' : '#EBEBEB',
-    rocketAccent: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
-    construction: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
-    crane: isDark ? '#C2A636' : isMid ? '#D4B83D' : '#F3CF44',
-    scaffolding: isDark ? '#212121' : isMid ? '#3A3A3A' : '#424242',
-    trafficRed: isDark ? '#CC3F00' : isMid ? '#E04500' : '#FF4F00',
-    trafficGreen: isDark ? '#388E3C' : isMid ? '#43A047' : '#4CAF50',
-    trafficYellow: isDark ? '#C2A636' : isMid ? '#D4B83D' : '#F3CF44',
-    roadMarking: isDark ? '#B0B0B0' : isMid ? '#D8D8D8' : '#FFFFFF',
-    dock: isDark ? '#3E2723' : isMid ? '#4E342E' : '#5D4037',
+    grass: isDark ? '#064E3B' : isMid ? '#15803D' : '#22C55E', // Rich greens
+    sidewalk: isDark ? '#1E293B' : isMid ? '#94A3B8' : '#F1F5F9',
+    road: isDark ? '#020617' : isMid ? '#334155' : '#1E293B',
+    concrete: isDark ? '#1E293B' : isMid ? '#475569' : '#CBD5E1',
+    window: isDark ? '#1E293B' : isMid ? '#94A3B8' : '#E3F2FD',
+    cloud: isDark ? '#334155' : isMid ? '#CBD5E1' : '#FFFFFF',
+    stormCloud: isDark ? '#475569' : isMid ? '#64748B' : '#94A3B8',
+    tree: isDark ? '#10B981' : isMid ? '#22C55E' : '#4ADE80',
+    treeDark: isDark ? '#065F46' : isMid ? '#166534' : '#15803D',
+    trunk: isDark ? '#020617' : isMid ? '#1E293B' : '#451A03',
+    cash: isDark ? '#94A3B8' : isMid ? '#CBD5E1' : '#F1F5F9',
+    savings: isDark ? '#CA8A04' : isMid ? '#EAB308' : '#FACC15',
+    investment: isDark ? '#0071E3' : isMid ? '#0071E3' : '#3B82F6',
+    super: isDark ? '#7E22CE' : isMid ? '#9333EA' : '#A855F7',
+    debt: isDark ? '#EF4444' : isMid ? '#EF4444' : '#F87171',
+    taxVault: isDark ? '#020617' : isMid ? '#1E293B' : '#0F172A',
+    water: isDark ? '#0071E3' : isMid ? '#60A5FA' : '#93C5FD', // Brighter blues
+    waterNegative: isDark ? '#EF4444' : isMid ? '#EF4444' : '#F87171',
+    rocket: isDark ? '#94A3B8' : isMid ? '#CBD5E1' : '#F1F5F9',
+    rocketAccent: isDark ? '#EF4444' : isMid ? '#EF4444' : '#F87171',
+    construction: isDark ? '#EF4444' : isMid ? '#EF4444' : '#F87171',
+    crane: isDark ? '#CA8A04' : isMid ? '#EAB308' : '#FACC15',
+    scaffolding: isDark ? '#020617' : isMid ? '#1E293B' : '#334155',
+    trafficRed: isDark ? '#EF4444' : isMid ? '#EF4444' : '#F87171',
+    trafficGreen: isDark ? '#10B981' : isMid ? '#10B981' : '#34D399',
+    trafficYellow: isDark ? '#F59E0B' : isMid ? '#F59E0B' : '#FBBF24',
+    roadMarking: isDark ? '#334155' : isMid ? '#64748B' : '#FFFFFF',
+    dock: isDark ? '#020617' : isMid ? '#1E293B' : '#451A03',
   }), [isDark, isMid]);
 
   // ============ SUB-COMPONENTS ============
+
+  const RoadLines = ({ position, rotation }: { position: [number, number, number]; rotation?: number }) => (
+    <group position={position} rotation={[0, rotation || 0, 0]}>
+      {[...Array(8)].map((_, i) => (
+        <mesh key={i} position={[0, 0.021, -3.5 + i * 1.0]}>
+          <boxGeometry args={[0.05, 0.001, 0.5]} />
+          <meshStandardMaterial color={themeColors.roadMarking} transparent opacity={isDark ? 0.2 : 0.4} />
+        </mesh>
+      ))}
+    </group>
+  );
+
+  const SidewalkDetail = ({ position }: { position: [number, number, number] }) => (
+    <group position={position}>
+      {/* Bench */}
+      <mesh position={[0, 0.08, 0]} castShadow>
+        <boxGeometry args={[0.4, 0.04, 0.15]} />
+        <meshStandardMaterial color={isDark ? "#1E293B" : "#5D4037"} />
+      </mesh>
+      <mesh position={[0, 0.02, 0.06]}><boxGeometry args={[0.4, 0.04, 0.02]} /><meshStandardMaterial color="#424242" /></mesh>
+      <mesh position={[0, 0.02, -0.06]}><boxGeometry args={[0.4, 0.04, 0.02]} /><meshStandardMaterial color="#424242" /></mesh>
+    </group>
+  );
 
   const StreetLamp = ({ position }: { position: [number, number, number] }) => (
     <group position={position}>
       <mesh position={[0, 0.45, 0]} castShadow>
         <cylinderGeometry args={[0.02, 0.025, 0.9, 6]} />
-        <meshStandardMaterial color="#607D8B" />
+        <meshStandardMaterial color={isDark ? "#2D3748" : "#607D8B"} metalness={0.6} />
       </mesh>
       <mesh position={[0.1, 0.88, 0]}>
         <boxGeometry args={[0.2, 0.02, 0.02]} />
-        <meshStandardMaterial color="#607D8B" />
+        <meshStandardMaterial color={isDark ? "#2D3748" : "#607D8B"} />
       </mesh>
       <mesh position={[0.2, 0.84, 0]}>
-        <sphereGeometry args={[0.05, 8, 8]} />
-        <meshStandardMaterial color="#FFF9C4" emissive="#FFF59D" emissiveIntensity={0.4} />
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshStandardMaterial 
+          color="#FFF9C4" 
+          emissive="#FFF59D" 
+          emissiveIntensity={isDark ? 4 : 0.4} 
+        />
       </mesh>
+      {isDark && (
+        <pointLight position={[0.2, 0.8, 0]} intensity={1.2} distance={4} color="#FFF59D" />
+      )}
     </group>
   );
 
-  const Window = ({ position, size }: { position: [number, number, number]; size: [number, number, number] }) => (
-    <mesh position={position}>
-      <boxGeometry args={size} />
-      <meshStandardMaterial color={themeColors.window} emissive="#4FC3F7" emissiveIntensity={0.2} />
-    </mesh>
-  );
+  const Window = ({ position, size }: { position: [number, number, number]; size: [number, number, number] }) => {
+    const isOn = useMemo(() => Math.random() > 0.4, []);
+    return (
+      <mesh position={position}>
+        <boxGeometry args={size} />
+        <meshStandardMaterial 
+          color={isDark ? (isOn ? "#60A5FA" : "#0F172A") : themeColors.window} 
+          emissive={isDark && isOn ? "#4FC3F7" : "#000000"} 
+          emissiveIntensity={isDark && isOn ? 1.5 : 0} 
+        />
+      </mesh>
+    );
+  };
 
   const Tree = ({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) => {
     const { showTooltip } = useContext(TooltipContext);
@@ -279,16 +317,43 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     };
     const floors = Math.min(Math.floor(height / 0.35), 10);
     const width = 0.95;
+    const hasHelipad = useMemo(() => height > 2.5 && Math.random() > 0.5, [height]);
+    
     const handleClick = (e: ThreeEvent<MouseEvent>) => {
       e.stopPropagation();
-      showTooltip({ type: 'asset', title: name || type, subtitle: type, value: `$${balance.toLocaleString()}`, description: 'Liquidity storage node.', icon: '🏦', color: getColor() });
+      showTooltip({ type: 'asset', title: name || type, subtitle: type, value: `$${balance.toLocaleString()}`, description: 'Your bank account storage.', icon: '🏦', color: getColor() });
     };
+    
     return (
       <group position={position}>
         <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
           <boxGeometry args={[width, height, width]} />
-          <meshStandardMaterial color={getColor()} roughness={0.4} />
+          <meshStandardMaterial color={getColor()} roughness={0.3} metalness={0.2} />
         </mesh>
+        
+        {/* Roof Detail */}
+        <group position={[0, height, 0]}>
+          <mesh position={[0, 0.05, 0]}><boxGeometry args={[width * 0.85, 0.1, width * 0.85]} /><meshStandardMaterial color="#333" /></mesh>
+          {hasHelipad ? (
+            <group position={[0, 0.11, 0]}>
+              <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                <circleGeometry args={[0.3, 16]} />
+                <meshStandardMaterial color="#444" />
+              </mesh>
+              <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[0.25, 0.28, 16]} />
+                <meshStandardMaterial color="#FFF" />
+              </mesh>
+              <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <boxGeometry args={[0.2, 0.02, 0.01]} />
+                <meshStandardMaterial color="#FFF" />
+              </mesh>
+            </group>
+          ) : (
+            <mesh position={[0.2, 0.15, 0.2]}><cylinderGeometry args={[0.05, 0.05, 0.2, 8]} /><meshStandardMaterial color="#222" /></mesh>
+          )}
+        </group>
+
         {Array.from({ length: floors }).map((_, f) => (
           <group key={f}>
             <Window position={[width/2 + 0.01, 0.22 + f * 0.35, 0]} size={[0.02, 0.14, width * 0.6]} />
@@ -305,7 +370,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     const { showTooltip } = useContext(TooltipContext);
     const smokeRef = useRef<THREE.Group>(null);
     useFrame(({ clock }) => { if (smokeRef.current) { smokeRef.current.children.forEach((child, i) => { child.position.y = 0.12 + Math.sin(clock.elapsedTime * 2 + i) * 0.1 + i * 0.12; (child as THREE.Mesh).scale.setScalar(0.8 + Math.sin(clock.elapsedTime * 3 + i) * 0.25); }); } });
-    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'debt', title: name || type.replace('_', ' '), subtitle: 'Liability', value: `-$${balance.toLocaleString()}`, description: 'Liability extraction point.', icon: '📉', color: themeColors.debt }); };
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'debt', title: name || type.replace('_', ' '), subtitle: 'Debt', value: `-$${balance.toLocaleString()}`, description: 'Money you owe.', icon: '📉', color: themeColors.debt }); };
     const floors = Math.min(Math.floor(height / 0.35), 8);
     const width = 0.9;
     return (
@@ -338,11 +403,11 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     const { showTooltip } = useContext(TooltipContext);
     const progress = Math.min(goal.currentAmount / goal.targetAmount, 1);
     const rocketHeight = 0.4 + progress * 0.7;
-    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'goal', title: goal.name, subtitle: `${goal.valueTag} Goal`, value: `$${goal.currentAmount.toLocaleString()} / $${goal.targetAmount.toLocaleString()}`, description: 'Strategic target module.', icon: '🚀', color: progress >= 1 ? '#4CAF50' : '#2196F3' }); };
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'goal', title: goal.name, subtitle: `${goal.valueTag} Goal`, value: `$${goal.currentAmount.toLocaleString()} / $${goal.targetAmount.toLocaleString()}`, description: 'A financial goal you are saving for.', icon: '🚀', color: progress >= 1 ? themeColors.trafficGreen : themeColors.investment }); };
     return (
       <group position={position}>
         <mesh position={[0, 0.08, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.6, 0.65, 0.16, 16]} /><meshStandardMaterial color={themeColors.concrete} /></mesh>
-        <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.4, 0.5, 16]} /><meshStandardMaterial color={progress >= 1 ? '#4CAF50' : '#FFC107'} /></mesh>
+        <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.4, 0.5, 16]} /><meshStandardMaterial color={progress >= 1 ? themeColors.trafficGreen : themeColors.trafficYellow} /></mesh>
         {progress > 0.05 && (
           <group position={[0, 0.2, 0]}>
             <mesh position={[0, rocketHeight / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} /><meshStandardMaterial color={themeColors.rocket} metalness={0.3} /></mesh>
@@ -366,23 +431,87 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
 
   const HarborDock = ({ position, savings }: { position: [number, number, number]; savings: number }) => {
     const { showTooltip } = useContext(TooltipContext);
+    const rippleRef = useRef<THREE.Group>(null);
+    useFrame(({ clock }) => {
+      if (rippleRef.current) {
+        rippleRef.current.children.forEach((child, i) => {
+          child.scale.setScalar(1 + Math.sin(clock.elapsedTime * 2 + i) * 0.05);
+          (child as THREE.Mesh).material.opacity = 0.6 + Math.sin(clock.elapsedTime * 2 + i) * 0.2;
+        });
+      }
+    });
     const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'harbor', title: 'Liquidity Harbor', value: `$${savings.toLocaleString()}`, description: 'Available liquid reserves.', icon: '⚓', color: themeColors.water }); };
     return (
       <group position={position}>
-        <mesh position={[0, -0.02, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[2.8, 0.12, 2.0]} /><meshStandardMaterial color={themeColors.water} transparent opacity={0.85} /></mesh>
-        <mesh position={[0.6, 0.06, 0]} onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.35, 0.06, 1.8]} /><meshStandardMaterial color={themeColors.dock} /></mesh>
+        <mesh position={[0, -0.02, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[2.8, 0.12, 2.0]} />
+          <meshStandardMaterial color={themeColors.water} transparent opacity={0.85} />
+        </mesh>
+        <group ref={rippleRef}>
+          <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.8, 0.9, 16]} />
+            <meshStandardMaterial color="#FFFFFF" transparent opacity={0.3} />
+          </mesh>
+        </group>
+        <mesh position={[0.6, 0.06, 0]} onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[0.35, 0.06, 1.8]} />
+          <meshStandardMaterial color={themeColors.dock} />
+        </mesh>
       </group>
     );
   };
 
   const CashflowFountain = ({ surplus }: { surplus: number; maxSurplus: number }) => {
     const { showTooltip } = useContext(TooltipContext);
+    const waterRef = useRef<THREE.Mesh>(null);
+    const particlesRef = useRef<THREE.Group>(null);
+    
+    useFrame(({ clock }) => {
+      if (waterRef.current) {
+        waterRef.current.scale.y = 1 + Math.sin(clock.elapsedTime * 4) * 0.1;
+      }
+      if (particlesRef.current) {
+        particlesRef.current.children.forEach((p, i) => {
+          p.position.y = 0.2 + (Math.sin(clock.elapsedTime * 5 + i) + 1) * 0.15;
+          p.scale.setScalar(0.5 + Math.sin(clock.elapsedTime * 3 + i) * 0.2);
+        });
+      }
+    });
+    
     const isNegative = surplus < 0;
-    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'fountain', title: 'Cashflow Fountain', value: `${isNegative ? '-' : '+'}$${Math.abs(surplus).toLocaleString()}/mo`, description: 'System liquidity generator.', icon: isNegative ? '🔴' : '⛲', color: isNegative ? '#EF5350' : '#4CAF50' }); };
+    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'fountain', title: 'Cashflow Fountain', value: `${isNegative ? '-' : '+'}$${Math.abs(surplus).toLocaleString()}/mo`, description: 'Your monthly money left over.', icon: isNegative ? '🔴' : '⛲', color: isNegative ? themeColors.trafficRed : themeColors.trafficGreen }); };
+    
     return (
       <group position={[0, 0, 0]}>
-        <mesh position={[0, 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[1.1, 1.2, 0.08, 24]} /><meshStandardMaterial color="#E0E0E0" /></mesh>
-        <mesh position={[0, 0.08, 0]} onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.8, 0.8, 0.08, 20]} /><meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.8} /></mesh>
+        {/* Base Pool */}
+        <mesh position={[0, 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}>
+          <cylinderGeometry args={[1.2, 1.3, 0.1, 24]} />
+          <meshStandardMaterial color={isDark ? "#1A202C" : "#E0E0E0"} />
+        </mesh>
+        {/* Water Surface */}
+        <mesh position={[0, 0.08, 0]}>
+          <cylinderGeometry args={[1.1, 1.1, 0.02, 24]} />
+          <meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.6} />
+        </mesh>
+        {/* Tier 1 */}
+        <mesh position={[0, 0.15, 0]}>
+          <cylinderGeometry args={[0.6, 0.7, 0.15, 16]} />
+          <meshStandardMaterial color={isDark ? "#2D3748" : "#BDBDBD"} />
+        </mesh>
+        {/* Tier 2 (Water Column) */}
+        <mesh ref={waterRef} position={[0, 0.3, 0]}>
+          <cylinderGeometry args={[0.2, 0.3, 0.4, 12]} />
+          <meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.8} />
+        </mesh>
+        {/* Particles/Splashes */}
+        <group ref={particlesRef}>
+          {[...Array(6)].map((_, i) => (
+            <mesh key={i} position={[Math.cos(i) * 0.4, 0.4, Math.sin(i) * 0.4]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.6} />
+            </mesh>
+          ))}
+        </group>
       </group>
     );
   };
@@ -452,6 +581,9 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <mesh position={[0.12, 0.02, -0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
         <mesh position={[-0.12, 0.02, 0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
         <mesh position={[-0.12, 0.02, -0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
+        {/* Headlights */}
+        <mesh position={[0.18, 0.06, 0.08]}><sphereGeometry args={[0.03, 8, 8]} /><meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} /></mesh>
+        <mesh position={[0.18, 0.06, -0.08]}><sphereGeometry args={[0.03, 8, 8]} /><meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} /></mesh>
       </group>
     );
   };
@@ -475,7 +607,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         // SW quadrant: Goals/Launchpad area (sidewalk around rockets)
         case 'SW': return [[-inner, offset], [-offset, offset], [-offset, -inner], [-inner, -inner]];
         // SE quadrant: Only the outer edge sidewalk (avoid harbor/water at center)
-        case 'SE': return [[offset, inner], [offset, offset], [inner + 2.5, offset], [inner + 2.5, inner]];
+        case 'SE': return [[offset, inner], [offset, offset], [inner, offset], [inner, inner]];
       }
     }, [quadrant]);
     
@@ -521,6 +653,31 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     );
   };
 
+  const StarField = () => {
+    const stars = useMemo(() => {
+      return Array.from({ length: 100 }, () => ({
+        position: [
+          (Math.random() - 0.5) * 30,
+          8 + Math.random() * 5,
+          (Math.random() - 0.5) * 30
+        ] as [number, number, number],
+        size: 0.02 + Math.random() * 0.03,
+        opacity: 0.2 + Math.random() * 0.8
+      }));
+    }, []);
+
+    return (
+      <group>
+        {stars.map((s, i) => (
+          <mesh key={i} position={s.position}>
+            <sphereGeometry args={[s.size, 4, 4]} />
+            <meshBasicMaterial color="#FFF" transparent opacity={s.opacity} />
+          </mesh>
+        ))}
+      </group>
+    );
+  };
+
   const CityScene = () => {
     const cityRef = useRef<THREE.Group>(null);
     const { horizontalGreen, isYellow } = useTrafficLight();
@@ -553,20 +710,42 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     
     return (
       <group ref={cityRef}>
-        <mesh position={[0, -0.15, 0]} receiveShadow><boxGeometry args={[14, 0.3, 14]} /><meshStandardMaterial color="#37474F" /></mesh>
-        <mesh position={[-3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#2E3B1E' : isMid ? '#5A7A3C' : '#7CB342'} /></mesh>
-        <mesh position={[3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#1A1A1A' : isMid ? '#4A7A2E' : '#689F38'} /></mesh>
-        <mesh position={[-3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#334D20' : isMid ? '#6B943A' : '#8BC34A'} /></mesh>
-        <mesh position={[3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={isDark ? '#2D4A2F' : isMid ? '#5E9060' : '#81C784'} /></mesh>
+        <mesh position={[0, -0.15, 0]} receiveShadow>
+          <boxGeometry args={[14, 0.3, 14]} />
+          <meshStandardMaterial color={isDark ? "#0F172A" : "#37474F"} />
+        </mesh>
+        
+        {/* Ground Grid for "Grid" feel */}
+        <gridHelper args={[14, 14, isDark ? "#1E293B" : "#455A64", isDark ? "#020617" : "#37474F"]} position={[0, 0.01, 0]} />
+
+        <mesh position={[-3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
+        <mesh position={[3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
+        <mesh position={[-3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
+        <mesh position={[3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
+        
         <mesh position={[-4.5, 0.02, 0]} receiveShadow><boxGeometry args={[5, 0.04, 2.2]} /><meshStandardMaterial color={themeColors.road} /></mesh>
         <mesh position={[4.5, 0.02, 0]} receiveShadow><boxGeometry args={[5, 0.04, 2.2]} /><meshStandardMaterial color={themeColors.road} /></mesh>
         <mesh position={[0, 0.02, -4.5]} receiveShadow><boxGeometry args={[2.2, 0.04, 5]} /><meshStandardMaterial color={themeColors.road} /></mesh>
         <mesh position={[0, 0.02, 4.5]} receiveShadow><boxGeometry args={[2.2, 0.04, 5]} /><meshStandardMaterial color={themeColors.road} /></mesh>
         <mesh position={[0, 0.02, 0]} receiveShadow><boxGeometry args={[2.2, 0.04, 2.2]} /><meshStandardMaterial color={themeColors.road} /></mesh>
+
+        {/* Road Lines */}
+        <RoadLines position={[-4.5, 0.02, 0]} rotation={Math.PI / 2} />
+        <RoadLines position={[4.5, 0.02, 0]} rotation={Math.PI / 2} />
+        <RoadLines position={[0, 0.02, -4.5]} />
+        <RoadLines position={[0, 0.02, 4.5]} />
+
         {[[-3.8, -3.8], [-3.8, 3.8], [3.8, -3.8], [3.8, 3.8]].map(([bx, bz], i) => (
           <group key={i}>
             <mesh position={[bx, 0.11, bz > 0 ? bz - 2.4 : bz + 2.4]} receiveShadow><boxGeometry args={[5.1, 0.08, 0.4]} /><meshStandardMaterial color={themeColors.sidewalk} /></mesh>
             <mesh position={[bx > 0 ? bx - 2.4 : bx + 2.4, 0.11, bz]} receiveShadow><boxGeometry args={[0.4, 0.08, 5.1]} /><meshStandardMaterial color={themeColors.sidewalk} /></mesh>
+            
+            {/* Sidewalk details */}
+            <SidewalkDetail position={[bx > 0 ? bx - 1.2 : bx + 1.2, 0.15, bz > 0 ? bz - 2.2 : bz + 2.2]} />
+            <SidewalkDetail position={[bx > 0 ? bx - 2.2 : bx + 2.2, 0.15, bz > 0 ? bz - 1.2 : bz + 1.2]} />
+
+            {/* Street Lamps on corners */}
+            <StreetLamp position={[bx > 0 ? bx - 2.1 : bx + 2.1, 0.15, bz > 0 ? bz - 2.1 : bz + 2.1]} />
           </group>
         ))}
         
@@ -598,21 +777,68 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           const positions: [number, number, number][] = [[-4.0, 0.1, -4.0], [-2.8, 0.1, -4.0], [-4.0, 0.1, -2.8], [-2.8, 0.1, -2.8]];
           return <AssetBuilding key={acc.id} position={positions[i]} height={Math.max(1.2, (acc.balance / maxBalance) * 4.0)} type={acc.type} balance={acc.balance} name={acc.name} />;
         })}
+        {assetsAcc.length < 4 && Array.from({ length: 4 - assetsAcc.length }).map((_, i) => {
+          const positions: [number, number, number][] = [[-4.0, 0.1, -4.0], [-2.8, 0.1, -4.0], [-4.0, 0.1, -2.8], [-2.8, 0.1, -2.8]];
+          const pos = positions[assetsAcc.length + i];
+          return (
+            <group key={`empty-asset-${i}`} position={pos}>
+              <mesh position={[0, 0.05, 0]} receiveShadow>
+                <boxGeometry args={[0.95, 0.1, 0.95]} />
+                <meshStandardMaterial color={isDark ? "#1A202C" : "#BDBDBD"} transparent opacity={0.3} />
+              </mesh>
+              {i % 2 === 0 ? <Tree position={[0, 0, 0]} scale={0.5} /> : null}
+            </group>
+          );
+        })}
         {/* Debt Buildings - NE Quadrant (max 3) */}
         {debtsAcc.slice(0, 3).map((acc, i) => {
           const positions: [number, number, number][] = [[4.0, 0.1, -4.0], [2.8, 0.1, -4.0], [4.0, 0.1, -2.8]];
           return <DebtBuilding key={acc.id} position={positions[i]} height={Math.max(1.0, (acc.balance / maxBalance) * 3.0)} type={acc.type} balance={acc.balance} name={acc.name} />;
+        })}
+        {debtsAcc.length < 3 && Array.from({ length: 3 - debtsAcc.length }).map((_, i) => {
+          const positions: [number, number, number][] = [[4.0, 0.1, -4.0], [2.8, 0.1, -4.0], [4.0, 0.1, -2.8]];
+          const pos = positions[debtsAcc.length + i];
+          return (
+            <group key={`empty-debt-${i}`} position={pos}>
+              <mesh position={[0, 0.05, 0]} receiveShadow>
+                <boxGeometry args={[0.9, 0.1, 0.9]} />
+                <meshStandardMaterial color={isDark ? "#1A202C" : "#BDBDBD"} transparent opacity={0.3} />
+              </mesh>
+              <mesh position={[0, 0.2, 0]} rotation={[0, Math.PI / 4, 0]}>
+                <boxGeometry args={[0.05, 0.4, 0.05]} />
+                <meshStandardMaterial color={themeColors.scaffolding} />
+              </mesh>
+            </group>
+          );
         })}
         {/* Launch Pads - SW Quadrant (max 3) */}
         {goals.slice(0, 3).map((goal, i) => {
           const positions: [number, number, number][] = [[-4.2, 0.1, 3.5], [-3.0, 0.1, 3.5], [-4.2, 0.1, 4.8]];
           return <LaunchPad key={goal.id} position={positions[i]} goal={goal} />;
         })}
+        {goals.length < 3 && Array.from({ length: 3 - goals.length }).map((_, i) => {
+          const positions: [number, number, number][] = [[-4.2, 0.1, 3.5], [-3.0, 0.1, 3.5], [-4.2, 0.1, 4.8]];
+          const pos = positions[goals.length + i];
+          return (
+            <group key={`empty-goal-${i}`} position={pos}>
+              <mesh position={[0, 0.05, 0]} receiveShadow>
+                <cylinderGeometry args={[0.6, 0.65, 0.1, 16]} />
+                <meshStandardMaterial color={isDark ? "#1A202C" : "#BDBDBD"} transparent opacity={0.5} />
+              </mesh>
+              <mesh position={[0.4, 0.3, 0.4]} rotation={[0, Math.PI / 4, 0]}>
+                <boxGeometry args={[0.1, 0.6, 0.1]} />
+                <meshStandardMaterial color={themeColors.scaffolding} />
+              </mesh>
+            </group>
+          );
+        })}
         <HarborDock position={[3.5, 0.08, 3.8]} savings={health.savings} />
         {health.taxVault > 0 && <TaxVault position={[4.8, 0.1, 2.8]} amount={health.taxVault} />}
-        {([[-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5]] as [number, number, number][]).map((pos, i) => <Tree key={i} position={pos} scale={0.8} />)}
+        {([[-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5], [-2.5, 0.08, -5.5], [2.5, 0.08, -5.5], [-5.5, 0.08, -2.5], [5.5, 0.08, -2.5]].map((pos, i) => <Tree key={i} position={pos as [number, number, number]} scale={0.7 + Math.random() * 0.3} />))}
         <DriftingCloud initialPosition={[-8, 8, -6]} speed={0.15} scale={1.2} isStorm={isLowScore} />
         <DriftingCloud initialPosition={[5, 9, -3]} speed={0.12} scale={0.9} isStorm={isLowScore} />
+        <DriftingCloud initialPosition={[-3, 7, 5]} speed={0.1} scale={1.1} isStorm={isLowScore} />
+        {isDark && <StarField />}
       </group>
     );
   };
@@ -629,17 +855,17 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     // Theme-based sky: light = bright, mid = soft grey, dark = near black
     if (isLowScore) {
       if (isDark) return "bg-[#0A0A0A]";
-      if (isMid) return "bg-[#A8A8A8]";
-      return "bg-[#D1D1D1]";
+      if (isMid) return "bg-[#64748B]"; // Desaturated blue-gray
+      return "bg-[#94A3B8]";
     }
     if (health.score > 70) {
-      if (isDark) return "bg-[#1A1A1A]";
-      if (isMid) return "bg-[#B8B8B8]";
-      return "bg-[#E8E8E8]";
+      if (isDark) return "bg-[#020617]"; // Deep night sky
+      if (isMid) return "bg-[#3B82F6]"; // Vibrant mid blue
+      return "bg-[#BFDBFE]"; // Bright sky blue
     }
-    if (isDark) return "bg-[#111111]";
-    if (isMid) return "bg-[#C0C0C0]";
-    return "bg-[#DEDEDE]";
+    if (isDark) return "bg-[#0F172A]";
+    if (isMid) return "bg-[#60A5FA]"; // Friendly blue
+    return "bg-[#DBEAFE]"; // Soft light blue
   };
 
   const cameraPosition: [number, number, number] = viewMode === 'birdseye' 
@@ -651,21 +877,49 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     : { min: Math.PI / 4, max: Math.PI / 3 }; 
 
   return (
-    <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden`}>
+    <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden shadow-inner`}>
       
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
-        <div className="flex flex-col bg-industrial-base rounded-xl overflow-hidden shadow-tactile-sm border-t border-l border-white/60">
-          <button onClick={handleZoomIn} className="px-3 py-2 text-industrial-text hover:bg-white/10 transition-colors text-sm font-black">+</button>
-          <div className="h-px w-full bg-industrial-well-shadow-light/50 shadow-well"></div>
-          <button onClick={handleZoomOut} className="px-3 py-2 text-industrial-text hover:bg-white/10 transition-colors text-sm font-black">−</button>
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+        <div className="flex flex-col bg-industrial-base rounded-xl overflow-hidden shadow-tactile-raised border-t border-l border-white/40">
+          <button
+            onClick={handleZoomIn}
+            aria-label="Zoom in"
+            className="w-11 h-11 flex items-center justify-center text-industrial-text hover:bg-black/5 transition-colors text-lg font-black active:shadow-inner"
+          >
+            +
+          </button>
+          <div className="h-px w-full bg-black/10"></div>
+          <button
+            onClick={handleZoomOut}
+            aria-label="Zoom out"
+            className="w-11 h-11 flex items-center justify-center text-industrial-text hover:bg-black/5 transition-colors text-lg font-black active:shadow-inner"
+          >
+            −
+          </button>
         </div>
         
-        <button onClick={toggleView} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-sm border-t border-l border-white/60 ${viewMode === 'birdseye' ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}>
+        <button
+          onClick={toggleView}
+          aria-label={viewMode === 'birdseye' ? 'Switch to isometric view' : 'Switch to birdseye view'}
+          className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${viewMode === 'birdseye' ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
+        >
           {viewMode === 'birdseye' ? '🦅' : '🏙️'}
         </button>
         
-        <button onClick={() => setAutoRotate(!autoRotate)} className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-sm border-t border-l border-white/60 ${autoRotate ? 'bg-industrial-orange text-white' : 'bg-industrial-base text-industrial-text'}`}>
+        <button
+          onClick={() => setAutoRotate(!autoRotate)}
+          aria-label={autoRotate ? 'Disable auto rotate' : 'Enable auto rotate'}
+          className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${autoRotate ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
+        >
           ⟳
+        </button>
+
+        <button
+          onClick={() => setShowLegend(s => !s)}
+          aria-label={showLegend ? 'Hide legend' : 'Show legend'}
+          className="w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] bg-industrial-base text-industrial-text"
+        >
+          ?
         </button>
       </div>
 
@@ -695,7 +949,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           <div className="absolute bottom-4 right-4 z-10 bg-industrial-base/90 backdrop-blur rounded-2xl p-4 shadow-tactile-raised border-t border-l border-white/60 max-w-[200px]">
             <div className="flex justify-between items-center mb-3">
               <span className="tactile-label text-industrial-subtext/60">Target Modules</span>
-              <LEDIndicator active={hasWeeds} color="orange" />
+              <LEDIndicator active={hasWeeds} color="yellow" />
             </div>
             {goals.length === 0 && <p className="text-[10px] font-bold text-industrial-subtext/40 uppercase">System idle.</p>}
             {goals.slice(0, 3).map(g => {
@@ -724,10 +978,60 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         </>
       )}
 
+      {showLegend && (
+        <div className="absolute top-24 left-4 z-30 max-w-[280px] w-[85vw] sm:w-[280px]" onClick={(e) => e.stopPropagation()}>
+          <ChassisWell label="Legend" className="animate-in zoom-in-95 duration-150">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <p className="text-sm font-semibold text-industrial-text/90">What you’re seeing</p>
+              <button
+                onClick={() => setShowLegend(false)}
+                aria-label="Close legend"
+                className="w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-industrial-text transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded bg-industrial-yellow" />
+                <span className="text-industrial-subtext/80">Savings & cash</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded bg-industrial-blue" />
+                <span className="text-industrial-subtext/80">Investments</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded bg-industrial-orange" />
+                <span className="text-industrial-subtext/80">Debt</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded bg-emerald-500" />
+                <span className="text-industrial-subtext/80">Goals in progress</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded bg-white border border-black/10" />
+                <span className="text-industrial-subtext/80">Harbor (liquidity)</span>
+              </div>
+            </div>
+          </ChassisWell>
+        </div>
+      )}
+
       {tooltip && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40" onClick={(e) => e.stopPropagation()}>
           <ChassisWell label="Module Diagnostics" className="max-w-[300px] w-full animate-in zoom-in-95 duration-200">
-            <button onClick={hideTooltip} className="absolute top-4 right-4 tactile-label text-industrial-subtext/40 hover:text-industrial-text">[X]</button>
+            <button
+              onClick={hideTooltip}
+              aria-label="Close"
+              className="absolute top-3 right-3 w-11 h-11 rounded-xl bg-industrial-well-bg/60 shadow-pressed border border-black/5 flex items-center justify-center text-industrial-subtext hover:text-industrial-text transition-colors"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
             <div className="flex items-start gap-4">
               <div className="w-14 h-14 bg-industrial-well-bg rounded-xl flex items-center justify-center text-3xl shadow-well shrink-0">{tooltip.icon}</div>
               <div className="flex-1 min-w-0">
@@ -747,6 +1051,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={polarAngle.min} maxPolarAngle={polarAngle.max} />
           <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
           <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
+          {isDark && <spotLight position={[0, 10, 0]} intensity={0.5} angle={Math.PI / 3} penumbra={1} color="#4FC3F7" />}
           {isFuture && <pointLight position={[-5, 5, -5]} intensity={1} color="#bc13fe" distance={20} />}
           <CityScene />
         </TooltipContext.Provider>

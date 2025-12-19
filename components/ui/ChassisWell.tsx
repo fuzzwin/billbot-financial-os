@@ -7,13 +7,18 @@ interface ChassisWellProps {
 }
 
 export const ChassisWell: React.FC<ChassisWellProps> = ({ children, label, className = "" }) => (
-  <div className={`bg-industrial-base tactile-raised p-4 md:p-6 rounded-[2rem] border-t border-l border-white/10 ${className}`}>
+  <div className={`bg-industrial-base shadow-tactile-raised p-5 md:p-6 rounded-2xl border border-white/15 relative overflow-hidden ${className}`}>
     {label && (
-      <div className="tactile-label mb-4 px-2 border-l-2 border-industrial-orange">
-        {label}
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 bg-industrial-blue rounded-full shadow-sm" />
+          <span className="tactile-label text-industrial-subtext/80">
+            {label}
+          </span>
+        </div>
       </div>
     )}
-    <div className="bg-industrial-base tactile-well rounded-2xl p-4 md:p-6 border-t border-l border-black/5">
+    <div className="relative">
       {children}
     </div>
   </div>

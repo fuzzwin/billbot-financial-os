@@ -12,23 +12,39 @@ export const LEDIndicator: React.FC<LEDIndicatorProps> = ({
   color = 'red' 
 }) => {
   const activeColors = {
-    red: 'bg-red-500 led-glow-red',
-    green: 'bg-emerald-500 led-glow-green',
-    blue: 'bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]',
-    yellow: 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.6)]',
-    orange: 'bg-[#FF4F00] shadow-[0_0_6px_rgba(255,79,0,0.6)]'
+    red: 'bg-[#EF4444]',
+    green: 'bg-[#10B981]',
+    blue: 'bg-[#3B82F6]',
+    yellow: 'bg-[#FACC15]',
+    orange: 'bg-[#FF5C00]'
   };
+  const glowColors = {
+    red: 'rgba(239, 68, 68, 0.35)',
+    green: 'rgba(16, 185, 129, 0.35)',
+    blue: 'rgba(59, 130, 246, 0.35)',
+    yellow: 'rgba(250, 204, 21, 0.35)',
+    orange: 'rgba(255, 92, 0, 0.35)'
+  } as const;
 
   return (
     <div className="flex items-center gap-2">
       <div className={`
-        w-2.5 h-2.5 rounded-full border border-black/10 transition-all duration-300
+        w-3 h-3 rounded-full transition-all duration-300 relative
         ${active
-          ? activeColors[color]
-          : 'bg-gray-400 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.2)]'
+          ? `${activeColors[color]}`
+          : 'bg-[#404040] shadow-inner'
         }
-      `} />
-      {label && <span className="tactile-label">{label}</span>}
+      `}>
+        {active && (
+          <div
+            className="absolute -inset-1 rounded-full"
+            style={{ boxShadow: `0 0 12px ${glowColors[color]}` }}
+          />
+        )}
+        {/* Physical lens reflection - minimal */}
+        {active && <div className="absolute top-[2px] left-[2px] w-1 h-1 bg-white/60 rounded-full" />}
+      </div>
+      {label && <span className="tactile-label opacity-70">{label}</span>}
     </div>
   );
 };
