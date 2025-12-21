@@ -193,7 +193,7 @@ export const ImpulseHangar: React.FC<ImpulseHangarProps> = ({ health, onUpdateHe
                                 >
                                     <div className="w-full h-full opacity-5 bg-[linear-gradient(45deg,#000_25%,transparent_25%,transparent_50%,#000_50%,#000_75%,transparent_75%,transparent)] bg-[size:10px_10px]"></div>
                                     {/* Liquid surface line */}
-                                    <div className="absolute top-0 w-full h-0.5 bg-industrial-blue/40 shadow-[0_0_8px_rgba(0,85,255,0.3)]"></div>
+                                    <div className="absolute top-0 w-full h-0.5 bg-industrial-blue/40 shadow-[0_0_4px_rgba(0,85,255,0.22)]"></div>
                                 </div>
                                 
                                 {/* Crane Hook */}

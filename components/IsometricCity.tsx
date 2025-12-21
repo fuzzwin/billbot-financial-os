@@ -1,7 +1,7 @@
 
 import React, { useMemo, useRef, useState, createContext, useContext } from 'react';
 import { Canvas, useFrame, ThreeEvent } from '@react-three/fiber';
-import { OrthographicCamera, OrbitControls } from '@react-three/drei';
+import { Html, OrthographicCamera, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AccountItem, FinancialHealth, Goal, WeeklyBuild, Subscription } from '../types';
 import { LEDIndicator } from './ui/LEDIndicator';
@@ -129,6 +129,13 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
   const [autoRotate, setAutoRotate] = useState(false);
   const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
   const [showLegend, setShowLegend] = useState(false);
+
+  // DEV: Harbor water override (for visual tuning)
+  const isDev = (import.meta as any)?.env?.DEV === true;
+  const [showHarborDev, setShowHarborDev] = useState(false);
+  const [harborOverrideEnabled, setHarborOverrideEnabled] = useState(false);
+  const [harborOverrideMax, setHarborOverrideMax] = useState(10000);
+  const [harborOverridePct, setHarborOverridePct] = useState(100);
   
   const isDark = theme === 'dark';
   const isMid = theme === 'mid';
@@ -214,14 +221,69 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <meshStandardMaterial 
           color="#FFF9C4" 
           emissive="#FFF59D" 
-          emissiveIntensity={isDark ? 4 : 0.4} 
+          emissiveIntensity={isDark ? 1.2 : 0.18} 
         />
       </mesh>
       {isDark && (
-        <pointLight position={[0.2, 0.8, 0]} intensity={1.2} distance={4} color="#FFF59D" />
+        <pointLight position={[0.2, 0.8, 0]} intensity={0.6} distance={4} color="#FFF59D" />
       )}
     </group>
   );
+
+  const QuadrantSign = ({
+    position,
+    label,
+    emoji,
+    accentColor,
+  }: {
+    position: [number, number, number];
+    label: string;
+    emoji: string;
+    accentColor: string;
+  }) => {
+    // NOTE: Use Html sprite labels so text never mirrors/flips at different camera angles.
+    const rotY = useMemo(() => Math.atan2(0 - position[0], 0 - position[2]), [position]);
+    return (
+      <group position={position} rotation={[0, rotY, 0]}>
+        {/* Post */}
+        <mesh position={[0, 0.18, 0]} castShadow>
+          <cylinderGeometry args={[0.035, 0.04, 0.36, 8]} />
+          <meshStandardMaterial color={isDark ? '#0B1220' : '#334155'} roughness={0.9} metalness={0.02} />
+        </mesh>
+        {/* Sign board */}
+        <mesh position={[0, 0.42, 0.06]} castShadow>
+          <boxGeometry args={[0.62, 0.28, 0.06]} />
+          <meshStandardMaterial color={isDark ? '#111827' : '#F1F5F9'} roughness={0.85} metalness={0.02} />
+        </mesh>
+        {/* Accent strip */}
+        <mesh position={[0, 0.42, 0.095]} castShadow>
+          <boxGeometry args={[0.62, 0.04, 0.01]} />
+          <meshStandardMaterial color={accentColor} roughness={0.7} metalness={0.02} />
+        </mesh>
+
+        {/* Crisp label (screen-space) */}
+        <Html
+          center
+          transform
+          sprite
+          position={[0, 0.42, 0.14]}
+          distanceFactor={12}
+          style={{ pointerEvents: 'none' }}
+        >
+          <div className="select-none">
+            <div className="px-2.5 py-1.5 rounded-lg bg-industrial-base/85 backdrop-blur-sm border border-white/15 shadow-tactile-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-sm leading-none">{emoji}</span>
+                <span className="text-[11px] font-black uppercase tracking-tight text-industrial-text">
+                  {label}
+                </span>
+              </div>
+            </div>
+          </div>
+        </Html>
+      </group>
+    );
+  };
 
   const Window = ({ position, size }: { position: [number, number, number]; size: [number, number, number] }) => {
     const isOn = useMemo(() => Math.random() > 0.4, []);
@@ -231,7 +293,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <meshStandardMaterial 
           color={isDark ? (isOn ? "#60A5FA" : "#0F172A") : themeColors.window} 
           emissive={isDark && isOn ? "#4FC3F7" : "#000000"} 
-          emissiveIntensity={isDark && isOn ? 1.5 : 0} 
+          emissiveIntensity={isDark && isOn ? 0.7 : 0} 
         />
       </mesh>
     );
@@ -271,9 +333,9 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     <group position={position} rotation={[0, rotation || 0, 0]}>
       <mesh position={[0, 0.4, 0]}><cylinderGeometry args={[0.03, 0.04, 0.8, 8]} /><meshStandardMaterial color="#424242" /></mesh>
       <mesh position={[0, 0.85, 0]}><boxGeometry args={[0.12, 0.3, 0.08]} /><meshStandardMaterial color="#212121" /></mesh>
-      <mesh position={[0, 0.93, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficRed} emissive={themeColors.trafficRed} emissiveIntensity={!isGreen && !isYellow ? 2 : 0.1} /></mesh>
-      <mesh position={[0, 0.85, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficYellow} emissive={themeColors.trafficYellow} emissiveIntensity={isYellow ? 2 : 0.1} /></mesh>
-      <mesh position={[0, 0.77, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficGreen} emissive={themeColors.trafficGreen} emissiveIntensity={isGreen && !isYellow ? 2 : 0.1} /></mesh>
+      <mesh position={[0, 0.93, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficRed} emissive={themeColors.trafficRed} emissiveIntensity={!isGreen && !isYellow ? 1.0 : 0.06} /></mesh>
+      <mesh position={[0, 0.85, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficYellow} emissive={themeColors.trafficYellow} emissiveIntensity={isYellow ? 1.0 : 0.06} /></mesh>
+      <mesh position={[0, 0.77, 0.045]}><sphereGeometry args={[0.035, 8, 8]} /><meshStandardMaterial color={themeColors.trafficGreen} emissive={themeColors.trafficGreen} emissiveIntensity={isGreen && !isYellow ? 1.0 : 0.06} /></mesh>
     </group>
   );
 
@@ -328,7 +390,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
       <group position={position}>
         <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
           <boxGeometry args={[width, height, width]} />
-          <meshStandardMaterial color={getColor()} roughness={0.3} metalness={0.2} />
+          <meshStandardMaterial color={getColor()} roughness={0.82} metalness={0.05} />
         </mesh>
         
         {/* Roof Detail */}
@@ -377,7 +439,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
       <group position={position}>
         <mesh position={[0, height / 2, 0]} castShadow receiveShadow onClick={handleClick} onPointerDown={handleClick}>
           <boxGeometry args={[width, height, width]} />
-          <meshStandardMaterial color={themeColors.debt} roughness={0.5} />
+          <meshStandardMaterial color={themeColors.debt} roughness={0.85} metalness={0.03} />
         </mesh>
         {Array.from({ length: floors }).map((_, f) => (
           <group key={f}>
@@ -410,7 +472,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <mesh position={[0, 0.17, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.4, 0.5, 16]} /><meshStandardMaterial color={progress >= 1 ? themeColors.trafficGreen : themeColors.trafficYellow} /></mesh>
         {progress > 0.05 && (
           <group position={[0, 0.2, 0]}>
-            <mesh position={[0, rocketHeight / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} /><meshStandardMaterial color={themeColors.rocket} metalness={0.3} /></mesh>
+            <mesh position={[0, rocketHeight / 2, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><cylinderGeometry args={[0.1, 0.12, rocketHeight, 12]} /><meshStandardMaterial color={themeColors.rocket} metalness={0.05} roughness={0.75} /></mesh>
             <mesh position={[0, rocketHeight + 0.12, 0]} onClick={handleClick} onPointerDown={handleClick}><coneGeometry args={[0.1, 0.25, 12]} /><meshStandardMaterial color={themeColors.rocketAccent} /></mesh>
           </group>
         )}
@@ -424,44 +486,174 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     return (
       <group position={position}>
         <mesh position={[0, 0.12, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.7, 0.24, 0.7]} /><meshStandardMaterial color="#37474F" /></mesh>
-        <mesh position={[0, 0.45, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.6, 0.42, 0.6]} /><meshStandardMaterial color={themeColors.taxVault} metalness={0.4} roughness={0.3} /></mesh>
+        <mesh position={[0, 0.45, 0]} castShadow onClick={handleClick} onPointerDown={handleClick}><boxGeometry args={[0.6, 0.42, 0.6]} /><meshStandardMaterial color={themeColors.taxVault} metalness={0.08} roughness={0.85} /></mesh>
       </group>
     );
   };
 
-  const HarborDock = ({ position, savings }: { position: [number, number, number]; savings: number }) => {
+  const HarborDock = ({
+    position,
+    savings,
+    maxSavingsRef
+  }: {
+    position: [number, number, number];
+    savings: number;
+    maxSavingsRef: number;
+  }) => {
     const { showTooltip } = useContext(TooltipContext);
     const rippleRef = useRef<THREE.Group>(null);
+    const boatsRef = useRef<THREE.Group>(null);
+
+    const savingsRatio = useMemo(() => {
+      const denom = Math.max(maxSavingsRef, 1);
+      return Math.min(Math.max(savings / denom, 0), 1);
+    }, [savings, maxSavingsRef]);
+
+    // Recessed basin dimensions (clay/diorama vibe)
+    const basin = useMemo(() => ({
+      w: 3.2,
+      d: 2.4,
+      wall: 0.16,
+      floorY: -0.06,
+      maxWaterY: 0.06,
+      minWaterY: -0.05,
+    }), []);
+
+    const waterY = useMemo(() => {
+      return basin.minWaterY + (basin.maxWaterY - basin.minWaterY) * savingsRatio;
+    }, [basin, savingsRatio]);
+
+    const boatConfigs = useMemo(() => {
+      // Keep boats inside inner basin (avoid clipping walls)
+      const innerW = basin.w - basin.wall * 2 - 0.25;
+      const innerD = basin.d - basin.wall * 2 - 0.25;
+      return Array.from({ length: 2 }, (_, i) => ({
+        id: `boat-${i}`,
+        x: (Math.random() - 0.5) * innerW * 0.55,
+        z: (Math.random() - 0.5) * innerD * 0.55,
+        rot: (Math.random() - 0.5) * 0.6,
+        phase: Math.random() * Math.PI * 2,
+        scale: 0.9 + Math.random() * 0.25,
+      }));
+    }, [basin]);
+
     useFrame(({ clock }) => {
       if (rippleRef.current) {
         rippleRef.current.children.forEach((child, i) => {
           child.scale.setScalar(1 + Math.sin(clock.elapsedTime * 2 + i) * 0.05);
-          (child as THREE.Mesh).material.opacity = 0.6 + Math.sin(clock.elapsedTime * 2 + i) * 0.2;
+          const m = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+          m.opacity = 0.35 + Math.sin(clock.elapsedTime * 2 + i) * 0.12;
+        });
+      }
+      if (boatsRef.current) {
+        boatsRef.current.children.forEach((child, i) => {
+          // Gentle bob + micro rock
+          child.position.y = waterY + 0.02 + Math.sin(clock.elapsedTime * 1.6 + i) * 0.015;
+          child.rotation.z = Math.sin(clock.elapsedTime * 1.2 + i) * 0.04;
+          child.rotation.x = Math.cos(clock.elapsedTime * 1.1 + i) * 0.03;
         });
       }
     });
-    const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'harbor', title: 'Liquidity Harbor', value: `$${savings.toLocaleString()}`, description: 'Available liquid reserves.', icon: '⚓', color: themeColors.water }); };
+    const handleClick = (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      showTooltip({
+        type: 'harbor',
+        title: 'Liquidity Harbor',
+        value: `$${savings.toLocaleString()}`,
+        description: 'This basin fills with your liquid savings (cash + savings + investments + super). Higher water = more runway.',
+        icon: '⚓',
+        color: themeColors.water
+      });
+    };
     return (
       <group position={position}>
-        <mesh position={[0, -0.02, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
-          <boxGeometry args={[2.8, 0.12, 2.0]} />
-          <meshStandardMaterial color={themeColors.water} transparent opacity={0.85} />
+        {/* Basin floor */}
+        <mesh position={[0, basin.floorY, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[basin.w, 0.08, basin.d]} />
+          <meshStandardMaterial color={isDark ? '#0B1220' : '#CBD5E1'} roughness={0.9} metalness={0.02} />
         </mesh>
+
+        {/* Walls */}
+        <mesh position={[0, basin.floorY + 0.12, (basin.d / 2) - (basin.wall / 2)]} receiveShadow>
+          <boxGeometry args={[basin.w, 0.24, basin.wall]} />
+          <meshStandardMaterial color={isDark ? '#111827' : '#E2E8F0'} roughness={0.85} metalness={0.02} />
+        </mesh>
+        <mesh position={[0, basin.floorY + 0.12, -(basin.d / 2) + (basin.wall / 2)]} receiveShadow>
+          <boxGeometry args={[basin.w, 0.24, basin.wall]} />
+          <meshStandardMaterial color={isDark ? '#111827' : '#E2E8F0'} roughness={0.85} metalness={0.02} />
+        </mesh>
+        <mesh position={[(basin.w / 2) - (basin.wall / 2), basin.floorY + 0.12, 0]} receiveShadow>
+          <boxGeometry args={[basin.wall, 0.24, basin.d]} />
+          <meshStandardMaterial color={isDark ? '#111827' : '#E2E8F0'} roughness={0.85} metalness={0.02} />
+        </mesh>
+        <mesh position={[-(basin.w / 2) + (basin.wall / 2), basin.floorY + 0.12, 0]} receiveShadow>
+          <boxGeometry args={[basin.wall, 0.24, basin.d]} />
+          <meshStandardMaterial color={isDark ? '#111827' : '#E2E8F0'} roughness={0.85} metalness={0.02} />
+        </mesh>
+
+        {/* Water (height = savings) */}
+        <mesh position={[0, waterY, 0]} receiveShadow onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[basin.w - basin.wall * 2, 0.06, basin.d - basin.wall * 2]} />
+          <meshStandardMaterial color={themeColors.water} transparent opacity={0.78} roughness={0.35} metalness={0.02} />
+        </mesh>
+
+        {/* Ripples */}
         <group ref={rippleRef}>
-          <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.8, 0.9, 16]} />
-            <meshStandardMaterial color="#FFFFFF" transparent opacity={0.3} />
+          <mesh position={[0, waterY + 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.75, 0.9, 16]} />
+            <meshStandardMaterial color="#FFFFFF" transparent opacity={0.18} depthWrite={false} />
+          </mesh>
+          <mesh position={[0.3, waterY + 0.036, -0.25]} rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.35, 0.43, 16]} />
+            <meshStandardMaterial color="#FFFFFF" transparent opacity={0.12} depthWrite={false} />
           </mesh>
         </group>
-        <mesh position={[0.6, 0.06, 0]} onClick={handleClick} onPointerDown={handleClick}>
-          <boxGeometry args={[0.35, 0.06, 1.8]} />
-          <meshStandardMaterial color={themeColors.dock} />
+
+        {/* Simple dock + posts */}
+        <mesh position={[0.95, basin.floorY + 0.18, 0]} onClick={handleClick} onPointerDown={handleClick}>
+          <boxGeometry args={[0.42, 0.06, basin.d * 0.75]} />
+          <meshStandardMaterial color={themeColors.dock} roughness={0.9} metalness={0.02} />
         </mesh>
+        {[0.7, -0.7].map((z, i) => (
+          <mesh key={i} position={[1.1, basin.floorY + 0.26, z]} castShadow>
+            <cylinderGeometry args={[0.03, 0.03, 0.22, 8]} />
+            <meshStandardMaterial color={isDark ? '#0B1220' : '#334155'} roughness={0.95} metalness={0.02} />
+          </mesh>
+        ))}
+
+        {/* Boats */}
+        <group ref={boatsRef}>
+          {boatConfigs.map(b => (
+            <group key={b.id} position={[b.x, waterY + 0.02, b.z]} rotation={[0, b.rot, 0]} scale={[b.scale, b.scale, b.scale]}>
+              <mesh castShadow>
+                <boxGeometry args={[0.28, 0.08, 0.14]} />
+                <meshStandardMaterial color={isDark ? '#0B1220' : '#334155'} roughness={0.85} metalness={0.02} />
+              </mesh>
+              <mesh position={[0, 0.06, 0]} castShadow>
+                <boxGeometry args={[0.22, 0.06, 0.11]} />
+                <meshStandardMaterial color={isDark ? '#111827' : '#E2E8F0'} roughness={0.9} metalness={0.02} />
+              </mesh>
+              <mesh position={[0.08, 0.14, 0]} castShadow>
+                <cylinderGeometry args={[0.01, 0.01, 0.18, 8]} />
+                <meshStandardMaterial color={isDark ? '#334155' : '#64748B'} roughness={0.95} metalness={0.02} />
+              </mesh>
+            </group>
+          ))}
+        </group>
       </group>
     );
   };
 
-  const CashflowFountain = ({ surplus }: { surplus: number; maxSurplus: number }) => {
+  const CashflowFountain = ({
+    surplus,
+    position = [0, 0, 0],
+    scale = 1,
+  }: {
+    surplus: number;
+    maxSurplus: number;
+    position?: [number, number, number];
+    scale?: number;
+  }) => {
     const { showTooltip } = useContext(TooltipContext);
     const waterRef = useRef<THREE.Mesh>(null);
     const particlesRef = useRef<THREE.Group>(null);
@@ -482,31 +674,31 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     const handleClick = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); showTooltip({ type: 'fountain', title: 'Cashflow Fountain', value: `${isNegative ? '-' : '+'}$${Math.abs(surplus).toLocaleString()}/mo`, description: 'Your monthly money left over.', icon: isNegative ? '🔴' : '⛲', color: isNegative ? themeColors.trafficRed : themeColors.trafficGreen }); };
     
     return (
-      <group position={[0, 0, 0]}>
+      <group position={position} scale={[scale, scale, scale]}>
         {/* Base Pool */}
         <mesh position={[0, 0.04, 0]} onClick={handleClick} onPointerDown={handleClick}>
-          <cylinderGeometry args={[1.2, 1.3, 0.1, 24]} />
+          <cylinderGeometry args={[0.72, 0.78, 0.08, 24]} />
           <meshStandardMaterial color={isDark ? "#1A202C" : "#E0E0E0"} />
         </mesh>
         {/* Water Surface */}
         <mesh position={[0, 0.08, 0]}>
-          <cylinderGeometry args={[1.1, 1.1, 0.02, 24]} />
+          <cylinderGeometry args={[0.66, 0.66, 0.02, 24]} />
           <meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.6} />
         </mesh>
         {/* Tier 1 */}
         <mesh position={[0, 0.15, 0]}>
-          <cylinderGeometry args={[0.6, 0.7, 0.15, 16]} />
+          <cylinderGeometry args={[0.38, 0.44, 0.12, 16]} />
           <meshStandardMaterial color={isDark ? "#2D3748" : "#BDBDBD"} />
         </mesh>
         {/* Tier 2 (Water Column) */}
         <mesh ref={waterRef} position={[0, 0.3, 0]}>
-          <cylinderGeometry args={[0.2, 0.3, 0.4, 12]} />
+          <cylinderGeometry args={[0.14, 0.2, 0.26, 12]} />
           <meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.8} />
         </mesh>
         {/* Particles/Splashes */}
         <group ref={particlesRef}>
           {[...Array(6)].map((_, i) => (
-            <mesh key={i} position={[Math.cos(i) * 0.4, 0.4, Math.sin(i) * 0.4]}>
+            <mesh key={i} position={[Math.cos(i) * 0.26, 0.32, Math.sin(i) * 0.26]}>
               <sphereGeometry args={[0.04, 8, 8]} />
               <meshStandardMaterial color={isNegative ? themeColors.waterNegative : themeColors.water} transparent opacity={0.6} />
             </mesh>
@@ -520,6 +712,21 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
   const CAR_COLORS = [0xFF4F00, 0x0055FF, 0xF3CF44, 0x1A1A1A, 0xFFFFFF];
   const PEOPLE_COLORS = [0xFF4F00, 0x0055FF, 0xF3CF44, 0x1A1A1A];
   const STOP_LINE = 1.8;
+
+  // World props that cars should never clip through (even if we add new props later)
+  const CASHFLOW_FOUNTAIN_POS: [number, number, number] = [-2.4, 0.02, 2.4];
+  const NO_DRIVE_ZONES = [
+    { id: 'cashflowFountain', x: CASHFLOW_FOUNTAIN_POS[0], z: CASHFLOW_FOUNTAIN_POS[2], r: 0.95 },
+  ] as const;
+
+  const wouldEnterNoDriveZone = (nextX: number, nextZ: number) => {
+    for (const zone of NO_DRIVE_ZONES) {
+      const dx = nextX - zone.x;
+      const dz = nextZ - zone.z;
+      if (dx * dx + dz * dz <= zone.r * zone.r) return true;
+    }
+    return false;
+  };
   
   type CarDirection = 'EAST' | 'WEST' | 'NORTH' | 'SOUTH';
   
@@ -562,13 +769,25 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         if (direction === 'NORTH' && pos.z > STOP_LINE && pos.z < STOP_LINE + 1) shouldStop = true;
       }
       
+      const move = speed * delta * 60;
+      const nextX =
+        direction === 'EAST' ? pos.x + move :
+        direction === 'WEST' ? pos.x - move :
+        pos.x;
+      const nextZ =
+        direction === 'SOUTH' ? pos.z + move :
+        direction === 'NORTH' ? pos.z - move :
+        pos.z;
+
+      // Never allow cars to enter prop zones (prevents clipping through fountain/statues/etc.)
+      if (!shouldStop && wouldEnterNoDriveZone(nextX, nextZ)) shouldStop = true;
+
       if (!shouldStop) {
-        const move = speed * delta * 60;
         switch(direction) {
-          case 'EAST': pos.x += move; if (pos.x > 8) pos.x = -8; break;
-          case 'WEST': pos.x -= move; if (pos.x < -8) pos.x = 8; break;
-          case 'NORTH': pos.z -= move; if (pos.z < -8) pos.z = 8; break;
-          case 'SOUTH': pos.z += move; if (pos.z > 8) pos.z = -8; break;
+          case 'EAST': pos.x = nextX; if (pos.x > 8) pos.x = -8; break;
+          case 'WEST': pos.x = nextX; if (pos.x < -8) pos.x = 8; break;
+          case 'NORTH': pos.z = nextZ; if (pos.z < -8) pos.z = 8; break;
+          case 'SOUTH': pos.z = nextZ; if (pos.z > 8) pos.z = -8; break;
         }
       }
     });
@@ -582,8 +801,8 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <mesh position={[-0.12, 0.02, 0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
         <mesh position={[-0.12, 0.02, -0.12]}><cylinderGeometry args={[0.04, 0.04, 0.02, 8]} /><meshStandardMaterial color="#212121" /></mesh>
         {/* Headlights */}
-        <mesh position={[0.18, 0.06, 0.08]}><sphereGeometry args={[0.03, 8, 8]} /><meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} /></mesh>
-        <mesh position={[0.18, 0.06, -0.08]}><sphereGeometry args={[0.03, 8, 8]} /><meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={2} /></mesh>
+        <mesh position={[0.18, 0.06, 0.08]}><sphereGeometry args={[0.03, 8, 8]} /><meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.55} /></mesh>
+        <mesh position={[0.18, 0.06, -0.08]}><sphereGeometry args={[0.03, 8, 8]} /><meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.55} /></mesh>
       </group>
     );
   };
@@ -685,6 +904,12 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     const assetsAcc = useMemo(() => accounts.filter(a => ['CASH', 'SAVINGS', 'INVESTMENT', 'SUPER'].includes(a.type)), [accounts]);
     const debtsAcc = useMemo(() => accounts.filter(a => ['LOAN', 'CREDIT_CARD', 'HECS'].includes(a.type)), [accounts]);
     const maxBalance = useMemo(() => Math.max(...accounts.map(a => a.balance), 1), [accounts]);
+    const harborDisplay = useMemo(() => {
+      if (!harborOverrideEnabled) return { savings: health.savings, maxRef: Math.max(health.savings * 1.2, 1000) };
+      const maxRef = Math.max(harborOverrideMax, 1);
+      const savings = Math.round((harborOverridePct / 100) * maxRef);
+      return { savings, maxRef };
+    }, [harborOverrideEnabled, harborOverrideMax, harborOverridePct, health.savings]);
     
     // Traffic density based on health score
     const numCars = health.score > 70 ? 6 : health.score > 40 ? 4 : 2;
@@ -771,7 +996,13 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           <Pedestrian key={cfg.id} quadrant={cfg.quadrant} speed={cfg.speed} horizontalGreen={horizontalGreen} />
         ))}
         
-        <CashflowFountain surplus={monthlySurplus} maxSurplus={Math.max(health.monthlyIncome, 5000)} />
+        {/* Cashflow fountain lives in the SW “plaza” (off the intersection) so traffic never clips it */}
+        <CashflowFountain
+          surplus={monthlySurplus}
+          maxSurplus={Math.max(health.monthlyIncome, 5000)}
+          position={CASHFLOW_FOUNTAIN_POS}
+          scale={1}
+        />
         {/* Asset Buildings - NW Quadrant (max 4) */}
         {assetsAcc.slice(0, 4).map((acc, i) => {
           const positions: [number, number, number][] = [[-4.0, 0.1, -4.0], [-2.8, 0.1, -4.0], [-4.0, 0.1, -2.8], [-2.8, 0.1, -2.8]];
@@ -832,9 +1063,16 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
             </group>
           );
         })}
-        <HarborDock position={[3.5, 0.08, 3.8]} savings={health.savings} />
+        <HarborDock position={[3.6, 0.08, 3.9]} savings={harborDisplay.savings} maxSavingsRef={harborDisplay.maxRef} />
         {health.taxVault > 0 && <TaxVault position={[4.8, 0.1, 2.8]} amount={health.taxVault} />}
         {([[-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5], [-2.5, 0.08, -5.5], [2.5, 0.08, -5.5], [-5.5, 0.08, -2.5], [5.5, 0.08, -2.5]].map((pos, i) => <Tree key={i} position={pos as [number, number, number]} scale={0.7 + Math.random() * 0.3} />))}
+
+        {/* In-world quadrant signage */}
+        <QuadrantSign position={[-5.2, 0.08, -5.2]} label="Banks" emoji="🏦" accentColor={themeColors.savings} />
+        <QuadrantSign position={[5.2, 0.08, -5.2]} label="Debts" emoji="⚠️" accentColor={themeColors.debt} />
+        <QuadrantSign position={[-5.2, 0.08, 5.2]} label="Goals" emoji="🚀" accentColor={themeColors.investment} />
+        <QuadrantSign position={[5.2, 0.08, 5.2]} label="Harbor" emoji="⚓" accentColor={themeColors.water} />
+
         <DriftingCloud initialPosition={[-8, 8, -6]} speed={0.15} scale={1.2} isStorm={isLowScore} />
         <DriftingCloud initialPosition={[5, 9, -3]} speed={0.12} scale={0.9} isStorm={isLowScore} />
         <DriftingCloud initialPosition={[-3, 7, 5]} speed={0.1} scale={1.1} isStorm={isLowScore} />
@@ -851,21 +1089,21 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
   const hideTooltip = () => setTooltip(null);
 
   const getSkyClass = () => {
-    if (isFuture) return "bg-[#1A1A1A]";
+    if (isFuture) return "bg-gradient-to-b from-[#140022] via-[#0B1020] to-[#020617]";
     // Theme-based sky: light = bright, mid = soft grey, dark = near black
     if (isLowScore) {
-      if (isDark) return "bg-[#0A0A0A]";
-      if (isMid) return "bg-[#64748B]"; // Desaturated blue-gray
-      return "bg-[#94A3B8]";
+      if (isDark) return "bg-gradient-to-b from-[#0B1220] via-[#060914] to-[#020617]";
+      if (isMid) return "bg-gradient-to-b from-[#94A3B8] via-[#64748B] to-[#334155]";
+      return "bg-gradient-to-b from-[#CBD5E1] via-[#94A3B8] to-[#64748B]";
     }
     if (health.score > 70) {
-      if (isDark) return "bg-[#020617]"; // Deep night sky
-      if (isMid) return "bg-[#3B82F6]"; // Vibrant mid blue
-      return "bg-[#BFDBFE]"; // Bright sky blue
+      if (isDark) return "bg-gradient-to-b from-[#0B1220] via-[#020617] to-[#020617]";
+      if (isMid) return "bg-gradient-to-b from-[#93C5FD] via-[#3B82F6] to-[#1D4ED8]";
+      return "bg-gradient-to-b from-[#E0F2FE] via-[#BFDBFE] to-[#93C5FD]";
     }
-    if (isDark) return "bg-[#0F172A]";
-    if (isMid) return "bg-[#60A5FA]"; // Friendly blue
-    return "bg-[#DBEAFE]"; // Soft light blue
+    if (isDark) return "bg-gradient-to-b from-[#0B1220] via-[#0F172A] to-[#020617]";
+    if (isMid) return "bg-gradient-to-b from-[#BFDBFE] via-[#60A5FA] to-[#3B82F6]";
+    return "bg-gradient-to-b from-[#EFF6FF] via-[#DBEAFE] to-[#BFDBFE]";
   };
 
   const cameraPosition: [number, number, number] = viewMode === 'birdseye' 
@@ -878,6 +1116,8 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
 
   return (
     <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden shadow-inner`}>
+      {/* Subtle vignette for depth (keep very light; fog already adds haze) */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/18" />
       
       <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
         <div className="flex flex-col bg-industrial-base rounded-xl overflow-hidden shadow-tactile-raised border-t border-l border-white/40">
@@ -921,6 +1161,17 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         >
           ?
         </button>
+
+        {isDev && (
+          <button
+            onClick={() => setShowHarborDev(s => !s)}
+            aria-label={showHarborDev ? 'Hide harbor dev tools' : 'Show harbor dev tools'}
+            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${showHarborDev ? 'bg-industrial-yellow text-industrial-dark-base' : 'bg-industrial-base text-industrial-text'}`}
+            title="DEV: Harbor water override"
+          >
+            🧪
+          </button>
+        )}
       </div>
 
       {!minimal && (
@@ -1020,6 +1271,87 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         </div>
       )}
 
+      {isDev && showHarborDev && (
+        <div className="absolute top-24 right-4 z-30 max-w-[320px] w-[90vw] sm:w-[320px]" onClick={(e) => e.stopPropagation()}>
+          <ChassisWell label="DEV // Harbor Water" className="animate-in zoom-in-95 duration-150">
+            <div className="space-y-3">
+              <label className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-industrial-subtext/80 font-semibold">Override</span>
+                <button
+                  className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm ${harborOverrideEnabled ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
+                  onClick={() => setHarborOverrideEnabled(v => !v)}
+                >
+                  {harborOverrideEnabled ? 'On' : 'Off'}
+                </button>
+              </label>
+
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm"
+                  onClick={() => { setHarborOverrideEnabled(true); setHarborOverridePct(0); }}
+                >
+                  Empty
+                </button>
+                <button
+                  className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm"
+                  onClick={() => { setHarborOverrideEnabled(true); setHarborOverridePct(50); }}
+                >
+                  50%
+                </button>
+                <button
+                  className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm"
+                  onClick={() => { setHarborOverrideEnabled(true); setHarborOverridePct(100); }}
+                >
+                  Full
+                </button>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-industrial-subtext/70">Water Level</span>
+                  <span className="text-[11px] font-black text-industrial-text">{harborOverridePct}%</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={harborOverridePct}
+                  onChange={(e) => setHarborOverridePct(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-black uppercase tracking-widest text-industrial-subtext/70">Max Range (AUD)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={harborOverrideMax}
+                    onChange={(e) => setHarborOverrideMax(Math.max(1, parseInt(e.target.value || '0')))}
+                    className="flex-1 bg-industrial-well-bg rounded-xl shadow-well border border-black/5 px-3 py-2 text-sm font-bold text-industrial-text"
+                  />
+                  <button
+                    className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm"
+                    onClick={() => setHarborOverrideMax(10000)}
+                  >
+                    10k
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <button className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm" onClick={() => setHarborOverrideMax(1000)}>1k</button>
+                  <button className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm" onClick={() => setHarborOverrideMax(5000)}>5k</button>
+                  <button className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm" onClick={() => setHarborOverrideMax(25000)}>25k</button>
+                  <button className="px-3 py-2 rounded-xl bg-industrial-base text-industrial-text text-[10px] font-black uppercase tracking-widest border border-black/10 shadow-tactile-sm" onClick={() => setHarborOverrideMax(100000)}>100k</button>
+                </div>
+              </div>
+            </div>
+          </ChassisWell>
+        </div>
+      )}
+
       {tooltip && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40" onClick={(e) => e.stopPropagation()}>
           <ChassisWell label="Module Diagnostics" className="max-w-[300px] w-full animate-in zoom-in-95 duration-200">
@@ -1047,11 +1379,14 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
 
       <Canvas shadows dpr={[1, 2]} onClick={() => tooltip && hideTooltip()}>
         <TooltipContext.Provider value={{ showTooltip, hideTooltip }}>
+          {/* Atmosphere */}
+          <fog attach="fog" args={[isDark ? '#020617' : isMid ? '#BFDBFE' : '#E0F2FE', 55, 140]} />
           <OrthographicCamera makeDefault position={cameraPosition} zoom={zoom} near={-50} far={200} />
           <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={polarAngle.min} maxPolarAngle={polarAngle.max} />
-          <ambientLight intensity={isFuture ? 0.4 : isLowScore ? 0.5 : 0.7} />
-          <directionalLight position={[10, 20, 10]} intensity={isFuture ? 0.4 : isLowScore ? 0.6 : 0.8} castShadow shadow-mapSize={[1024, 1024]} />
-          {isDark && <spotLight position={[0, 10, 0]} intensity={0.5} angle={Math.PI / 3} penumbra={1} color="#4FC3F7" />}
+          <ambientLight intensity={isFuture ? 0.35 : isLowScore ? 0.45 : 0.6} />
+          <hemisphereLight intensity={isFuture ? 0.25 : 0.35} groundColor={isDark ? '#020617' : '#0F172A'} color={isDark ? '#93C5FD' : '#FFFFFF'} />
+          <directionalLight position={[12, 18, 10]} intensity={isFuture ? 0.35 : isLowScore ? 0.55 : 0.75} castShadow shadow-mapSize={[1024, 1024]} />
+          {isDark && <spotLight position={[0, 10, 0]} intensity={0.25} angle={Math.PI / 3} penumbra={1} color="#93C5FD" />}
           {isFuture && <pointLight position={[-5, 5, -5]} intensity={1} color="#bc13fe" distance={20} />}
           <CityScene />
         </TooltipContext.Provider>

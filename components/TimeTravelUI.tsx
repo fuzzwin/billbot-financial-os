@@ -104,7 +104,7 @@ export const TimeTravelUI: React.FC<TimeTravelUIProps> = ({ year, setYear, mode,
                     className="absolute w-8 h-8 bg-industrial-base rounded-full shadow-tactile-raised border border-white/10 pointer-events-none transition-all duration-300 flex items-center justify-center group-active:scale-90"
                     style={{ left: `calc(${((year - 2025) / 5) * 100}% - 16px)` }}
                 >
-                    <div className={`w-2.5 h-2.5 rounded-full ${mode === 'TURBO' ? 'bg-emerald-500 shadow-[0_0_6px_#10b981]' : 'bg-industrial-orange shadow-[0_0_6px_#FF4F00]'}`}></div>
+                    <div className={`w-2.5 h-2.5 rounded-full ${mode === 'TURBO' ? 'bg-emerald-500 shadow-[0_0_3px_rgba(16,185,129,0.35)]' : 'bg-industrial-orange shadow-[0_0_3px_rgba(239,68,68,0.35)]'}`}></div>
                     {/* Dial marker */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-industrial-subtext/20"></div>
                 </div>

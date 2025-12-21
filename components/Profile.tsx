@@ -60,7 +60,7 @@ export const Profile: React.FC<ProfileProps> = ({ health, onUpdate }) => {
             
             <div className="w-full bg-industrial-well-bg h-1.5 rounded-full mt-6 overflow-hidden shadow-well border border-black/5">
                 <div 
-                    className="bg-industrial-blue h-full transition-all duration-500 ease-out shadow-[0_0_8px_rgba(0,85,255,0.4)]"
+                    className="bg-industrial-blue h-full transition-all duration-500 ease-out shadow-[0_0_4px_rgba(0,85,255,0.25)]"
                     style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
                 ></div>
             </div>

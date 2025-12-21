@@ -624,6 +624,14 @@ Keys:
 
 ## 13. Changelog
 
+### v3.11 - City Readability + Clay Pass (Dec 19, 2025)
+**Changes:**
+1. **Waterfall/Fountain Fix:** Moved and resized the Cashflow Fountain off the central intersection so traffic never clips through it.
+2. **Traffic Safety:** Added a simple “no-drive zone” system so cars won’t enter prop areas (future-proofing against new map objects).
+3. **Map Signage:** Added in-world quadrant signposts (Banks, Debts, Goals, Harbor) for instant map comprehension.
+4. **Claymation Look:** Softer materials and lighting (higher roughness, lower metalness), reduced emissive “neon” feel, added subtle fog and improved sky/ether gradients.
+5. **Glow Tuning:** Reduced UI glow intensity in LEDs and a few hotspot elements to avoid over-bloomed UI.
+
 ### v3.10 - UI Overhaul: Clarity, Controls, Delight (Dec 19, 2025)
 **Changes:**
 1. **Typography & Readability:** Increased base label sizing and reduced “all-caps everywhere” feel for better scanning and accessibility.

@@ -19,11 +19,11 @@ export const LEDIndicator: React.FC<LEDIndicatorProps> = ({
     orange: 'bg-[#FF5C00]'
   };
   const glowColors = {
-    red: 'rgba(239, 68, 68, 0.35)',
-    green: 'rgba(16, 185, 129, 0.35)',
-    blue: 'rgba(59, 130, 246, 0.35)',
-    yellow: 'rgba(250, 204, 21, 0.35)',
-    orange: 'rgba(255, 92, 0, 0.35)'
+    red: 'rgba(239, 68, 68, 0.22)',
+    green: 'rgba(16, 185, 129, 0.22)',
+    blue: 'rgba(59, 130, 246, 0.22)',
+    yellow: 'rgba(250, 204, 21, 0.22)',
+    orange: 'rgba(255, 92, 0, 0.22)'
   } as const;
 
   return (
@@ -38,7 +38,7 @@ export const LEDIndicator: React.FC<LEDIndicatorProps> = ({
         {active && (
           <div
             className="absolute -inset-1 rounded-full"
-            style={{ boxShadow: `0 0 12px ${glowColors[color]}` }}
+            style={{ boxShadow: `0 0 7px ${glowColors[color]}` }}
           />
         )}
         {/* Physical lens reflection - minimal */}
