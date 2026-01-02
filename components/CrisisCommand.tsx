@@ -46,39 +46,39 @@ export const CrisisCommand: React.FC<CrisisCommandProps> = ({ accounts }) => {
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-32 animate-in fade-in slide-in-from-bottom-4">
+        <div className="max-w-4xl mx-auto pb-24 px-1 animate-in fade-in slide-in-from-bottom-4">
             
-            <div className="bg-industrial-orange/5 border border-industrial-orange/20 p-8 rounded-[3rem] mb-10 flex items-center gap-8 relative overflow-hidden shadow-tactile-raised border-t border-l border-white/40">
+            <div className="bg-industrial-orange/5 border border-industrial-orange/20 p-6 md:p-8 rounded-3xl md:rounded-[3rem] mb-6 md:mb-10 flex items-center gap-6 md:gap-8 relative overflow-hidden shadow-tactile-raised border-t border-l border-white/40">
                 <div className="absolute -left-10 -top-10 w-40 h-40 bg-industrial-orange/10 rounded-full blur-3xl animate-pulse"></div>
-                <div className="text-6xl z-10 filter drop-shadow-2xl">🚨</div>
+                <div className="text-4xl md:text-6xl z-10 filter drop-shadow-2xl">🚨</div>
                 <div className="z-10">
-                    <h2 className="text-3xl font-black text-industrial-orange uppercase tracking-tighter leading-none mb-2">CRISIS COMMAND</h2>
-                    <div className="flex items-center gap-3">
+                    <h2 className="text-xl md:text-3xl font-black text-industrial-orange uppercase tracking-tighter leading-none mb-2">CRISIS COMMAND</h2>
+                    <div className="flex items-center gap-2 md:gap-3">
                         <LEDIndicator active={true} color="orange" />
-                        <p className="tactile-label !text-industrial-orange/60">Hardship Protocol // System Priority 0</p>
+                        <p className="tactile-label !text-industrial-orange/60 text-[10px] md:text-xs">Hardship Protocol // System Priority 0</p>
                     </div>
                 </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="flex gap-2 mb-10 bg-industrial-well-bg p-2 rounded-[2rem] shadow-well border-t border-l border-black/5">
+            <div className="flex gap-1.5 mb-6 md:mb-10 bg-industrial-well-bg p-1.5 rounded-2xl md:rounded-[2rem] shadow-well border-t border-l border-black/5 overflow-x-auto no-scrollbar">
                 <button 
                     onClick={() => setMode('TRIAGE')} 
-                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${mode === 'TRIAGE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
+                    className={`flex-1 min-w-[80px] py-3.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all duration-300 ${mode === 'TRIAGE' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
                 >
                     01. TRIAGE
                 </button>
                 <button 
                     onClick={() => setMode('LETTER')} 
-                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${mode === 'LETTER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
+                    className={`flex-1 min-w-[80px] py-3.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all duration-300 ${mode === 'LETTER' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
                 >
-                    02. GENERATOR
+                    02. GEN
                 </button>
                 <button 
                     onClick={() => setMode('OMBUDSMAN')} 
-                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${mode === 'OMBUDSMAN' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
+                    className={`flex-1 min-w-[80px] py-3.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl md:rounded-2xl transition-all duration-300 ${mode === 'OMBUDSMAN' ? 'bg-industrial-base shadow-tactile-sm text-industrial-orange' : 'text-industrial-subtext/60 hover:text-industrial-text'}`}
                 >
-                    03. ESCALATE
+                    03. ESC
                 </button>
             </div>
 

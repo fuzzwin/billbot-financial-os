@@ -26,9 +26,9 @@ export const TactileButton: React.FC<TactileButtonProps> = ({
 
   const sizeMap = {
     /* Minimum touch height ~44px (mobile) */
-    sm: "px-4 py-2.5 text-[12px] min-h-[44px]",
+    sm: "px-4 py-2.5 text-[11px] min-h-[40px]",
     md: "px-5 py-3 text-[13px] min-h-[44px]",
-    lg: "px-7 py-4 text-[15px] min-h-[48px]"
+    lg: "px-7 py-4 text-[15px] min-h-[50px]"
   };
 
   return (

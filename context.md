@@ -17,7 +17,7 @@ BillBot is a **local-first, AI-native financial operating system** tailored for 
 
 *   **Runtime:** Browser (ES Modules via Vite)
 *   **Framework:** React 18.3.1 (TypeScript 5.8)
-*   **Styling:** Tailwind CSS (Slate/Neon color palette with custom colors: `neon-blue`, `neon-purple`, `neon-green`)
+*   **Styling:** Tailwind CSS (compiled locally at build time; no CDN dependency for offline iOS)
 *   **3D Engine:** Three.js 0.167.1 + @react-three/fiber 8.17.6 + @react-three/drei 9.112.0 + @react-three/postprocessing 2.16.2
 *   **AI SDK:** `@google/genai` 1.33.0 (Model: `gemini-2.5-flash`)
 *   **Charts:** Recharts 2.13.0
@@ -624,6 +624,29 @@ Keys:
 
 ## 13. Changelog
 
+### v3.14 - iPhone & Scalability Optimization (Dec 22, 2025)
+**Changes:**
+1. **Responsive Typography:** Refactored large titles (`text-4xl` to `text-6xl`) to use responsive prefixes (e.g., `text-2xl md:text-4xl`), preventing overflow on small iPhone screens.
+2. **Standardized Touch Targets:** Increased button hit areas to a minimum of `48px` height for `md` and `54px` for `lg` variants. Enlarged tab navigation and theme toggles for better ergonomics.
+3. **Flexible City View:** Changed the `IsometricCity` container from fixed pixel heights to relative viewport units (`min-h-[45vh] max-h-[70vh]`), allowing the 3D map to scale better across different device aspect ratios.
+4. **Enhanced Modals:** Refined all CRUD modals (`Account`, `Bill`, `Goal`, `Import`) with better padding and `rounded-3xl` corners, optimized for the "bottom sheet" pattern on mobile.
+5. **Layout Tightening:** Reduced excessive padding in `App.tsx` and `HomeView` overlays to maximize screen real estate on smaller devices like the iPhone SE.
+6. **Chat & Form Ergonomics:** Enlarged chat input fields and form elements for easier touch interaction.
+
+### v3.13 - UI & Layout Recovery (Dec 21, 2025)
+**Changes:**
+1. **Tailwind Fix:** Imported `index.css` directly into `App.tsx` and removed the redundant `<link>` from `index.html`. This ensures Vite processes Tailwind classes, fixing the unstyled "broken" UI.
+2. **Immersive Home View:** Refactored the `main` container and `HomeView` to allow the 3D city to occupy the full viewport (`100vh`) without being restricted by parent padding or `max-w-lg` constraints.
+3. **Overlay Depth:** Adjusted the bottom overlay in `HomeView` to be positioned above the floating navigation bar (`bottom: 8.5rem`), ensuring all controls are visible and interactive.
+4. **Layout Robustness:** Removed negative margins and fixed viewport height calculations for a more stable mobile experience.
+
+### v3.12 - Offline iOS WebKit Wrapper (Dec 21, 2025)
+**Changes:**
+1. **Offline Web Bundle:** Removed runtime CDN dependencies (Tailwind CDN + `esm.sh` importmap) and switched to locally compiled Tailwind via PostCSS so the UI can ship offline.
+2. **iOS Wrapper (Xcode 16):** Added a SwiftUI `WKWebView` shell with a custom `WKURLSchemeHandler` (`billbot://`) to serve the bundled web build from the app resources.
+3. **Native Bridge:** Added a minimal JS↔︎native message bridge (`window.BillbotNative.postMessage`) for future native features (camera/files/etc).
+4. **Safe-Area + Viewport Fixes:** Updated home HUD, bottom nav, and bottom-sheet modals to respect iPhone notch/home-indicator safe areas, and added a stable `--bb-vh` height var to prevent iOS Safari `100vh` layout overlap.
+
 ### v3.11 - City Readability + Clay Pass (Dec 19, 2025)
 **Changes:**
 1. **Waterfall/Fountain Fix:** Moved and resized the Cashflow Fountain off the central intersection so traffic never clips through it.
@@ -884,5 +907,13 @@ Keys:
 ### v2.0 - Initial Codebase Documentation (Dec 17, 2025)
 *   Complete documentation of all components, data models, and logic flows
 *   Tech stack and dependencies documented with versions
-*   All 13 AppView navigation states documented
-*   Storage schema and tutorial system documented
+  *   All 13 AppView navigation states documented
+  *   Storage schema and tutorial system documented
+
+### v1.1 - iOS Safari Layout & Safe Area Optimization (Dec 23, 2025)
+**Changes:**
+1.  **Eliminated "White Gap":** Replaced legacy JS `vh` hacks with `fixed inset-0` root container and `height: -webkit-fill-available` on `html/body`.
+2.  **Safe Area Precision:** Implemented `env(safe-area-inset-*)` variables for consistent padding across all iPhone models (including Dynamic Island/Home Indicator).
+3.  **Home HUD Refinement:** Increased spacing for bottom overlay actions in the 3D City view to prevent overlap with the bottom navigation bar on tall iPhone displays.
+4.  **AI Advisor Overhaul:** Refactored the "OPS" view to use a sticky composer and flex-based message list, ensuring the chat input remains reachable above the keyboard and bottom nav.
+5.  **Native Interaction:** Added Momentum Scrolling and Scroll-Snap to dashboard tabs for a native iOS feel.

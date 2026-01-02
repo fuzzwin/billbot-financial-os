@@ -49,12 +49,12 @@ export const WeeklyBriefing: React.FC<WeeklyBriefingProps> = ({ accounts, onUpda
                 <ChassisWell className="max-w-md w-full" label="Weekly check-in">
                     <div className="text-center">
                         <div className="text-6xl mb-6 animate-bounce filter drop-shadow-sm">{isProfit ? '📈' : '📉'}</div>
-                        <h2 className="text-2xl font-black text-industrial-text tracking-tight mb-2">All set</h2>
+                        <h2 className="text-xl md:text-2xl font-black text-industrial-text tracking-tight mb-2">All set</h2>
                         <p className="tactile-label text-industrial-subtext/60 mb-8">Balances updated.</p>
                         
                         <div className="bg-industrial-well-bg p-8 rounded-2xl shadow-well border-t border-l border-black/5 mb-8">
                             <p className="tactile-label text-industrial-subtext/40 mb-2">Net Value Delta</p>
-                            <p className={`text-4xl font-black tracking-tighter ${isProfit ? 'text-emerald-500' : 'text-industrial-orange'}`}>
+                            <p className={`text-3xl md:text-4xl font-black tracking-tighter ${isProfit ? 'text-emerald-500' : 'text-industrial-orange'}`}>
                                 {isProfit ? '+' : ''}${Math.abs(diff).toLocaleString()}
                             </p>
                         </div>

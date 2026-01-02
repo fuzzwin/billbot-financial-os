@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#020617" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -11,101 +11,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'industrial-base': 'var(--industrial-base)',
-              'industrial-text': 'var(--industrial-text)',
-              'industrial-subtext': 'var(--industrial-subtext)',
-              'industrial-highlight': 'var(--industrial-highlight)',
-              'industrial-shadow': 'var(--industrial-shadow)',
-              'industrial-well-bg': 'var(--industrial-well-bg)',
-              /* Keep Tailwind colors in sync with theme variables */
-              'industrial-orange': 'var(--industrial-orange)',
-              'industrial-blue': 'var(--industrial-blue)',
-              'industrial-yellow': 'var(--industrial-yellow)',
-              'industrial-green': 'var(--industrial-green)',
-            },
-            boxShadow: {
-              'tactile-raised': 'var(--shadow-raised)',
-              'tactile-pressed': 'var(--shadow-pressed)',
-              'tactile-sm': 'var(--shadow-sm)',
-              'well': 'var(--shadow-well)',
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: var(--industrial-base);
-        color: var(--industrial-text);
-        -webkit-tap-highlight-color: transparent;
-        font-family: 'Inter', sans-serif;
-      }
-      
-      .tactile-label {
-        font-size: 10px;
-        font-weight: 900;
-        text-transform: uppercase;
-        letter-spacing: -0.025em;
-        color: var(--industrial-subtext);
-      }
-
-      .led-glow-red {
-        box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
-      }
-
-      .led-glow-green {
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-      }
-      
-      /* Safe area padding for mobile notches/home indicators */
-      .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-      }
-      
-      /* Rocket Launch Animation */
-      @keyframes fly-off {
-          0% { transform: translateY(0) scale(1); opacity: 1; }
-          20% { transform: translateY(10px) scale(1.05); } 
-          100% { transform: translateY(-1000px) scale(0.5); opacity: 0; }
-      }
-      
-      /* Smooth scrolling */
-      html {
-        scroll-behavior: smooth;
-      }
-      
-      /* Fix for Three.js canvas not blocking nav clicks */
-      canvas {
-        touch-action: none;
-        pointer-events: auto;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "react": "https://esm.sh/react@18.3.1",
-    "react/": "https://esm.sh/react@18.3.1/",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
-    "recharts": "https://esm.sh/recharts@2.13.0?deps=react@18.3.1,react-dom@18.3.1",
-    "three": "https://esm.sh/three@0.167.1",
-    "@react-three/fiber": "https://esm.sh/@react-three/fiber@8.17.6?deps=three@0.167.1,react@18.3.1,react-dom@18.3.1",
-    "@react-three/drei": "https://esm.sh/@react-three/drei@9.112.0?deps=three@0.167.1,react@18.3.1,react-dom@18.3.1,@react-three/fiber@8.17.6",
-    "@react-three/postprocessing": "https://esm.sh/@react-three/postprocessing@2.16.2?deps=three@0.167.1,react@18.3.1,react-dom@18.3.1,@react-three/fiber@8.17.6,postprocessing@6.36.0",
-    "postprocessing": "https://esm.sh/postprocessing@6.36.0?deps=three@0.167.1",
-    "uuid": "https://esm.sh/uuid@10.0.0",
-    "maath": "https://esm.sh/maath@0.10.7"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>

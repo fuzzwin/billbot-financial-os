@@ -5,43 +5,71 @@
 
 :root {
   --industrial-base: #F5F5F7;
+  --industrial-base-rgb: 245 245 247;
   --industrial-text: #1D1D1F;
+  --industrial-text-rgb: 29 29 31;
   --industrial-subtext: #86868B;
+  --industrial-subtext-rgb: 134 134 139;
   --industrial-highlight: #FFFFFF;
+  --industrial-highlight-rgb: 255 255 255;
   --industrial-shadow: #D2D2D7;
+  --industrial-shadow-rgb: 210 210 215;
   --industrial-well-shadow: #E5E5E7;
   --industrial-well-bg: #EBEBEF;
+  --industrial-well-bg-rgb: 235 235 239;
   
   --industrial-blue: #0071E3;
+  --industrial-blue-rgb: 0 113 227;
   --industrial-orange: #EF4444; /* Changed from neon orange to a more readable soft red/orange */
+  --industrial-orange-rgb: 239 68 68;
   --industrial-green: #10B981;
+  --industrial-green-rgb: 16 185 129;
   --industrial-yellow: #F59E0B;
+  --industrial-yellow-rgb: 245 158 11;
   
   /* Physical Matte Shadows - Refined for "Outwards" feel */
-  --shadow-raised: 4px 4px 12px var(--industrial-shadow), -4px -4px 12px var(--industrial-highlight);
-  --shadow-pressed: inset 2px 2px 5px var(--industrial-shadow), inset -2px -2px 5px var(--industrial-highlight);
-  --shadow-sm: 2px 2px 6px var(--industrial-shadow), -2px -2px 6px var(--industrial-highlight);
-  --shadow-well: inset 4px 4px 8px var(--industrial-well-shadow), inset -3px -3px 8px var(--industrial-highlight);
+  --shadow-raised: 3px 3px 8px var(--industrial-shadow), -3px -3px 8px var(--industrial-highlight);
+  --shadow-pressed: inset 2px 2px 4px var(--industrial-shadow), inset -2px -2px 4px var(--industrial-highlight);
+  --shadow-sm: 1.5px 1.5px 4px var(--industrial-shadow), -1.5px -1.5px 4px var(--industrial-highlight);
+  --shadow-well: inset 3px 3px 6px var(--industrial-well-shadow), inset -2px -2px 6px var(--industrial-highlight);
+
+  /* Safe-area insets (iOS notch/home indicator). These resolve to 0 on desktop. */
+  --bb-safe-top: env(safe-area-inset-top, 0px);
+  --bb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bb-safe-left: env(safe-area-inset-left, 0px);
+  --bb-safe-right: env(safe-area-inset-right, 0px);
 }
 
 [data-theme='mid'] {
   --industrial-base: #D1D1D6;
+  --industrial-base-rgb: 209 209 214;
   --industrial-text: #1D1D1F;
+  --industrial-text-rgb: 29 29 31;
   --industrial-subtext: #48484A;
+  --industrial-subtext-rgb: 72 72 74;
   --industrial-highlight: #E5E5EA;
+  --industrial-highlight-rgb: 229 229 234;
   --industrial-shadow: #AEAEB2;
+  --industrial-shadow-rgb: 174 174 178;
   --industrial-well-shadow: #B6B6BA;
   --industrial-well-bg: #BEBEC0;
+  --industrial-well-bg-rgb: 190 190 192;
 }
 
 [data-theme='dark'] {
   --industrial-base: #1C1C1E;
+  --industrial-base-rgb: 28 28 30;
   --industrial-text: #F5F5F7;
+  --industrial-text-rgb: 245 245 247;
   --industrial-subtext: #8E8E93;
+  --industrial-subtext-rgb: 142 142 147;
   --industrial-highlight: #2C2C2E;
+  --industrial-highlight-rgb: 44 44 46;
   --industrial-shadow: #000000;
+  --industrial-shadow-rgb: 0 0 0;
   --industrial-well-shadow: #121214;
   --industrial-well-bg: #262629;
+  --industrial-well-bg-rgb: 38 38 41;
 }
 
 body {
@@ -50,6 +78,13 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
   font-feature-settings: "ss01", "cv02", "cv03";
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  width: 100%;
+  height: 100%;
 }
 
 /* Atomic Style Overrides */
@@ -71,12 +106,91 @@ body {
 
 .tactile-label {
   /* Default label style: readable, not shouty */
-  @apply text-[11px] font-semibold tracking-wide text-industrial-subtext/80;
+  @apply text-[11px] font-semibold tracking-wide text-industrial-subtext opacity-80;
   font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* iOS viewport + safe-area helpers */
+html, body {
+  height: 100% !important;
+  height: 100dvh !important;
+  height: -webkit-fill-available !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  background-color: var(--industrial-base) !important;
+  position: fixed; /* Stop any scrolling on the root */
+}
+
+#root {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100% !important;
+  height: 100dvh !important;
+  background-color: var(--industrial-base) !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pt-safe {
+  padding-top: var(--bb-safe-top);
+}
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--bb-safe-bottom);
+}
+.pl-safe {
+  padding-left: var(--bb-safe-left);
+}
+.pr-safe {
+  padding-right: var(--bb-safe-right);
+}
+
+.tabs-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  padding: 0.25rem 0.5rem;
+  scrollbar-width: none;
+}
+
+.tabs-row::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs-row > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.safe-bottom-padding {
+  padding-bottom: calc(var(--bb-safe-bottom) + 0.5rem);
+}
+
+.advisor-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.messages-list {
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .advisor-shell {
+    height: 100%;
+    margin: 0;
+  }
 }
 
 /* Button & Input Refinements */
@@ -87,6 +201,28 @@ button, input, select {
 /* Accessible base sizing */
 html {
   font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Fix for Three.js canvas interactions on mobile */
+canvas {
+  touch-action: none;
+  pointer-events: auto;
+}
+
+/* LED glow helpers */
+.led-glow-red {
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+.led-glow-green {
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+/* Rocket Launch Animation (used by goal celebration UI) */
+@keyframes fly-off {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  20% { transform: translateY(10px) scale(1.05); }
+  100% { transform: translateY(-1000px) scale(0.5); opacity: 0; }
 }
 
 /* Better default focus (Tailwind CDN doesn't include base focus ring) */

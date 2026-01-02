@@ -152,7 +152,7 @@ export const WalletManager: React.FC<WalletManagerProps> = ({
           <div className="flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="text-center md:text-left">
                 <p className="tactile-label text-industrial-subtext/60 mb-1">Total Equity</p>
-                <p className={`text-5xl font-black tracking-tighter ${netWorth >= 0 ? 'text-emerald-500' : 'text-industrial-orange'}`}>
+                <p className={`text-3xl md:text-5xl font-black tracking-tighter ${netWorth >= 0 ? 'text-emerald-500' : 'text-industrial-orange'}`}>
                     ${netWorth.toLocaleString()}
                 </p>
             </div>

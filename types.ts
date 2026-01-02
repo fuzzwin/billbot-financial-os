@@ -95,6 +95,8 @@ export interface FinancialHealth {
 }
 
 // Simplified navigation - 4 main zones
+export type ThemeMode = 'light' | 'mid' | 'dark';
+
 export enum AppView {
   HOME = 'HOME',           // Dashboard with city, health score, next action
   MONEY = 'MONEY',         // Cash flow: income, expenses, subscriptions, bills

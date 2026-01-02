@@ -74,7 +74,7 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
       
       <div className="mb-8 flex flex-col md:flex-row justify-between items-end gap-6 px-2">
         <div>
-            <h2 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">Recurring Cost Command</h2>
+            <h2 className="text-2xl md:text-3xl font-black text-industrial-text uppercase tracking-tighter">Recurring Cost Command</h2>
             <div className="flex items-center gap-2 mt-1">
               <LEDIndicator active={subscriptions.some(s => s.isOptimizable)} color="red" label="Leakage Detected" />
               <p className="tactile-label text-industrial-subtext/60">V2.5 // SUBSCRIPTION_MOD</p>

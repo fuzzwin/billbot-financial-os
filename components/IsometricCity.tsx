@@ -125,7 +125,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
   subscriptions = []
 }) => {
   const [tooltip, setTooltip] = useState<TooltipInfo | null>(null);
-  const [zoom, setZoom] = useState(minimal ? 45 : 35);
+  const [zoom, setZoom] = useState(minimal ? 54 : 35);
   const [autoRotate, setAutoRotate] = useState(false);
   const [viewMode, setViewMode] = useState<'isometric' | 'birdseye'>('isometric');
   const [showLegend, setShowLegend] = useState(false);
@@ -267,14 +267,14 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           transform
           sprite
           position={[0, 0.42, 0.14]}
-          distanceFactor={12}
+          distanceFactor={10}
           style={{ pointerEvents: 'none' }}
         >
-          <div className="select-none">
-            <div className="px-2.5 py-1.5 rounded-lg bg-industrial-base/85 backdrop-blur-sm border border-white/15 shadow-tactile-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-sm leading-none">{emoji}</span>
-                <span className="text-[11px] font-black uppercase tracking-tight text-industrial-text">
+          <div className="select-none scale-[0.85] md:scale-100">
+            <div className="px-2 py-1 rounded-lg bg-industrial-base/70 backdrop-blur-sm border border-white/10 shadow-tactile-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs leading-none">{emoji}</span>
+                <span className="text-[9px] font-black uppercase tracking-tighter text-industrial-text">
                   {label}
                 </span>
               </div>
@@ -935,14 +935,15 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
     
     return (
       <group ref={cityRef}>
+        {/* Enormous ground floor to ensure it covers the entire perspective projection */}
         <mesh position={[0, -0.15, 0]} receiveShadow>
-          <boxGeometry args={[14, 0.3, 14]} />
-          <meshStandardMaterial color={isDark ? "#0F172A" : "#37474F"} />
+          <boxGeometry args={[80, 0.3, 80]} />
+          <meshStandardMaterial 
+            color={isDark ? "#020617" : isMid ? "#1E293B" : "#0F172A"} 
+            roughness={1}
+          />
         </mesh>
         
-        {/* Ground Grid for "Grid" feel */}
-        <gridHelper args={[14, 14, isDark ? "#1E293B" : "#455A64", isDark ? "#020617" : "#37474F"]} position={[0, 0.01, 0]} />
-
         <mesh position={[-3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
         <mesh position={[3.8, 0.05, -3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
         <mesh position={[-3.8, 0.05, 3.8]} receiveShadow><boxGeometry args={[5, 0.1, 5]} /><meshStandardMaterial color={themeColors.grass} /></mesh>
@@ -1067,11 +1068,11 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         {health.taxVault > 0 && <TaxVault position={[4.8, 0.1, 2.8]} amount={health.taxVault} />}
         {([[-5.5, 0.08, -5.5], [5.5, 0.08, -5.5], [-5.5, 0.08, 5.5], [5.5, 0.08, 5.5], [-2.5, 0.08, -5.5], [2.5, 0.08, -5.5], [-5.5, 0.08, -2.5], [5.5, 0.08, -2.5]].map((pos, i) => <Tree key={i} position={pos as [number, number, number]} scale={0.7 + Math.random() * 0.3} />))}
 
-        {/* In-world quadrant signage */}
-        <QuadrantSign position={[-5.2, 0.08, -5.2]} label="Banks" emoji="🏦" accentColor={themeColors.savings} />
-        <QuadrantSign position={[5.2, 0.08, -5.2]} label="Debts" emoji="⚠️" accentColor={themeColors.debt} />
-        <QuadrantSign position={[-5.2, 0.08, 5.2]} label="Goals" emoji="🚀" accentColor={themeColors.investment} />
-        <QuadrantSign position={[5.2, 0.08, 5.2]} label="Harbor" emoji="⚓" accentColor={themeColors.water} />
+        {/* In-world quadrant signage - Pulled inward for narrow mobile screens */}
+        <QuadrantSign position={[-4.4, 0.08, -4.4]} label="Banks" emoji="🏦" accentColor={themeColors.savings} />
+        <QuadrantSign position={[4.4, 0.08, -4.4]} label="Debts" emoji="⚠️" accentColor={themeColors.debt} />
+        <QuadrantSign position={[-4.4, 0.08, 4.4]} label="Goals" emoji="🚀" accentColor={themeColors.investment} />
+        <QuadrantSign position={[4.4, 0.08, 4.4]} label="Harbor" emoji="⚓" accentColor={themeColors.water} />
 
         <DriftingCloud initialPosition={[-8, 8, -6]} speed={0.15} scale={1.2} isStorm={isLowScore} />
         <DriftingCloud initialPosition={[5, 9, -3]} speed={0.12} scale={0.9} isStorm={isLowScore} />
@@ -1108,31 +1109,31 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
 
   const cameraPosition: [number, number, number] = viewMode === 'birdseye' 
     ? [0, 30, 0.1]  
-    : [20, 20, 20]; 
+    : [22, 22, 22]; // Restored to original height for better framing
   
   const polarAngle = viewMode === 'birdseye' 
     ? { min: 0, max: 0.1 }  
-    : { min: Math.PI / 4, max: Math.PI / 3 }; 
+    : { min: Math.PI / 4.2, max: Math.PI / 2.8 }; 
 
   return (
-    <div className={`w-full h-full ${minimal ? '' : 'h-[500px] md:h-[600px]'} ${getSkyClass()} relative rounded-2xl overflow-hidden shadow-inner`}>
-      {/* Subtle vignette for depth (keep very light; fog already adds haze) */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/18" />
+    <div className={`w-full h-full ${getSkyClass()} relative overflow-hidden`}>
+      {/* Subtle vignette for depth */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-black/20 z-10" />
       
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-1.5 scale-90 md:scale-100 origin-left">
         <div className="flex flex-col bg-industrial-base rounded-xl overflow-hidden shadow-tactile-raised border-t border-l border-white/40">
           <button
             onClick={handleZoomIn}
             aria-label="Zoom in"
-            className="w-11 h-11 flex items-center justify-center text-industrial-text hover:bg-black/5 transition-colors text-lg font-black active:shadow-inner"
+            className="w-10 h-10 flex items-center justify-center text-industrial-text hover:bg-black/5 transition-colors text-lg font-black active:shadow-inner"
           >
             +
           </button>
-          <div className="h-px w-full bg-black/10"></div>
+          <div className="h-px w-full bg-black/5"></div>
           <button
             onClick={handleZoomOut}
             aria-label="Zoom out"
-            className="w-11 h-11 flex items-center justify-center text-industrial-text hover:bg-black/5 transition-colors text-lg font-black active:shadow-inner"
+            className="w-10 h-10 flex items-center justify-center text-industrial-text hover:bg-black/5 transition-colors text-lg font-black active:shadow-inner"
           >
             −
           </button>
@@ -1141,7 +1142,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <button
           onClick={toggleView}
           aria-label={viewMode === 'birdseye' ? 'Switch to isometric view' : 'Switch to birdseye view'}
-          className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${viewMode === 'birdseye' ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${viewMode === 'birdseye' ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
         >
           {viewMode === 'birdseye' ? '🦅' : '🏙️'}
         </button>
@@ -1149,7 +1150,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <button
           onClick={() => setAutoRotate(!autoRotate)}
           aria-label={autoRotate ? 'Disable auto rotate' : 'Enable auto rotate'}
-          className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${autoRotate ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${autoRotate ? 'bg-industrial-blue text-white' : 'bg-industrial-base text-industrial-text'}`}
         >
           ⟳
         </button>
@@ -1157,7 +1158,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
         <button
           onClick={() => setShowLegend(s => !s)}
           aria-label={showLegend ? 'Hide legend' : 'Show legend'}
-          className="w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] bg-industrial-base text-industrial-text"
+          className="w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] bg-industrial-base text-industrial-text"
         >
           ?
         </button>
@@ -1166,7 +1167,7 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           <button
             onClick={() => setShowHarborDev(s => !s)}
             aria-label={showHarborDev ? 'Hide harbor dev tools' : 'Show harbor dev tools'}
-            className={`w-11 h-11 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${showHarborDev ? 'bg-industrial-yellow text-industrial-dark-base' : 'bg-industrial-base text-industrial-text'}`}
+            className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all shadow-tactile-raised border-t border-l border-white/40 active:translate-y-[1px] ${showHarborDev ? 'bg-industrial-yellow text-industrial-dark-base' : 'bg-industrial-base text-industrial-text'}`}
             title="DEV: Harbor water override"
           >
             🧪
@@ -1176,42 +1177,42 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
 
       {!minimal && (
         <>
-          <div className="absolute top-4 left-4 z-10 pointer-events-none">
-            <h2 className="text-industrial-text font-black text-xl uppercase tracking-tighter drop-shadow-sm">{isFuture ? 'Sector 7 // Future' : 'Grid // Primary'}</h2>
+          <div className="absolute top-4 left-4 z-10 pointer-events-none drop-shadow-sm">
+            <h2 className="text-industrial-text font-black text-lg md:text-xl uppercase tracking-tighter">{isFuture ? 'Sector 7 // Future' : 'Grid // Primary'}</h2>
             <p className="tactile-label text-industrial-subtext/60">{accounts.length} ACCOUNTS • {goals.length} TARGETS</p>
           </div>
 
           <div className="absolute top-4 right-4 z-10">
-            <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter shadow-tactile-sm border-t border-l border-white/60 ${health.score > 70 ? 'bg-emerald-500 text-white' : health.score > 40 ? 'bg-industrial-yellow text-industrial-dark-base' : 'bg-industrial-orange text-white'}`}>
+            <div className={`px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[9px] md:text-[10px] font-black uppercase tracking-tighter shadow-tactile-sm border-t border-l border-white/60 ${health.score > 70 ? 'bg-emerald-500 text-white' : health.score > 40 ? 'bg-industrial-yellow text-industrial-dark-base' : 'bg-industrial-orange text-white'}`}>
               SCORE: {health.score}
             </div>
           </div>
 
-          <div className="absolute top-16 left-4 z-10 bg-industrial-base/90 backdrop-blur rounded-xl px-4 py-2 shadow-tactile-sm border-t border-l border-white/60 flex items-center gap-3">
-            <span className={`text-[10px] font-black tracking-tighter ${monthlySurplus >= 0 ? 'text-emerald-500' : 'text-industrial-orange'}`}>
+          <div className="absolute top-14 left-4 z-10 bg-industrial-base/90 backdrop-blur rounded-xl px-3 py-1.5 shadow-tactile-sm border-t border-l border-white/60 flex items-center gap-2.5">
+            <span className={`text-[9px] font-black tracking-tighter ${monthlySurplus >= 0 ? 'text-emerald-500' : 'text-industrial-orange'}`}>
               {monthlySurplus >= 0 ? '↑' : '↓'} ${Math.abs(monthlySurplus).toLocaleString()} / MO
             </span>
             {totalSubCost > 0 && <>
-              <div className="w-px h-3 bg-industrial-well-shadow-light/50"></div>
-              <span className="text-[10px] font-black text-industrial-blue uppercase tracking-tighter">BURN: ${Math.round(totalSubCost)}</span>
+              <div className="w-px h-3 bg-industrial-well-shadow-light/30"></div>
+              <span className="text-[9px] font-black text-industrial-blue uppercase tracking-tighter">BURN: ${Math.round(totalSubCost)}</span>
             </>}
           </div>
 
-          <div className="absolute bottom-4 right-4 z-10 bg-industrial-base/90 backdrop-blur rounded-2xl p-4 shadow-tactile-raised border-t border-l border-white/60 max-w-[200px]">
-            <div className="flex justify-between items-center mb-3">
+          <div className="absolute bottom-4 right-4 z-10 bg-industrial-base/90 backdrop-blur rounded-2xl p-3 md:p-4 shadow-tactile-raised border-t border-l border-white/60 max-w-[180px] md:max-w-[200px]">
+            <div className="flex justify-between items-center mb-2 md:mb-3">
               <span className="tactile-label text-industrial-subtext/60">Target Modules</span>
               <LEDIndicator active={hasWeeds} color="yellow" />
             </div>
-            {goals.length === 0 && <p className="text-[10px] font-bold text-industrial-subtext/40 uppercase">System idle.</p>}
-            {goals.slice(0, 3).map(g => {
+            {goals.length === 0 && <p className="text-[9px] md:text-[10px] font-bold text-industrial-subtext/40 uppercase">System idle.</p>}
+            {goals.slice(0, 2).map(g => {
               const p = Math.min(g.currentAmount / g.targetAmount, 1);
               return (
-                <div key={g.id} className="mb-3 last:mb-0">
+                <div key={g.id} className="mb-2 md:mb-3 last:mb-0">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-black text-industrial-text uppercase tracking-tighter truncate max-w-[100px]">{g.name}</span>
-                    <span className={`text-[10px] font-black ${p >= 1 ? 'text-emerald-500' : 'text-industrial-subtext/40'}`}>{Math.round(p * 100)}%</span>
+                    <span className="text-[9px] md:text-[10px] font-black text-industrial-text uppercase tracking-tighter truncate max-w-[80px] md:max-w-[100px]">{g.name}</span>
+                    <span className={`text-[9px] md:text-[10px] font-black ${p >= 1 ? 'text-emerald-500' : 'text-industrial-subtext/40'}`}>{Math.round(p * 100)}%</span>
                   </div>
-                  <div className="w-full h-2 bg-industrial-well-bg rounded-full shadow-well p-0.5">
+                  <div className="w-full h-1.5 md:h-2 bg-industrial-well-bg rounded-full shadow-well p-0.5">
                     <div className={`h-full rounded-full transition-all duration-1000 ${p >= 1 ? 'bg-emerald-500' : 'bg-industrial-blue'}`} style={{ width: `${p * 100}%` }} />
                   </div>
                 </div>
@@ -1219,12 +1220,12 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
             })}
           </div>
 
-          <div className="absolute bottom-4 left-4 z-10 bg-industrial-base/80 backdrop-blur rounded-xl p-3 shadow-tactile-sm border-t border-l border-white/10 space-y-1.5">
-            <div className="tactile-label text-industrial-subtext/60 mb-2">Sector Index</div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-industrial-yellow shadow-sm"></div> NW: Banks</div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-industrial-orange shadow-sm"></div> NE: Debts</div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-industrial-blue shadow-sm"></div> SW: Goals</div>
-            <div className="flex items-center gap-2 text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2.5 h-2.5 rounded bg-white shadow-sm border border-black/10"></div> SE: Harbor</div>
+          <div className="absolute bottom-4 left-4 z-10 bg-industrial-base/80 backdrop-blur rounded-xl p-2.5 md:p-3 shadow-tactile-sm border-t border-l border-white/10 space-y-1 md:space-y-1.5">
+            <div className="tactile-label text-industrial-subtext/60 mb-1 md:mb-2">Sector Index</div>
+            <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-industrial-yellow shadow-sm"></div> NW: Banks</div>
+            <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-industrial-orange shadow-sm"></div> NE: Debts</div>
+            <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-industrial-blue shadow-sm"></div> SW: Goals</div>
+            <div className="flex items-center gap-2 text-[8px] md:text-[9px] font-black text-industrial-text/80 uppercase tracking-tight"><div className="w-2 h-2 md:w-2.5 md:h-2.5 rounded bg-white shadow-sm border border-black/10"></div> SE: Harbor</div>
           </div>
         </>
       )}
@@ -1382,7 +1383,15 @@ export const IsometricCity: React.FC<IsometricCityProps> = ({
           {/* Atmosphere */}
           <fog attach="fog" args={[isDark ? '#020617' : isMid ? '#BFDBFE' : '#E0F2FE', 55, 140]} />
           <OrthographicCamera makeDefault position={cameraPosition} zoom={zoom} near={-50} far={200} />
-          <OrbitControls autoRotate={autoRotate} autoRotateSpeed={0.5} enableZoom={false} enablePan={false} minPolarAngle={polarAngle.min} maxPolarAngle={polarAngle.max} />
+          <OrbitControls 
+            autoRotate={autoRotate} 
+            autoRotateSpeed={0.5} 
+            enableZoom={false} 
+            enablePan={false} 
+            enableRotate={viewMode !== 'birdseye'} 
+            minPolarAngle={polarAngle.min} 
+            maxPolarAngle={polarAngle.max} 
+          />
           <ambientLight intensity={isFuture ? 0.35 : isLowScore ? 0.45 : 0.6} />
           <hemisphereLight intensity={isFuture ? 0.25 : 0.35} groundColor={isDark ? '#020617' : '#0F172A'} color={isDark ? '#93C5FD' : '#FFFFFF'} />
           <directionalLight position={[12, 18, 10]} intensity={isFuture ? 0.35 : isLowScore ? 0.55 : 0.75} castShadow shadow-mapSize={[1024, 1024]} />

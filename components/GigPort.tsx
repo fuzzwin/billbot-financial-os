@@ -36,7 +36,7 @@ export const GigPort: React.FC<GigPortProps> = ({ health, onUpdateHealth }) => {
     return (
         <div className="max-w-2xl mx-auto pb-24 animate-in fade-in slide-in-from-bottom-4">
             <div className="text-center mb-10 px-2">
-                <h2 className="text-4xl font-black text-industrial-text uppercase tracking-tighter">GIG ECONOMY PORT</h2>
+                <h2 className="text-2xl md:text-4xl font-black text-industrial-text uppercase tracking-tighter">GIG ECONOMY PORT</h2>
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <LEDIndicator active={true} color="yellow" />
                   <p className="tactile-label text-industrial-subtext/60">Cargo Offload // Tax Quarantine Protocol</p>

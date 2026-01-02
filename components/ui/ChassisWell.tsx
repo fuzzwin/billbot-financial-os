@@ -7,7 +7,13 @@ interface ChassisWellProps {
 }
 
 export const ChassisWell: React.FC<ChassisWellProps> = ({ children, label, className = "" }) => (
-  <div className={`bg-industrial-base shadow-tactile-raised p-5 md:p-6 rounded-2xl border border-white/15 relative overflow-hidden ${className}`}>
+  <div 
+    className={`bg-industrial-base shadow-tactile-raised p-5 md:p-6 rounded-2xl border border-white/15 relative overflow-hidden ${className}`}
+    style={{
+      paddingLeft: 'max(1.25rem, var(--bb-safe-left))',
+      paddingRight: 'max(1.25rem, var(--bb-safe-right))'
+    }}
+  >
     {label && (
       <div className="flex items-center justify-between gap-3 mb-4">
         <div className="flex items-center gap-2">

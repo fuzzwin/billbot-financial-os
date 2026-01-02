@@ -52,7 +52,7 @@ export const Profile: React.FC<ProfileProps> = ({ health, onUpdate }) => {
         
         {/* Progress Header */}
         <div className="text-center mb-10 px-2">
-            <h2 className="text-3xl font-black text-industrial-text uppercase tracking-tighter">System Configuration</h2>
+            <h2 className="text-xl md:text-3xl font-black text-industrial-text uppercase tracking-tighter">System Configuration</h2>
             <div className="flex items-center justify-center gap-2 mt-1">
                 <LEDIndicator active={true} color="blue" />
                 <p className="tactile-label text-industrial-subtext/60">Module Blueprint // Step {step} of {TOTAL_STEPS}</p>

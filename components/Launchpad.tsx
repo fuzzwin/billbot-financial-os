@@ -98,7 +98,7 @@ export const Launchpad: React.FC<LaunchpadProps> = ({ health, onUpdateHealth, go
             
             <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6 px-2">
                 <div>
-                    <h2 className="text-4xl font-black text-industrial-text uppercase tracking-tighter">THE LAUNCHPAD</h2>
+                    <h2 className="text-2xl md:text-4xl font-black text-industrial-text uppercase tracking-tighter">THE LAUNCHPAD</h2>
                     <div className="flex items-center gap-2 mt-1">
                       <LEDIndicator active={true} color="blue" />
                       <p className="tactile-label text-industrial-subtext/60">Module Registry // Rocket Status: Active</p>

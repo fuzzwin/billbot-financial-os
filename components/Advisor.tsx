@@ -116,11 +116,13 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
   }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6 animate-in fade-in zoom-in-95 duration-500 pb-20">
+    <div
+      className="flex flex-col lg:flex-row gap-4 lg:gap-6 animate-in fade-in zoom-in-95 duration-500 h-full min-h-0 advisor-shell"
+    >
       
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col bg-industrial-base rounded-[2rem] shadow-chassis border-t border-l border-white/10 overflow-hidden">
-        <div className="p-6 border-b border-black/5 flex justify-between items-center bg-industrial-base">
+      <div className="flex-1 min-w-0 flex flex-col bg-industrial-base rounded-[2rem] shadow-chassis border-t border-l border-white/10 overflow-hidden min-h-0 relative">
+        <div className="p-4 md:p-6 border-b border-black/5 flex justify-between items-center bg-industrial-base sticky top-0 z-10">
             <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-0.5">
                     <LEDIndicator active={true} color="green" />
@@ -131,7 +133,7 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
             <div className="bg-industrial-base px-3 py-1 rounded-lg shadow-well text-[9px] font-black text-industrial-subtext/60 uppercase border-t border-l border-white/5">AUD // COMPLIANT</div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 space-y-6 custom-scrollbar overscroll-contain messages-list">
             {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[85%] p-5 rounded-2xl shadow-tactile-sm text-sm font-medium leading-relaxed border-t border-l ${
@@ -158,7 +160,8 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
             <div ref={messagesEndRef} />
         </div>
 
-        <div className="p-6 bg-industrial-base border-t border-black/5">
+        {/* Composer (pinned within card) */}
+        <div className="p-4 md:p-6 bg-industrial-base border-t border-black/5 sticky bottom-0 z-10 safe-bottom-padding">
             <div className="flex gap-4 bg-industrial-base p-2 rounded-2xl shadow-well border-t border-l border-black/5">
                 <input 
                     type="text" 
@@ -166,7 +169,7 @@ export const Advisor: React.FC<AdvisorProps> = ({ health }) => {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyPress}
                     placeholder="Ask a question..."
-                    className="flex-1 bg-transparent px-4 py-3 text-sm font-bold text-industrial-text placeholder-industrial-subtext/40 outline-none"
+                    className="flex-1 bg-transparent px-4 py-4 text-sm font-bold text-industrial-text placeholder-industrial-subtext/40 outline-none"
                 />
                 <TactileButton 
                     onClick={handleSend}
