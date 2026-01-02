@@ -624,6 +624,14 @@ Keys:
 
 ## 13. Changelog
 
+### v3.15 - iPhone UI Refinement & Space Optimization (Jan 2, 2026)
+**Changes:**
+1. **Unified Command Bar:** Consolidated top overlay cards (Net Worth, Stability, Theme) into a single horizontal HUD for better vertical space usage.
+2. **Condensed Action HUD:** Refined the bottom action grid into a more compact dual-row HUD, reducing the vertical gap between city and navigation.
+3. **Enhanced City Immersiveness:** Increased default zoom level on Home view to better fill "void" space with city details.
+4. **Optimized Map Labels:** Scaled down quadrant signs and increased transparency for a cleaner, less cluttered 3D view.
+5. **Touch Ergonomics:** Standardized action button heights to 48px+ for reliable iPhone interaction.
+
 ### v3.14 - iPhone & Scalability Optimization (Dec 22, 2025)
 **Changes:**
 1. **Responsive Typography:** Refactored large titles (`text-4xl` to `text-6xl`) to use responsive prefixes (e.g., `text-2xl md:text-4xl`), preventing overflow on small iPhone screens.
